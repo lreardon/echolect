@@ -1,0 +1,31 @@
+{
+	// GENERAL
+	"files.associations": {
+		".terminals.json": "jsonc",
+		"*.json": "jsonc"
+	},
+	// CODE ACTIONS ON SAVE
+	"editor.codeActionsOnSave": {
+		"source.fixAll": "always",
+		"source.organizeImports": "always",
+		"quickfix.insertSemicolon": "explicit"
+	},
+	"editor.formatOnSave": true,
+	// RUBY
+	// "rubyLsp.rubyVersionManager": {
+	// 	"frum": {
+	// 		"autoDetect": true
+	// 	},
+	// },
+	"[ruby]": {
+		"editor.defaultFormatter": "Shopify.ruby-lsp"
+	},
+	"rubyLsp.formatter": "rubocop",
+	// JSON
+	"[json]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "vscode.json-language-features"
+	},
+}

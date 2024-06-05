@@ -2,12 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
-:root{
-    --themeColorMain:#1aa8db;
-    --themeColorSecondary:#d23838;
+:root {
+  --themeColorMain: #1aa8db;
+  --themeColorSecondary: #d23838;
 }
 
 * {
-    background-color: #04011f;
-    color: #eee
+  background-color: #04011f;
+  color: #eee;
+}
+
+.emoji-button {
+  height: 150px;
+  font-size: 90px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }

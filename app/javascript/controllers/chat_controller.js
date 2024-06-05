@@ -2,6 +2,8 @@ import { Controller } from "@hotwired/stimulus";
 
 // Connects to data-controller="chat"
 export default class extends Controller {
+  static targets = ["emojiInput", "emojiMessageForm"];
+
   static values = { currentUserId: String };
 
   // Set up observers when the controller connects
@@ -87,7 +89,7 @@ export default class extends Controller {
   // Apply style to a message body
   applyStyle(userId, messageBody) {
     if (userId === this.currentUserIdValue) {
-      messageBody.classList.add("bg-themeColorMain", "text-textColorSecondary");
+      // messageBody.classList.add("bg-themeColorMain", "text-textColorSecondary");
     } else {
       messageBody.classList.add(
         "border",
@@ -96,4 +98,10 @@ export default class extends Controller {
       );
     }
   }
+  sendEmoji() {
+    var emoji = event.target.textContent;
+		console.log(emoji);
+    this.emojiInputTarget.value = emoji;
+    this.emojiMessageFormTarget.submit();
+	}
 }
