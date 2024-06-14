@@ -3,10 +3,8 @@
 require 'active_support/core_ext/integer/time'
 
 Rails.application.configure do
-	# Inject secret_key_base from environment.
-	# config.secret_key_base = ENV.fetch('SECRET_KEY_BASE', nil)
 	# Settings specified here will take precedence over those in config/application.rb.
-
+	
 	# Code is not reloaded between requests.
 	config.cache_classes = true
 	config.action_controller.default_url_options = { host: 'www.echolect.co', protocol: 'https' }
@@ -23,7 +21,7 @@ Rails.application.configure do
 
 	# Ensures that a master key has been made available in either ENV["RAILS_MASTER_KEY"]
 	# or in config/master.key. This key is used to decrypt credentials (and other encrypted files).
-	# config.require_master_key = true
+	config.require_master_key = true
 
 	# Disable serving static files from the `/public` folder by default since
 	# Apache or NGINX already handles this.
