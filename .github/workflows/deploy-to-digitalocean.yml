@@ -13,7 +13,7 @@ jobs:
       - name: Set up .env
         working-directory: server
         run: |
-          cp .env.template .env.production
+          cp .env.template .env
           sed -i 's/RAILS_ENV=/RAILS_ENV=production/' .env
           sed -i 's/SECRET_KEY_BASE=/SECRET_KEY_BASE=${{ secrets.RAILS_SECRET_KEY_BASE }}/' .env
           sed -i 's/RAILS_MASTER_KEY=/RAILS_MASTER_KEY=${{ secrets.RAILS_MASTER_KEY }}/' .env
