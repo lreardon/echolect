@@ -31,4 +31,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_KEY }}
-          script: docker restart webapp # We'll want to restart the application after deploying, with 'docker restart api'
+          script: |
+            cd ~/server/
+            docker exec webapp bin/rails assets:precompile
+            docker restart webapp
