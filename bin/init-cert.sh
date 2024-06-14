@@ -4,7 +4,9 @@
 
 # AUTOMATE RUNNING THIS FILE?
 
-source ~/server/.env.production
+source ~/server/.env
+
+mkdir -p /etc/letsencrypt
 
 echo "### Downloading recommended TLS parameters ..."
 curl -s https://raw.githubusercontent.com/certbot/certbot/master/certbot-nginx/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf > "/etc/letsencrypt/options-ssl-nginx.conf"
