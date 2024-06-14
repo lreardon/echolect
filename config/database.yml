@@ -22,4 +22,7 @@ test:
 
 production:
   <<: *default
-  database: echolect/production
+  host: db
+  database: prod
+  username: proddy
+  password: proddy_password
