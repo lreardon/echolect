@@ -37,7 +37,8 @@ services:
     #   - ./env/postgres.env # you can also define env variables like this.
     volumes:
       - .:/docker/app
-    command: bash -c "rails assets:precompile && foreman start -f Procfile"
+    command: "rails s -p 3000 -b '0.0.0.0'"
+    # command: "foreman start -f Procfile"
   nginx:
     container_name: nginx
     image: nginx:latest
