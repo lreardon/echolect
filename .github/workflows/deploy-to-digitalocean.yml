@@ -33,7 +33,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             cd ~/server/
-            docker exec webapp bin/rails assets:precompile
+            bin/rails assets:precompile
       - name: Restart Webapp
         uses: appleboy/ssh-action@v1.0.3
         with:
