@@ -33,7 +33,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             cd ~/server/
-            bin/rails assets:precompile
+            rails assets:precompile
       - name: Restart Webapp
         uses: appleboy/ssh-action@v1.0.3
         with:
