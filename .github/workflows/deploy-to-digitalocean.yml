@@ -31,9 +31,9 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_KEY }}
-        script: |
-          cd ~/server/
-          docker exec webapp bin/rails assets:precompile
+          script: |
+            cd ~/server/
+            docker exec webapp bin/rails assets:precompile
       - name: Restart Webapp
         uses: appleboy/ssh-action@v1.0.3
         with:
