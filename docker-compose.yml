@@ -1,0 +1,95 @@
+services:
+  db:
+    container_name: db
+    image: postgres
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    command: "postgres -c 'max_connections=500'"
+    environment:
+      - POSTGRES_DB=prod
+      - POSTGRES_USER=proddy
+      - POSTGRES_PASSWORD=proddy_password
+      # POSTGRES_PASSWORD: ILoveDoingKnowBe4Training!
+          # env_file:
+          #   - ./env/postgres.env # you can also define env variables like this.
+    ports:
+      - "5432:5432"
+  webapp:
+    container_name: api
+    build: .
+    env_file:
+      - .env.production
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      # DB_NAME: app_db
+      # DB_USERNAME: my_user
+      # DB_PASSWORD: ILoveDoingKnowBe4Training!
+          # env_file:
+    #   - ./env/postgres.env # you can also define env variables like this.
+    volumes:
+      - .:/docker/app
+    command: "bundle exec rails s -p 3000 -b '0.0.0.0'"
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf
+      - /etc/letsencrypt:/etc/letsencrypt
+    depends_on:
+      - api
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+  certbot:
+    container_name: certbot
+    image: certbot/certbot
+    volumes:
+      - ./etc/letsencrypt:/etc/letsencrypt
+      # - ./etc/letsencrypt:/etc/letsencrypt
+    depends_on:
+      - nginx
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+  mailserver:
+    image: mailserver/docker-mailserver:latest
+    container_name: mail
+    hostname: mail
+    domainname: echolect.co
+    ports:
+      - "25:25"
+      - "143:143"
+      - "587:587"
+      - "993:993"
+    volumes:
+      - maildata:/var/mail
+      - mailstate:/var/mail-state
+      - ./config/:/tmp/docker-mailserver/
+    environment:
+      - ENABLE_SPAMASSASSIN=1
+      - ENABLE_CLAMAV=1
+      - ENABLE_FAIL2BAN=1
+      - ENABLE_POSTGREY=1
+      - ONE_DIR=1
+      - DMS_DEBUG=0
+    cap_add:
+      - NET_ADMIN
+      - SYS_PTRACE
+    restart: always
+volumes:
+  postgres: {}
+  certbot-etc:
+  certbot-var:
+  maildata:
+  mailstate:
+networks:
+  default:
+    name: echolect
+
+
+# The first time you run this, you may need to also connect to the api container and run:
+# rails db:create. Actually, if the db is specified and matches the db name in the database.yml file, it should create the db automatically.
+
+# Migrations need to be run by ocnnecting to the container and running:
+#' bundle exec rake db:migrate'
