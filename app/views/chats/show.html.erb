@@ -6,12 +6,13 @@
 	</h1>
 	<h3><%= @chat.access_code %></h3>
 	<br/>
-	<h2>Speaker View</h2>
-	<div class="outline outline-2 outline-green-800 m-1 flex-1 flex flex-col overflow-y-auto">
-		<%= render partial: 'chats/speaker_view', locals: { chat: @chat } %>
-	</div>
-	<br/>
-	<h2>Learner View</h2>
+	<% if current_user == @chat.user %>
+		<div class="outline outline-2 outline-green-800 m-1 flex-1 flex flex-col overflow-y-auto">
+			<%= render partial: 'chats/speaker_view', locals: { chat: @chat } %>
+		</div>
+		<br/>
+	<% end %>
+
 	<div class="outline outline-2 outline-green-800 m-1 flex-1 flex flex-col overflow-y-auto">
 		<%= render partial: 'chats/learner_view' %>
 	</div>

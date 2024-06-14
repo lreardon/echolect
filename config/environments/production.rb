@@ -3,10 +3,12 @@
 require 'active_support/core_ext/integer/time'
 
 Rails.application.configure do
+	config.secret_key_base = ENV.fetch('SECRET_KEY_BASE', nil)
 	# Settings specified here will take precedence over those in config/application.rb.
 
 	# Code is not reloaded between requests.
 	config.cache_classes = true
+	config.action_controller.default_url_options = { host: 'www.echolect.co', protocol: 'https' }
 
 	# Eager load code on boot. This eager loads most of Rails and
 	# your application in memory, allowing both threaded web servers
@@ -30,7 +32,7 @@ Rails.application.configure do
 	# config.assets.css_compressor = :sass
 
 	# Do not fallback to assets pipeline if a precompiled asset is missed.
-	config.assets.compile = false
+	config.assets.compile = true # WAS FALSE AS DEFAULT
 
 	# Enable serving of images, stylesheets, and JavaScripts from an asset server.
 	# config.asset_host = "http://assets.example.com"
@@ -64,7 +66,12 @@ Rails.application.configure do
 	# config.active_job.queue_adapter     = :resque
 	# config.active_job.queue_name_prefix = "echolect_production"
 
+	config.action_mailer.perform_deliveries = true
 	config.action_mailer.perform_caching = false
+	config.action_mailer.raise_delivery_errors = true
+	config.action_mailer.default_url_options = { host: 'www.echolect.co', protocol: 'https' }
+	config.action_mailer.delivery_method = :smtp
+	config.action_mailer.asset_host = 'https://echolect.co'
 
 	# Ignore bad email addresses and do not raise email delivery errors.
 	# Set this to true and configure the email server for immediate delivery to raise delivery errors.
