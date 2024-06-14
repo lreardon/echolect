@@ -2,7 +2,7 @@
 	// GENERAL
 	"files.associations": {
 		".terminals.json": "jsonc",
-		"*.json": "jsonc"
+		"*.json": "jsonc",
 	},
 	// CODE ACTIONS ON SAVE
 	"editor.codeActionsOnSave": {
@@ -28,4 +28,11 @@
 	"[jsonc]": {
 		"editor.defaultFormatter": "vscode.json-language-features"
 	},
+	"[erb]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"workbench.colorCustomizations": {
+		"textPreformat.background": "#050722",
+		"textPreformat.foreground": "#ffa136",
+	}
 }

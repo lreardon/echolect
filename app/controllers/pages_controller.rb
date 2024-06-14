@@ -3,8 +3,9 @@
 class PagesController < ApplicationController
 	before_action :authenticate_user!
 
-	def home
-		@messages = Message.order(created_at: :desc).limit(5)
-		@message = current_user.messages.build
+	def home; end
+
+	def offline
+		render 'offline', layout: false
 	end
 end

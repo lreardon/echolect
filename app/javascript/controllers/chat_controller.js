@@ -103,5 +103,7 @@ export default class extends Controller {
 		console.log(emoji);
     this.emojiInputTarget.value = emoji;
     this.emojiMessageFormTarget.submit();
+		
+		
 	}
 }

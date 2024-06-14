@@ -2,7 +2,15 @@
 
 Rails.application.routes.draw do
 	root 'pages#home'
+	get 'offline' => 'pages#offline'
+
+	get '/service-worker.js' => 'service_worker#service_worker'
+	get '/manifest.json' => 'service_worker#manifest'
+
+	resource :example, constraints: -> { Rails.env.development? }
+	resources :chats, only: %i[show]
 	resources :messages, only: %i[create destroy]
+
 	devise_for :users, controllers: {
 		registrations: 'users/registrations'
 	}

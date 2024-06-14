@@ -2,13 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  h1 {
+    @apply text-3xl;
+  }
+
+  h2 {
+    @apply text-2xl;
+  }
+
+  .field input {
+    @apply bg-transparent;
+  }
+}
+
 :root {
   --themeColorMain: #1aa8db;
   --themeColorSecondary: #d23838;
 }
 
 * {
-  background-color: #04011f;
+  /* background-color: #04011f; */
   color: #eee;
 }
 

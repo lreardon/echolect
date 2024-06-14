@@ -1,24 +1,7 @@
-<% messageIsReaction = message.body =~ Unicode::Emoji::REGEX %>
-<%# message_1 %>
-<%= turbo_frame_tag dom_id(message) do %>
-	
-	<div class="flex h-14 message grid grid-cols-12 gap-4" data-user-id="<%= message.user.id %>">
-		<div class="col-span-1">
-			<%= message.user.username %>
-		</div>
-		<div class="message__body col-span-10 <%= messageIsReaction ? 'text-5xl' : 'text-m' %> flex-grow">
-			<%= message.body %>
-		</div>
-		<div class="message__header justify-between text-textColorMain col-span-1">      
-			<%# message_1_controls %>
-			<%= turbo_frame_tag [dom_id(message), "controls"] do %>
-				<% if display_controls %>
-					<%= render partial: "messages/controls", locals: { message: message } %>
-				<% end %>
-			<% end %>
-		</div> 
-
+<div class="mb-3">
+	<div class="flex flex-row gap-5">
+		<p class="text-gray-500"><%= message.user.name %></p>
+		<p class="text-gray-500"><%= message.created_at %></p>
 	</div>
-		
-
-<% end %>
+	<p><%= message.body %></p>
+</div>

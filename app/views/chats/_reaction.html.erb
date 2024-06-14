@@ -1,0 +1,35 @@
+
+<style>
+  .tooltip {
+    position: relative;
+    display: inline-block;
+  }
+
+  .tooltip .tooltiptext {
+    visibility: hidden;
+    width: 120px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    bottom: 100%;
+    left: 50%;
+    margin-left: -60px;
+    opacity: 0;
+    transition: opacity 0s;
+		pointer-events: none;
+  }
+
+  .tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 0.75;
+  }
+</style>
+
+<div class="tooltip hover:bg-gray-800 p-2 cursor-pointer">
+	<%= reaction.emoji %>
+	<span class="tooltiptext"><%= time_ago_abbreviated(reaction.created_at) %> ago</span>
+</div>

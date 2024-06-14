@@ -12,17 +12,50 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 20_230_627_035_847) do
+ActiveRecord::Schema[7.1].define(version: 20_240_614_155_400) do
 	# These are extensions that must be enabled in order to support this database
 	enable_extension 'pgcrypto'
 	enable_extension 'plpgsql'
+
+	create_table 'chat_memberships', id: :uuid, default: -> { 'gen_random_uuid()' }, force: :cascade do |t|
+		t.uuid 'user_id', null: false
+		t.uuid 'chat_id', null: false
+		t.boolean 'good_standing', default: true
+		t.datetime 'created_at', null: false
+		t.datetime 'updated_at', null: false
+		t.index ['chat_id'], name: 'index_chat_memberships_on_chat_id'
+		t.index %w[user_id chat_id], name: 'index_chat_memberships_on_user_id_and_chat_id', unique: true
+		t.index ['user_id'], name: 'index_chat_memberships_on_user_id'
+	end
+
+	create_table 'chats', id: :uuid, default: -> { 'gen_random_uuid()' }, force: :cascade do |t|
+		t.uuid 'user_id', null: false
+		t.datetime 'created_at', null: false
+		t.datetime 'updated_at', null: false
+		t.string 'name'
+		t.string 'code', null: false
+		t.index ['code'], name: 'index_chats_on_code', unique: true
+		t.index ['user_id'], name: 'index_chats_on_user_id'
+	end
 
 	create_table 'messages', id: :uuid, default: -> { 'gen_random_uuid()' }, force: :cascade do |t|
 		t.text 'body'
 		t.uuid 'user_id', null: false
 		t.datetime 'created_at', null: false
 		t.datetime 'updated_at', null: false
+		t.uuid 'chat_id'
+		t.index ['chat_id'], name: 'index_messages_on_chat_id'
 		t.index ['user_id'], name: 'index_messages_on_user_id'
+	end
+
+	create_table 'reactions', id: :uuid, default: -> { 'gen_random_uuid()' }, force: :cascade do |t|
+		t.string 'emoji'
+		t.uuid 'user_id', null: false
+		t.uuid 'chat_id', null: false
+		t.datetime 'created_at', null: false
+		t.datetime 'updated_at', null: false
+		t.index ['chat_id'], name: 'index_reactions_on_chat_id'
+		t.index ['user_id'], name: 'index_reactions_on_user_id'
 	end
 
 	create_table 'users', id: :uuid, default: -> { 'gen_random_uuid()' }, force: :cascade do |t|
@@ -34,10 +67,16 @@ ActiveRecord::Schema[7.1].define(version: 20_230_627_035_847) do
 		t.datetime 'created_at', null: false
 		t.datetime 'updated_at', null: false
 		t.string 'username'
+		t.string 'first_name', null: false
+		t.string 'last_name', null: false
 		t.index ['email'], name: 'index_users_on_email', unique: true
 		t.index ['reset_password_token'], name: 'index_users_on_reset_password_token', unique: true
 		t.index ['username'], name: 'index_users_on_username', unique: true
 	end
 
+	add_foreign_key 'chats', 'users'
+	add_foreign_key 'messages', 'chats'
 	add_foreign_key 'messages', 'users'
+	add_foreign_key 'reactions', 'chats'
+	add_foreign_key 'reactions', 'users'
 end

@@ -1,0 +1,31 @@
+<div class="m-2 flex-1 flex flex-col overflow-y-auto">
+			
+			<div>
+				<p>Send a message</p>
+				<form
+					data-controller='messages'
+					data-reflex="submit->Messages#create"
+					data-reflex-root="#chat-messages"
+					data-reflex-serialize-form
+				>
+					<div class="flex flex-row gap-5">
+						<input data-reflex-chat-id type="hidden" name="message[chat_id]" value="<%= @chat.id %>" />
+						<input class="flex-1 bg-transparent" data-reflex-message-body type="text" class="outline focus:outline-white bg-transparent" name="message[body]" />			
+						<button type="submit">Send</button>
+					</div>
+				</form>
+			</div>
+			
+			<br/>
+			
+			<div>
+				<p>React</p>
+				<div class="flex flex-row gap-5">
+					<button data-reflex="click->Reactions#create" data-reaction="👍" data-chat-id=<%= @chat.id %> class="text-6xl">👍</button>
+					<button data-reflex="click->Reactions#create" data-reaction="💙" data-chat-id=<%= @chat.id %> class="text-6xl">💙</button>
+					<button data-reflex="click->Reactions#create" data-reaction="🧠" data-chat-id=<%= @chat.id %> class="text-6xl">🧠</button>
+					<button data-reflex="click->Reactions#create" data-reaction="💀" data-chat-id=<%= @chat.id %> class="text-6xl">💀</button>
+				</div>
+			</div>
+			
+		</div>
