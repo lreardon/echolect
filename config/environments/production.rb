@@ -3,6 +3,7 @@
 require 'active_support/core_ext/integer/time'
 
 Rails.application.configure do
+	# Inject secret_key_base from environment.
 	config.secret_key_base = ENV.fetch('SECRET_KEY_BASE', nil)
 	# Settings specified here will take precedence over those in config/application.rb.
 
