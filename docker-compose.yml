@@ -71,7 +71,7 @@ services:
     volumes:
       - maildata:/var/mail
       - mailstate:/var/mail-state
-      - ./config/:/tmp/docker-mailserver/
+      - ./config/mailserver:/tmp/docker-mailserver/
     environment:
       - ENABLE_SPAMASSASSIN=1
       - ENABLE_CLAMAV=1
