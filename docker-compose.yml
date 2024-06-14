@@ -14,6 +14,11 @@ services:
           #   - ./env/postgres.env # you can also define env variables like this.
     ports:
       - "5432:5432"
+  redis:
+    container_name: redis
+    image: redis
+    ports:
+      - "6379:6379"
   webapp:
     container_name: webapp
     build: .
@@ -23,6 +28,7 @@ services:
       - "3000:3000"
     depends_on:
       - db
+      - redis
       # DB_NAME: app_db
       # DB_USERNAME: my_user
       # DB_PASSWORD: ILoveDoingKnowBe4Training!
@@ -48,7 +54,6 @@ services:
     image: certbot/certbot
     volumes:
       - ./etc/letsencrypt:/etc/letsencrypt
-      # - ./etc/letsencrypt:/etc/letsencrypt
     depends_on:
       - nginx
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
