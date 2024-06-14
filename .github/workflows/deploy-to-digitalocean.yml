@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up .env
-        working-directory: server
+        working-directory: .
         run: |
           cp .env.template .env
           sed -i 's/RAILS_ENV=/RAILS_ENV=production/' .env
