@@ -1,2 +1,2 @@
 //= link_tree ../images
-//= link_tree ../buildsapp
+//= link_tree ../builds
