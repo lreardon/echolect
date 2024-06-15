@@ -17,6 +17,8 @@ services:
   redis:
     container_name: redis
     image: redis
+    volumes:
+      - redis:/data
     ports:
       - "6379:6379"
   webapp:
@@ -91,6 +93,7 @@ services:
       retries: 0
 volumes:
   postgres: {}
+  redis:
   certbot-etc:
   certbot-var:
   mail-data:
