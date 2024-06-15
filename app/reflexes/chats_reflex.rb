@@ -2,7 +2,7 @@
 
 class ChatsReflex < ApplicationReflex
 	def create
-		puts "PARAMS"
+		puts "PARAMS" 
 		puts params
 		chat_params = params.require(:chat).permit(:name)
 		name = chat_params[:name]
