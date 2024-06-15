@@ -40,4 +40,4 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_KEY }}
-          script: docker restart webapp
+          script: docker restart webapp && docker restart nginx
