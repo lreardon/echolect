@@ -45,7 +45,7 @@ Rails.application.configure do
 	# Store uploaded files on the local file system (see config/storage.yml for options).
 	config.active_storage.service = :local
 
-	config.action_cable.allowed_request_origins = ['https://echolect.co']
+	config.action_cable.allowed_request_origins = ['https://echolect.co', 'http://echolect.co']
 
 	# Mount Action Cable outside main process or domain.
 	# config.action_cable.mount_path = nil
