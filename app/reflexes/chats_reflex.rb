@@ -2,20 +2,24 @@
 
 class ChatsReflex < ApplicationReflex
 	def create
+		puts "PARAMS"
+		puts params
 		chat_params = params.require(:chat).permit(:name)
 		name = chat_params[:name]
 
-		@chat = current_user.chats.create(name:)
-
+		puts name
+		current_user.chats.create(name:)
 		current_user.reload
 
+		puts current_user.chats
+		puts "\n\n\n\n\n"
+		
 		morph '#user-created-chats', render(partial: 'chats/chats')
 	end
 
 	def delete
 		chat = Chat.find(element.dataset.chat_id)
 		chat.destroy
-
 		current_user.reload
 
 		morph '#user-created-chats', render(partial: 'chats/chats')
