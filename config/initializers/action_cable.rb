@@ -1,2 +1,1 @@
-ActionCable.server.config.logger = Logger.new($stdout)
-ActionCable.server.config.logger.level = Logger::DEBUG
+ActionCable.server.config.logger = Logger.new(nil)
