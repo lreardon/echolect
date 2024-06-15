@@ -10960,7 +10960,7 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
       scanForReflexes();
     }
   });
-  var StimulusReflex2 = Object.freeze({
+  var StimulusReflex = Object.freeze({
     __proto__: null,
     StimulusReflexController,
     initialize: initialize2,
@@ -10972,7 +10972,7 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
   });
   var global2 = {
     version: packageInfo2.version,
-    ...StimulusReflex2,
+    ...StimulusReflex,
     get debug() {
       return Debug$1.value;
     },
@@ -11164,8 +11164,6 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
   controller_default.forEach((controller) => {
     application.register(controller.name, controller.module.default);
   });
-  StimulusReflex.initialize(application);
-  StimulusReflex.debug = process.env.RAILS_ENV === "development";
 
   // custom/companion.js
   if (navigator.serviceWorker) {
