@@ -46,8 +46,8 @@ Rails.application.configure do
 	config.active_storage.service = :local
 
 	# config.action_cable.allowed_request_origins = ['https://echolect.co', 'http://echolect.co']
-	config.action_cable.url = 'wss://echolect.co/cable'
-	config.action_cable.allowed_request_origins = ['https://echolect.co']
+	# config.action_cable.url = 'wss://echolect.co/cable'
+	# config.action_cable.allowed_request_origins = ['https://echolect.co']
 
 	# Mount Action Cable outside main process or domain.
 	# config.action_cable.mount_path = nil
