@@ -50,7 +50,7 @@ services:
     volumes:
       - ./config/nginx.conf:/etc/nginx/nginx.conf
       - /etc/letsencrypt:/etc/letsencrypt
-      - public_files:/usr/share/nginx/html/public
+      - public_files:/usr/share/nginx/html
     depends_on:
       - webapp
     command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
