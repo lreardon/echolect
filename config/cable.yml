@@ -7,4 +7,4 @@ test:
 
 production:
   adapter: redis
-  url: redis://redis:6379/0 # From redis container
+  url: redis://redis:6379/0 # Host is redis because we're connecting to the redis service (see docker-compose.yml)
