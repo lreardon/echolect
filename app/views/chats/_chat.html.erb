@@ -3,6 +3,6 @@
 				<%= link_to chat.name || chat.id, chat_path(chat), class: 'button' %>
 			</div>
 			<% if chat.user_id == current_user.id %>
-				<button data-reflex="click->Chats#delete" data-chat-id="<%= chat.id %>" class="text-red-900 hover:text-red-800">Delete</button>
+				<button data-reflex="click->Chats#delete" data-chat-id="<%= chat.id %>" class="text-button text-red-900 hover:text-red-800">Delete</button>
 			<% end %>
 		</div>

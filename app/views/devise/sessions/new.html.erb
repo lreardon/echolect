@@ -1,4 +1,9 @@
+<%= render partial: 'pages/banner' %>
+<br/><br/>
 <h2>Log in</h2>
+
+	<br/>
+
 
 <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
   <div class="field">
@@ -6,10 +11,14 @@
     <%= f.email_field :email, autofocus: true, autocomplete: "email" %>
   </div>
 
+	<br/>
+
   <div class="field">
     <%= f.label :password %><br />
     <%= f.password_field :password, autocomplete: "current-password" %>
   </div>
+
+	<br/>
 
   <% if devise_mapping.rememberable? %>
     <div class="field">
@@ -18,9 +27,13 @@
     </div>
   <% end %>
 
-  <div class="actions">
+	<br/>
+
+  <button class="actions">
     <%= f.submit "Log in" %>
-  </div>
+  </button>
 <% end %>
+
+<br/><br/>
 
 <%= render "devise/shared/links" %>

@@ -14,6 +14,14 @@
   .field input {
     @apply bg-transparent;
   }
+
+  button {
+    @apply bg-indigo-900 text-white font-bold py-2 px-4 rounded hover:bg-indigo-800;
+  }
+
+  .text-button {
+    @apply bg-transparent hover:bg-transparent;
+  }
 }
 
 :root {
@@ -24,12 +32,4 @@
 * {
   /* background-color: #04011f; */
   color: #eee;
-}
-
-.emoji-button {
-  height: 150px;
-  font-size: 90px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }

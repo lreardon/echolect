@@ -19,7 +19,7 @@
 					<div class="flex flex-1 flex-row">
 						<h2><%= current_user.name %></h2>
 					</div>
-					<%= button_to 'Logout', destroy_user_session_path, method: :delete, class: "btn btn-primary" %>
+					<%= button_to 'Log out', destroy_user_session_path, method: :delete, class: "btn btn-primary text-button" %>
 				</div>
 				<br />
       <% end %>

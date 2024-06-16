@@ -1,23 +1,40 @@
+<%= render partial: 'pages/banner' %>
+<br/><br/>
+
 <h2>Sign up</h2>
+
+<br/>
+
 <%= form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f| %>
   <%= render "devise/shared/error_messages", resource: resource %>
 	<div class="field">
     <%= f.label :first_name %><br />
     <%= f.text_field :first_name, autofocus: true %>
   </div>
-  <div class="field">
+
+	<br/>
+  
+	<div class="field">
     <%= f.label :last_name %><br />
     <%= f.text_field :last_name %>
   </div>
+
+	<br/>
 
   <div class="field">
     <%= f.label :email %><br />
     <%= f.email_field :email, autocomplete: "email" %>
   </div>
+
+	<br/>
+
   <div class="field">
     <%= f.label :username %><br />
     <%= f.text_field :username %>
   </div>
+	
+	<br/>
+
   <div class="field">
     <%= f.label :password %>
     <% if @minimum_password_length %>
@@ -25,12 +42,20 @@
     <% end %><br />
     <%= f.password_field :password, autocomplete: "new-password" %>
   </div>
+	<br/>
+
   <div class="field">
     <%= f.label :password_confirmation %><br />
     <%= f.password_field :password_confirmation, autocomplete: "new-password" %>
   </div>
-  <div class="actions">
+
+	<br/>
+  
+	<button class="actions">
     <%= f.submit "Sign up" %>
-  </div>
+  </button>
 <% end %>
+
+<br/><br/>
+
 <%= render "devise/shared/links" %>
