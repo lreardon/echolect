@@ -2,9 +2,9 @@
 
 <div class="flex-1 flex flex-col overflow-y-auto text-xl">
 	<h2>Reactions</h2>
-	<div class="flex-1 flex flex-col-reverse bg-gray-900 overflow-y-auto">
-		<div id="chat-<%=chat.id%>-reactions" class="flex flex-wrap">
-			<% chat.reactions.each do |reaction| %>
+	<div class="flex-1 flex flex-col-reverse bg-gray-900 overflow-y-auto overflow-x-visible">
+		<div id="chat-<%=chat.id%>-reactions" class="flex flex-wrap overflow-x-visible">
+			<% chat.reactions.order(created_at: :asc).each do |reaction| %>
 				<%= render partial: 'chats/reaction', locals: { reaction: reaction }%>
 			<% end %>
 		</div>

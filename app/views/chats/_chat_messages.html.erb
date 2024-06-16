@@ -3,7 +3,7 @@
 <div class="flex-1 flex flex-col overflow-y-auto">
 	<h2>Messages</h2>
 	<div id="chat-<%=chat.id%>-messages" class="flex-1 flex flex-col-reverse bg-gray-900 overflow-y-auto">
-		<% chat.messages.reverse.each do |message| %>
+		<% chat.messages.order(created_at: :asc).reverse.each do |message| %>
 			<%= render partial: 'messages/message', locals: {message: message} %>
 		<% end %>
 	</div>
