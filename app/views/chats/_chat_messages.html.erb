@@ -1,6 +1,6 @@
 <%= cable_ready_stream_from "chat-#{chat.id}-messages" %>
 
-<div class="flex-1 flex flex-col overflow-y-auto">
+<div class="md:flex-1 flex flex-col overflow-y-auto">
 	<h2>Messages</h2>
 	<div id="chat-<%=chat.id%>-messages" class="flex-1 flex flex-col-reverse bg-gray-900 overflow-y-auto">
 		<% chat.messages.order(created_at: :asc).reverse.each do |message| %>

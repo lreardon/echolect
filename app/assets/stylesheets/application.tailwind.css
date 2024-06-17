@@ -52,6 +52,13 @@
     visibility: visible;
     opacity: 0.75;
   }
+
+  .access-code-text {
+    font-family: "Ubuntu Sans Mono", monospace;
+    font-optical-sizing: auto;
+    /* font-weight: <weight>; */
+    font-style: normal;
+  }
 }
 
 :root {
