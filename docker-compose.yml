@@ -73,10 +73,10 @@ services:
       - "587:587"
       - "993:993"
     volumes:
-      - ./docker-data/dms/mail-data/:/var/mail/
-      - ./docker-data/dms/mail-state/:/var/mail-state/
-      - ./docker-data/dms/mail-logs/:/var/log/mail/
-      - ./docker-data/dms/config/:/tmp/docker-mailserver/
+      - mail-data:/var/mail/
+      - mail-state:/var/mail-state/
+      - mail-logs:/var/log/mail/
+      - mail-config:/tmp/docker-mailserver/
       - /etc/localtime:/etc/localtime:ro
       - /etc/letsencrypt:/etc/letsencrypt
     environment:
@@ -100,6 +100,7 @@ volumes:
   mail-data:
   mail-state:
   mail-logs:
+  mail-config:
   public:
 networks:
   default:
