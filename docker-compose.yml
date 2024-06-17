@@ -66,7 +66,7 @@ services:
     image: ghcr.io/docker-mailserver/docker-mailserver:latest
     container_name: mail
     # Provide the FQDN of your mail server here (Your DNS MX record should point to this value)
-    hostname: mail.example.com
+    hostname: mail.echolect.co
     ports:
       - "25:25"
       - "465:465"
