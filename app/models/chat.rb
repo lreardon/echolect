@@ -12,4 +12,6 @@ class Chat < ApplicationRecord
 	has_many :reacting_users, through: :reactions
 
 	has_code as: :access_code, length: 8
+
+	validates :name, presence: true, length: { maximum: 50 }
 end

@@ -2,18 +2,28 @@
 
 class ChatsReflex < ApplicationReflex
 	def create
-		puts "PARAMS" 
-		puts params
 		chat_params = params.require(:chat).permit(:name)
-		name = chat_params[:name]
+		unless chat_params
+			morph :none
+			return
+		end
 
-		puts name
-		current_user.chats.create(name:)
+		name = chat_params[:name]
+		unless name
+			morph :none
+			return
+		end
+
+		chat = current_user.chats.create(name:)
+
+		unless chat.persisted?
+			# flash[:error] = 'Chat could not be created.'
+			morph :none
+			return
+		end
+
 		current_user.reload
 
-		puts current_user.chats
-		puts "\n\n\n\n\n"
-		
 		morph '#user-created-chats', render(partial: 'chats/chats')
 	end
 
@@ -27,8 +37,22 @@ class ChatsReflex < ApplicationReflex
 
 	def join
 		chat_params = params.require(:chat).permit(:code)
+		unless chat_params
+			morph :none
+			return
+		end
+
 		code = chat_params[:code]
+		unless code
+			morph :none
+			return
+		end
+
 		chat = Chat.find_by(code:)
+		unless chat
+			morph :none
+			return
+		end
 
 		current_user.join_chat(chat, code:)
 
