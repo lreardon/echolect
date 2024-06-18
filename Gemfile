@@ -92,3 +92,8 @@ gem 'stimulus_reflex', '~> 3.5'
 gem 'redis-session-store', '~> 0.11.5'
 
 gem 'tailwindcss-rails', '~> 2.6'
+
+gem 'erb-formatter', '~> 0.7.2'
+
+gem 'solargraph', require: false, group: :development
+gem 'solargraph-rails', require: false, group: :development

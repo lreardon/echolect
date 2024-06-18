@@ -1,4 +1,5 @@
 const defaultTheme = require('tailwindcss/defaultTheme')
+const colors = require('tailwindcss/colors')
 
 module.exports = {
   content: [
@@ -9,16 +10,20 @@ module.exports = {
   ],
   theme: {
 		screens: {
-      'sm': '365px',
-      'md': '425px',
-      'lg': '500px',
-      'xl': '640px',
-      '2xl': '800px'
+      's': '365px',
+      'm': '640px',
+      'l': '900px',
+      'xl': '1075px'
     },  
     extend: {
       fontFamily: {
         sans: ['Inter var', ...defaultTheme.fontFamily.sans],
       },
+			colors: {
+				'primary': '#61aeb8',
+				'surface': '#1e1e1e',
+				'secondary': colors.indigo[950],
+			},
     },
   },
   plugins: [

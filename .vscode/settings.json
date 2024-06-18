@@ -29,10 +29,14 @@
 		"editor.defaultFormatter": "vscode.json-language-features"
 	},
 	"[erb]": {
-		"editor.defaultFormatter": "esbenp.prettier-vscode"
+		"editor.defaultFormatter": "elia.erb-formatter",
+		"editor.formatOnSave": true,
 	},
 	"workbench.colorCustomizations": {
 		"textPreformat.background": "#050722",
 		"textPreformat.foreground": "#ffa136",
-	}
+	},
+	"solargraph.commandPath": "bin/solargraph",
+	"solargraph.useBundler": true,
+	"solargraph.bundlerPath": "/var/folders/q2/1cb0try95cx3ll70t6yybsfr0000gn/T/frum_76899_1718727616121/bin/bundle"
 }

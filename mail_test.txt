@@ -1,0 +1,10 @@
+sendmail -f "postmaster@echolect.co" bortenwork@gmail.com << EOF
+From: "Leland Reardon" <postmaster@echolect.co>
+To: bortenwork@gmail.com
+Subject: Greetings from the Echolect Team
+List-Unsubscribe: <mailto:postmaster@echolect.co?subject=Unsubscribe>
+
+Hey! I'm testing a mailserver I set up. Did you get this? If so, text me plz :)
+
+-Leland
+EOF
