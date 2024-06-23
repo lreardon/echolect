@@ -21,4 +21,8 @@ class User < ApplicationRecord
 
 		joined_chats << chat
 	end
+
+	def owns_chat(chat)
+		chat.user_id == id
+	end
 end

@@ -75,6 +75,12 @@ group :development do
 
 	# Speed up commands on slow machines / big apps [https://github.com/rails/spring]
 	# gem "spring"
+	gem 'solargraph', require: false
+	gem 'solargraph-rails', require: false
+
+	gem 'sorbet'
+	gem 'sorbet-rails'
+	gem 'tapioca', require: false
 end
 
 group :test do
@@ -84,7 +90,7 @@ group :test do
 	gem 'webdrivers'
 end
 
-gem 'devise', '~> 4.9'
+gem 'devise', '~> 4.9', '>= 4.9.3'
 gem 'faker', '~> 3.2'
 
 gem 'stimulus_reflex', '~> 3.5'
@@ -95,5 +101,4 @@ gem 'tailwindcss-rails', '~> 2.6'
 
 gem 'erb-formatter', '~> 0.7.2'
 
-gem 'solargraph', require: false, group: :development
-gem 'solargraph-rails', require: false, group: :development
+gem 'sorbet-runtime'

@@ -67,6 +67,13 @@
     /* font-weight: <weight>; */
     font-style: normal;
   }
+
+  .branded-text {
+    /* font-family: "" Caveat, Montserrat Alternatives, Poetsen One, Kalam, Pangolin, Playpen Sans,  */
+    font-family: "Solitreo", cursive;
+    font-weight: 400;
+    font-style: normal;
+  }
 }
 
 * {

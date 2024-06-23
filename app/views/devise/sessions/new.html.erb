@@ -21,6 +21,9 @@
             <%= f.label :remember_me %>
           </div>
         <% end %>
+        <% if resource.errors.any? %>
+          <p class="textt-red-600">ERROR!</p>
+        <% end %>
         <button class="actions">
           <%= f.submit "Log in" %>
         </button>
