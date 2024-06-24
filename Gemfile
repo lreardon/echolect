@@ -5,6 +5,8 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
 ruby '3.3.3'
 
+gem 'bundler', '2.5.13'
+
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem 'rails', '~> 7.1.0', '>= 7.1.2'
 
@@ -77,6 +79,10 @@ group :development do
 	# gem "spring"
 	gem 'solargraph', require: false
 	gem 'solargraph-rails', require: false
+
+	gem 'sorbet'
+	gem 'sorbet-rails'
+	gem 'tapioca', require: false
 end
 
 group :test do
@@ -97,7 +103,4 @@ gem 'tailwindcss-rails', '~> 2.6'
 
 gem 'erb-formatter', '~> 0.7.2'
 
-gem 'sorbet'
-gem 'sorbet-rails'
 gem 'sorbet-runtime'
-gem 'tapioca', require: false
