@@ -20,6 +20,5 @@ certbot certonly -n \
 --agree-tos \
 -d $DOMAIN \
 -d www.$DOMAIN \
-# For mailserver
 -d mail.$DOMAIN \
 --force-renewal
