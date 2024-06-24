@@ -77,10 +77,6 @@ group :development do
 	# gem "spring"
 	gem 'solargraph', require: false
 	gem 'solargraph-rails', require: false
-
-	gem 'sorbet'
-	gem 'sorbet-rails'
-	gem 'tapioca', require: false
 end
 
 group :test do
@@ -101,4 +97,7 @@ gem 'tailwindcss-rails', '~> 2.6'
 
 gem 'erb-formatter', '~> 0.7.2'
 
+gem 'sorbet'
+gem 'sorbet-rails'
 gem 'sorbet-runtime'
+gem 'tapioca', require: false
