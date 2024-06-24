@@ -70,9 +70,6 @@ Rails.application.configure do
 		address: 'mailserver',
 		port: 587,
 		domain: 'echolect.co',
-		user_name: 'your_username',
-		password: 'your_password',
-		authentication: 'plain',
 		enable_starttls_auto: true
 	}
 
