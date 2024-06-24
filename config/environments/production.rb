@@ -70,7 +70,8 @@ Rails.application.configure do
 		address: 'mail.echolect.co',
 		port: 587,
 		domain: 'echolect.co',
-		enable_starttls_auto: true
+		enable_starttls_auto: true,
+		openssl_verify_mode: 'peer'
 	}
 
 	config.action_mailer.perform_deliveries = true
