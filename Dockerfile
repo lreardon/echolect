@@ -12,9 +12,9 @@ WORKDIR /docker/app
 
 COPY Gemfile* ./
 
-RUN bundle install
-
 ADD . /docker/app
+
+RUN bundle install
 
 ARG DEFAULT_PORT 3000
 
