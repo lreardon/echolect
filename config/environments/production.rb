@@ -67,7 +67,7 @@ Rails.application.configure do
 
 	config.action_mailer.delivery_method = :smtp
 	config.action_mailer.smtp_settings = {
-		address: 'www.echolect.co',
+		address: 'mail.echolect.co',
 		port: 587,
 		domain: 'echolect.co',
 		enable_starttls_auto: true
