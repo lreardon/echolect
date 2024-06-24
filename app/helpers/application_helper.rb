@@ -8,4 +8,19 @@ module ApplicationHelper
 
 		"#{t} ago"
 	end
+
+	def icon_button(icon_name, options = {}, &block)
+		icon_class = options.delete(:icon_class) || 'material-icons'
+		button_class = options.delete(:class) || 'icon-button'
+		size = options.delete(:size) || 'medium'
+		variant = options.delete(:variant) || 'default'
+
+		# Ensure the button is displayed as a flex container and justify and align items are centered
+		button_class += " icon-button--#{size} icon-button--#{variant}"
+
+		content_tag(:button, options.merge(type: 'button', class: button_class)) do
+			content_tag(:span, icon_name, class: "#{icon_class} flex justify-center items-center") +
+				(block_given? ? capture(&block) : '')
+		end
+	end
 end
