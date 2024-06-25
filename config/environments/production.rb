@@ -71,7 +71,7 @@ Rails.application.configure do
 		port: 587,
 		domain: 'echolect.co',
 		enable_starttls_auto: true,
-		openssl_verify_mode: 'none'
+		openssl_verify_mode: 'none' # This was 'peer' but I had an SSL issue. Revisit and fix later.
 	}
 
 	config.action_mailer.perform_deliveries = true
