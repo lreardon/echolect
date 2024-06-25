@@ -27,6 +27,7 @@ submission     inet  n       -       n       -       -       smtpd
   -o smtpd_discard_ehlo_keywords=
   -o milter_macro_daemon_name=ORIGINATING
   -o cleanup_service_name=sender-cleanup
+	-o debug_peer_list=webapp.echolect
 
 submissions    inet  n       -       n       -       -       smtpd
   -o syslog_name=postfix/submissions
@@ -41,6 +42,7 @@ submissions    inet  n       -       n       -       -       smtpd
   -o smtpd_discard_ehlo_keywords=
   -o milter_macro_daemon_name=ORIGINATING
   -o cleanup_service_name=sender-cleanup
+	-o debug_peer_list=webapp.echolect
 
 pickup         fifo  n       -       n       60      1       pickup
   -o content_filter=
