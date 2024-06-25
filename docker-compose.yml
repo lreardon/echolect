@@ -86,7 +86,6 @@ services:
       - ENABLE_OPENDKIM=0
       - ENABLE_OPENDMARC=0
       - ENABLE_POLICYD_SPF=0
-      - PERMIT_DOCKER=network
       - ENABLE_CLAMAV=0 # This uses more resources than I want to right now, and I don't know what it is.
       - ENABLE_FAIL2BAN=1
       - DMS_DEBUG=1
@@ -96,7 +95,10 @@ services:
       - ENABLE_SASLAUTHD=0
       - ENABLE_SASL_AUTH=1
       # - SSL_TYPE=letsencrypt
+      - PERMIT_DOCKER=network
       - POSTFIX_mynetworks=127.0.0.0/8 [::1]/128 172.16.0.0/12
+      - POSTFIX_smtpd_recipient_restrictions=permit_mynetworks,permit_sasl_authenticated,reject_unauth_destination
+      - POSTFIX_smtpd_sasl_auth_enable=yes
     cap_add:
       - NET_ADMIN # For Fail2Ban to work
     restart: always
