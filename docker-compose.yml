@@ -89,6 +89,11 @@ services:
       - ENABLE_CLAMAV=0 # This uses more resources than I want to right now, and I don't know what it is.
       - ENABLE_FAIL2BAN=1
       - DMS_DEBUG=1
+      - SMTP_ONLY=1
+      - ENABLE_POSTFIX_VIRTUAL_TRANSPORT=1
+      - POSTFIX_DAGENT=lmtp:unix:/var/run/dovecot/lmtp
+      - ENABLE_SASLAUTHD=0
+      - ENABLE_SASL_AUTH=1
       - SSL_TYPE=letsencrypt
     cap_add:
       - NET_ADMIN # For Fail2Ban to work
