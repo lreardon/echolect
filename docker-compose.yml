@@ -116,6 +116,10 @@ volumes:
 networks:
   default:
     name: echolect
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
 
 
 # The first time you run this, you may need to also connect to the webapp container and run:
