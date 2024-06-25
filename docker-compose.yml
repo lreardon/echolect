@@ -80,7 +80,8 @@ services:
       - mail-config:/tmp/docker-mailserver/
       - /etc/localtime:/etc/localtime:ro
       - /etc/letsencrypt:/etc/letsencrypt
-      - ./config/postfix_master.cf:/etc/postfix/master.cf
+      - ./config/postfix/master.cf:/etc/postfix/master.cf
+      - ./config/postfix/main.cf:/etc/postfix/main.cf
     environment:
       - ENABLE_RSPAMD=1
       - ENABLE_AMAVIS=0
