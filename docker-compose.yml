@@ -63,8 +63,8 @@ services:
       - nginx
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
   mailserver:
-    # image: ghcr.io/docker-mailserver/docker-mailserver:latest
-    image: docker-mailserver
+    image: ghcr.io/docker-mailserver/docker-mailserver:latest
+    # image: docker-mailserver
     container_name: mail
     # Provide the FQDN of your mail server here (Your DNS MX record should point to this value)
     hostname: mail.echolect.co
