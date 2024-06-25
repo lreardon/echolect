@@ -98,6 +98,9 @@ services:
       - POSTFIX_mynetworks=127.0.0.0/8 [::1]/128 172.0.0.0/8
       - POSTFIX_smtpd_client_restrictions=permit_mynetworks,reject_unauth_destination
       - POSTFIX_debug_peer_list=webapp.echolect
+      - POSTFIX_smtp_tls_security_level=encrypt
+      - POSTFIX_smtpd_tls_security_level=encrypt
+      - POSTFIX_smtpd_tls_chain_files=/etc/letsencrypt/live/echolect.co/fullchain.pem,/etc/letsencrypt/live/echolect.co/privkey.pem
     cap_add:
       - NET_ADMIN # For Fail2Ban to work
     restart: always
