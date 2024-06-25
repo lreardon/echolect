@@ -71,7 +71,7 @@ Rails.application.configure do
 		port: 587,
 		domain: 'echolect.co',
 		enable_starttls_auto: true,
-		openssl_verify_mode: 'peer'
+		openssl_verify_mode: 'none'
 	}
 
 	config.action_mailer.perform_deliveries = true
