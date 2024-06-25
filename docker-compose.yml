@@ -96,6 +96,7 @@ services:
       - ENABLE_SASLAUTHD=0
       - ENABLE_SASL_AUTH=1
       - SSL_TYPE=letsencrypt
+      - POSTFIX_mynetworks=127.0.0.0/8 [::1]/128 172.16.0.0/12
     cap_add:
       - NET_ADMIN # For Fail2Ban to work
     restart: always
