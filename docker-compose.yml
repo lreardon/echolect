@@ -95,7 +95,7 @@ services:
       - POSTFIX_DAGENT=lmtp:unix:/var/run/dovecot/lmtp
       # - ENABLE_SASLAUTHD=0
       # - ENABLE_SASL_AUTH=1
-      # - SSL_TYPE=letsencrypt
+      - SSL_TYPE=letsencrypt
       - PERMIT_DOCKER=network
       - POSTFIX_mynetworks=127.0.0.0/8 [::1]/128 172.0.0.0/8
       - POSTFIX_smtpd_client_restrictions=permit_mynetworks,reject_unauth_destination
