@@ -92,13 +92,12 @@ services:
       - SMTP_ONLY=1
       - ENABLE_POSTFIX_VIRTUAL_TRANSPORT=1
       - POSTFIX_DAGENT=lmtp:unix:/var/run/dovecot/lmtp
-      - ENABLE_SASLAUTHD=0
-      - ENABLE_SASL_AUTH=1
+      # - ENABLE_SASLAUTHD=0
+      # - ENABLE_SASL_AUTH=1
       # - SSL_TYPE=letsencrypt
       - PERMIT_DOCKER=network
-      - POSTFIX_mynetworks=127.0.0.0/8 [::1]/128 172.16.0.0/12
-      - POSTFIX_smtpd_recipient_restrictions=permit_mynetworks,permit_sasl_authenticated,reject_unauth_destination
-      - POSTFIX_smtpd_sasl_auth_enable=yes
+      - POSTFIX_mynetworks=127.0.0.0/8 [::1]/128 172.0.0.0/8
+      - POSTFIX_smtpd_client_restrictions=permit_mynetworks,reject_unauth_destination
     cap_add:
       - NET_ADMIN # For Fail2Ban to work
     restart: always
