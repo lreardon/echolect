@@ -397,6 +397,7 @@ PLATFORMS
 
 DEPENDENCIES
   bootsnap
+  bundler (= 2.5.13)
   capybara
   clockwork
   cssbundling-rails

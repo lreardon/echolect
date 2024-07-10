@@ -27,12 +27,13 @@ inet_protocols = all
 # These [snakeoil files actually exist](https://askubuntu.com/questions/396120/what-is-the-purpose-of-the-ssl-cert-snakeoil-key), but shouldn't ever be used in production!
 # If no `SSL_TYPE` env is set, "plaintext" is configured, but still accepts SSL with these:
 smtpd_tls_chain_files = /etc/letsencrypt/live/echolect.co/privkey.pem /etc/letsencrypt/live/echolect.co/fullchain.pem
+smtp_tls_chain_files = /etc/letsencrypt/live/echolect.co/privkey.pem /etc/letsencrypt/live/echolect.co/fullchain.pem # IS THIS NECESSARY?
 #smtpd_tls_CAfile =
 #smtp_tls_CAfile =
 smtpd_tls_security_level = may
 smtpd_tls_loglevel = 1
-# smtp_tls_security_level = may
-# smtp_tls_loglevel = 1
+smtp_tls_security_level = may
+smtp_tls_loglevel = 1
 
 # Reduces CPU overhead with `NO_COMPRESSION`, SMTP not at risk of CRIME attack (see git blame for details)
 # Reduce opportunities for a potential CPU exhaustion attack with `NO_RENEGOTIATION`
