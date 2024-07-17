@@ -23,8 +23,7 @@
         <% end %>
 
         <% flash.each do |name, msg| %>
-					<p><%= name %></p>
-          <% if msg.class == Array %>
+          <% if name == 'alert' && msg.class == Array %>
             <% msg.each do |message| %>
               <%= content_tag :div, message, id: "flash_#{name}" %>
             <% end %>
