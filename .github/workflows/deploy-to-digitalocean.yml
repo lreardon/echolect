@@ -25,15 +25,6 @@ jobs:
           remote_host: ${{ secrets.SSH_HOST }}
           remote_user: ${{ secrets.SSH_USERNAME }}
           remote_key: ${{ secrets.SSH_KEY }}
-      - name: Run migrations
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            cd ~/server
-            bundle exec rails db:migrate RAILS_ENV=production
       # - name: Precompile assets
       #   uses: appleboy/ssh-action@v1.0.3
       #   with:
