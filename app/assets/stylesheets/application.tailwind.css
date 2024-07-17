@@ -82,6 +82,10 @@
     font-weight: 400;
     font-style: normal;
   }
+
+  .flash-error {
+    @apply text-red-700;
+  }
 }
 
 * {

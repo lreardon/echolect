@@ -21,8 +21,15 @@
             <%= f.label :remember_me %>
           </div>
         <% end %>
-        <% if resource.errors.any? %>
-          <p class="text-red-600">ERROR!</p>
+
+        <% flash.each do |name, msg| %>
+          <% if msg.class == Array %>
+            <% msg.each do |message| %>
+              <%= content_tag :div, message, id: "flash_#{name}" %>
+            <% end %>
+          <% else %>
+            <%= content_tag :div, msg, id: "flash_#{name}", class: "flash-error" %>
+          <% end %>
         <% end %>
 
         <button class="actions">

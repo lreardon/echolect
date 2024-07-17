@@ -1,7 +1,9 @@
 <div
   class="
     flex flex-row items-center py-2 px-3 gap-5 w-full bg-gray-800 rounded-lg
+    hover:cursor-pointer
   "
+  onclick="window.location.href='<%= chat_path(chat) %>'"
 >
   <div class="flex-1">
     <%= link_to chat.name || chat.id, chat_path(chat), class: "button" %>
