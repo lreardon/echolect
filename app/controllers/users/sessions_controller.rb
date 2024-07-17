@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Users::SessionsController < Devise::SessionsController
-	before_action :clear_flash_messages, only: %i[create new]
+	before_action :clear_flash_messages, only: %i[new]
 
 	# GET /resource/sign_in
 	# def new
