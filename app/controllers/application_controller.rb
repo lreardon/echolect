@@ -4,7 +4,13 @@ class ApplicationController < ActionController::Base
 	include CableReady::Broadcaster
 
 	def authenticate_user!
-		super
-		flash.delete(:alert)
+		auth_action = catch(:warden) do
+			super
+			return true
+		end
+
+		flash.delete(:alert) if auth_action.is_a?(Hash) && auth_action[:action] == :unauthenticated
+
+		throw(:warden, auth_action)
 	end
 end
