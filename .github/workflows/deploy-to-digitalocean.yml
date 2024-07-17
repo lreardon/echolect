@@ -33,7 +33,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             cd ~/server
-            docker exec -it webapp bundle exec rails db:migrate RAILS_ENV=production
+            docker exec webapp bundle exec rails db:migrate RAILS_ENV=production
       # - name: Precompile assets
       #   uses: appleboy/ssh-action@v1.0.3
       #   with:
