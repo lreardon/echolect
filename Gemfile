@@ -83,6 +83,8 @@ group :development do
 	gem 'sorbet'
 	gem 'sorbet-rails'
 	gem 'tapioca', require: false
+
+	gem 'pry'
 end
 
 group :test do

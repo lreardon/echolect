@@ -1,3 +1,5 @@
+
+import audioChannel from "../channels/audio_channel";
 import ApplicationController from './application_controller';
 
 export default class extends ApplicationController {
@@ -28,9 +30,21 @@ export default class extends ApplicationController {
       	}
 
         this.mediaRecorder = new MediaRecorder(stream);
+
         this.mediaRecorder.ondataavailable = event => {
+					// console.log('DATA AVAILABLE')
           this.audioChunks.push(event.data);
+
+					const reader = new FileReader();
+					reader.onloadend = () => {
+						const base64data = reader.result.split(',')[1];
+						// console.log('SENDING DATA!')
+						audioChannel.sendAudioData(base64data);
+					};
+
+					reader.readAsDataURL(event.data);
         };
+
         this.mediaRecorder.onstop = () => {
           const audioBlob = new Blob(this.audioChunks, { 'type' : 'audio/ogg; codecs=opus' });
           const audioUrl = URL.createObjectURL(audioBlob);

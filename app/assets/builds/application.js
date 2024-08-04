@@ -4982,6 +4982,23 @@
   // channels/consumer.js
   var consumer_default = createConsumer3();
 
+  // channels/audio_channel.js
+  var audioChannel = consumer_default.subscriptions.create("AudioChannel", {
+    connected() {
+      console.log("Connected to AudioChannel");
+    },
+    disconnected() {
+      console.log("Disconnected from AudioChannel");
+    },
+    received(data) {
+      console.log("Received data:", data);
+    },
+    sendAudioData(audioData) {
+      this.perform("receive", { audio_data: audioData });
+    }
+  });
+  var audio_channel_default = audioChannel;
+
   // channels/chat_channel.js
   consumer_default.subscriptions.create("ChatChannel", {
     connected() {
@@ -11186,6 +11203,12 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
           this.mediaRecorder = new MediaRecorder(stream);
           this.mediaRecorder.ondataavailable = (event) => {
             this.audioChunks.push(event.data);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const base64data = reader.result.split(",")[1];
+              audio_channel_default.sendAudioData(base64data);
+            };
+            reader.readAsDataURL(event.data);
           };
           this.mediaRecorder.onstop = () => {
             const audioBlob = new Blob(this.audioChunks, { "type": "audio/ogg; codecs=opus" });
