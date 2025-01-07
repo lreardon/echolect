@@ -11199,7 +11199,7 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
     }
   };
 
-  // rails:/docker/app/app/javascript/controllers/**/*_controller.js
+  // rails:/Users/landho/git/echolect/app/javascript/controllers/**/*_controller.js
   var modules = [{ name: "application", module: application_controller_exports, filename: "application_controller.js" }, { name: "chats", module: chats_controller_exports, filename: "chats_controller.js" }, { name: "example", module: example_controller_exports, filename: "example_controller.js" }, { name: "messages", module: messages_controller_exports, filename: "messages_controller.js" }, { name: "recording", module: recording_controller_exports, filename: "recording_controller.js" }, { name: "transcription", module: transcription_controller_exports, filename: "transcription_controller.js" }];
   var controller_default = modules;
 
