@@ -17,7 +17,7 @@ jobs:
           sed -i 's/RAILS_ENV=/RAILS_ENV=production/' .env
           sed -i 's/RAILS_MASTER_KEY=/RAILS_MASTER_KEY=${{ secrets.RAILS_MASTER_KEY }}/' .env
           sed -i 's/DOMAIN=/DOMAIN=echolect.co/' .env
-          # TODO: Change the prod POSTGRES credentials and then store them as secrets eventually
+          # TODO: Change the prod POSTGRES credentials and then store them as secrets
           sed -i 's/POSTGRES_DB=/POSTGRES_DB=prod/' .env
           sed -i 's/POSTGRES_USER=/POSTGRES_USER=proddy/' .env
           sed -i 's/POSTGRES_PASSWORD=/POSTGRES_PASSWORD=proddy_password/' .env
