@@ -22,3 +22,7 @@ Things you may want to cover:
 * Deployment instructions
 
 * ...
+
+## Pesky Issues
+
+<p>If ever in production you get the dreaded `Connection not secure` error, just go into the droplet, kill the containers, run `server/bin/init-cert.sh` and restart the containers.</p>
