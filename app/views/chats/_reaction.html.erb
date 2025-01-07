@@ -1,0 +1,7 @@
+<div class="tooltip hover:bg-gray-800 p-2 cursor-pointer">
+	<%= reaction.emoji %>
+	<div class="tooltiptext overflow-x-visible">
+		<p><%= reaction.user.name %></p>
+		<p><%= time_ago_abbreviated(reaction.created_at) %></p>
+	</div>
+</div>

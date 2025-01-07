@@ -1,0 +1,14 @@
+#! /bin/bash
+if [ -f .env ]; then
+  export RAILS_ENV=$(grep -E '^RAILS_ENV=' .env | cut -d '=' -f 2)
+fi
+
+# if [ -z "$RAILS_ENV" ]; then
+  # COMPOSE_FILE="docker-compose.yml"
+# else
+  COMPOSE_FILE="docker-compose.${RAILS_ENV}.yml"
+# fi
+
+echo "Using compose file: $COMPOSE_FILE"
+sleep 2
+docker compose -f $COMPOSE_FILE up

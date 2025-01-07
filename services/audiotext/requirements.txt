@@ -1,0 +1,4 @@
+numpy<2
+txtai[api,pipeline]
+watchdog
+# Add any other required packages here

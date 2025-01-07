@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  h1 {
+    @apply text-2xl sm:text-3xl;
+  }
+
+  h2 {
+    @apply text-xl sm:text-2xl;
+  }
+
+  h3 {
+    @apply text-sm sm:text-base;
+  }
+
+  a {
+    @apply hover:underline;
+  }
+
+  .actions input {
+    @apply cursor-pointer;
+  }
+
+  button {
+    @apply bg-indigo-900 text-white font-bold py-2 px-4 rounded hover:bg-indigo-800;
+  }
+
+  .special-button {
+    @apply text-center font-bold py-2 px-4 rounded bg-primary hover:bg-[#51c0cf] hover:no-underline;
+  }
+
+  .field input {
+    @apply bg-transparent rounded-md shadow-inner ring-offset-transparent ring-offset-0;
+  }
+
+  .text-button {
+    @apply bg-transparent hover:bg-transparent p-0;
+  }
+
+  .tooltip {
+    position: relative;
+    display: inline-block;
+  }
+
+  .tooltip .tooltiptext {
+    @apply text-sm;
+    visibility: hidden;
+    width: 120px;
+    background-color: black;
+    color: #fff;
+
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    bottom: 100%;
+    left: 50%;
+    margin-left: -60px;
+    opacity: 0;
+    transition: opacity 0s;
+    pointer-events: none;
+  }
+
+  .tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 0.75;
+  }
+
+  .access-code-text {
+    font-family: "Ubuntu Sans Mono", monospace;
+    font-optical-sizing: auto;
+    /* font-weight: <weight>; */
+    font-style: normal;
+  }
+
+  .branded-text {
+    /* font-family: "" Caveat, Montserrat Alternatives, Poetsen One, Kalam, Pangolin, Playpen Sans,  */
+    font-family: "Solitreo", cursive;
+    font-weight: 400;
+    font-style: normal;
+  }
+
+  .flash-error {
+    @apply text-red-700;
+  }
+}
+
+* {
+  /* background-color: #04011f; */
+  color: #eee;
+}

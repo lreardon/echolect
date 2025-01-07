@@ -1,0 +1,4 @@
+.hf-token-diarization-read
+models/*
+recordings/*
+transcriptions/*

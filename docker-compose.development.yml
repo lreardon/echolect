@@ -1,0 +1,203 @@
+services:
+  db:
+    container_name: db
+    image: postgres
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    command: "postgres -c 'max_connections=500'"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      # - POSTGRES_DB=prod
+      # - POSTGRES_USER=proddy
+      # - POSTGRES_PASSWORD=proddy_password
+      # POSTGRES_PASSWORD: ILoveDoingKnowBe4Training!
+      # env_file:
+      #   - ./env/postgres.env # you can also define env variables like this.
+    ports:
+      - "5432:5432"
+
+  redis:
+    container_name: redis
+    image: redis
+    volumes:
+      - redis:/data
+    ports:
+      - "6379:6379"
+
+  webapp:
+    container_name: webapp
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      - redis
+      - minio
+      # DB_NAME: app_db
+      # DB_USERNAME: my_user
+      # DB_PASSWORD: ILoveDoingKnowBe4Training!
+      # env_file:
+      #   - ./env/postgres.env # you can also define env variables like this.
+    volumes:
+      - .:/docker/app # TODO: This seems like it should be unnecessary.
+      - public:/docker/app/public
+      - recordings:/docker/app/shared/recordings
+    command: bundle exec rails s -p 3000 -b 0.0.0.0
+
+  audiotext:
+    container_name: audiotext
+    build:
+      context: services/audiotext
+      dockerfile: Dockerfile
+    volumes:
+      - recordings:/app/recordings
+    command: "python main.py"
+
+  whisper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: whisper
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - WHISPER_MODEL=large-v3
+      - WHISPER_BEAM=1 #optional
+      - WHISPER_LANG=en #optional
+    volumes:
+      - 'recordings:/app/recordings'
+      - 'whisper-models:/app/models'
+      - 'whisper-transcriptions:/app/transcriptions'
+      # - /path/to/faster-whisper/data:/config
+    ports:
+      - 10300:10300
+    restart: unless-stopped
+
+  minio:
+    container_name: minio
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server --console-address :9001 /data
+    environment:
+      MINIO_ROOT_USER: dev
+      MINIO_ROOT_PASSWORD: password
+    volumes:
+      - minio-data:/data
+  # nginx:
+  #   container_name: nginx
+  #   image: nginx:latest
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./config/nginx.conf.template:/etc/nginx/templates/nginx.conf.template
+  #     - letsencrypt:/etc/letsencrypt
+  #     - public:/usr/share/nginx/html
+  #   depends_on:
+  #     - webapp
+  #   environment:
+  #     - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
+  #   command: >
+  #     /bin/sh -c "
+  #     if [ ! -f /etc/letsencrypt/live/${DOMAIN}/fullchain.pem ]; then
+  #       mkdir -p /etc/letsencrypt/live/${DOMAIN} &&
+  #       openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/letsencrypt/live/${DOMAIN}/privkey.pem -out /etc/letsencrypt/live/${DOMAIN}/fullchain.pem -subj '/CN=${DOMAIN}' &&
+  #       chmod 644 /etc/letsencrypt/live/${DOMAIN}/privkey.pem /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+  #     fi &&
+  #     if [ ! -f /etc/letsencrypt/options-ssl-nginx.conf ]; then
+  #       echo 'ssl_protocols TLSv1.2 TLSv1.3;
+  #       ssl_prefer_server_ciphers off;
+  #       ssl_ciphers EECDH+AESGCM:EDH+AESGCM;
+  #       ssl_session_timeout 1d;
+  #       ssl_session_cache shared:SSL:10m;
+  #       ssl_session_tickets off;
+  #       ssl_stapling on;
+  #       ssl_stapling_verify on;' > /etc/letsencrypt/options-ssl-nginx.conf;
+  #     fi &&
+  #     if [ ! -f /etc/letsencrypt/ssl-dhparams.pem ]; then
+  #       openssl dhparam -out /etc/letsencrypt/ssl-dhparams.pem 2048;
+  #     fi &&
+  #     nginx -g 'daemon off;'"
+  #   mailserver:
+  #     image: ghcr.io/docker-mailserver/docker-mailserver:latest
+  #     # image: docker-mailserver
+  #     container_name: mail
+  #     # Provide the FQDN of your mail server here (Your DNS MX record should point to this value)
+  #     # hostname: mail.echolect.co
+  #     hostname: localhost
+  #     ports:
+  #       - "25:25"
+  #       - "465:465"
+  #       - "587:587"
+  #       - "993:993"
+  #     volumes:
+  #       - mail-data:/var/mail/
+  #       - mail-state:/var/mail-state/
+  #       - mail-logs:/var/log/mail/
+  #       - mail-config:/tmp/docker-mailserver/
+  #       # - /etc/localtime:/etc/localtime:ro
+  #       - letsencrypt:/etc/letsencrypt
+  #       - ./config/postfix/master.cf:/etc/postfix/master.cf
+  #       - ./config/postfix/main.cf:/etc/postfix/main.cf
+  #     environment:
+  #       - ENABLE_RSPAMD=1
+  #       - ENABLE_AMAVIS=0
+  #       - ENABLE_OPENDKIM=0
+  #       - ENABLE_OPENDMARC=0
+  #       - ENABLE_POLICYD_SPF=0
+  #       - ENABLE_CLAMAV=0 # This uses more resources than I want to right now, and I don't know what it is.
+  #       - ENABLE_FAIL2BAN=1
+  #       - DMS_DEBUG=1
+  #       - SMTP_ONLY=1
+  #       - ENABLE_POSTFIX_VIRTUAL_TRANSPORT=1
+  #       - POSTFIX_DAGENT=lmtp:unix:/var/run/dovecot/lmtp
+  #       - SSL_TYPE=letsencrypt
+  #       - PERMIT_DOCKER=network
+  #       - POSTFIX_mynetworks=127.0.0.0/8 [::1]/128 172.0.0.0/8
+  #       - POSTFIX_smtpd_client_restrictions=permit_mynetworks,reject_unauth_destination
+  #       - POSTFIX_debug_peer_list=webapp.echolect
+  #       - POSTFIX_smtp_tls_security_level=encrypt
+  #       - POSTFIX_smtpd_tls_security_level=encrypt
+  #       - POSTFIX_smtpd_tls_chain_files=/etc/letsencrypt/live/${DOMAIN}/fullchain.pem,/etc/letsencrypt/live/${DOMAIN}/privkey.pem
+  #       # - POSTFIX_smtpd_tls_chain_files=/etc/letsencrypt/live/echolect.co/fullchain.pem,/etc/letsencrypt/live/echolect.co/privkey.pem
+  #     cap_add:
+  #       - NET_ADMIN # For Fail2Ban to work
+  #     restart: always
+volumes:
+  postgres: {}
+  redis:
+  certbot-etc:
+  certbot-var:
+  mail-data:
+  mail-state:
+  mail-logs:
+  mail-config:
+  public:
+  letsencrypt:
+  localtime:
+  recordings:
+  minio-data:
+  whisper-models:
+  whisper-transcriptions:
+
+
+networks:
+  default:
+    name: echolect
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# The first time you run this, you may need to also connect to the webapp container and run:
+# rails db:create. Actually, if the db is specified and matches the db name in the database.yml file, it should create the db automatically.
+
+# Migrations need to be run by ocnnecting to the container and running:
+#' bundle exec rake db:migrate'

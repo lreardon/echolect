@@ -1,0 +1,19 @@
+#! /bin/bash
+if [ -f .env ]; then
+  export RAILS_ENV=$(grep -E '^RAILS_ENV=' .env | cut -d '=' -f 2)
+fi
+
+if [ -z "$RAILS_ENV" ]; then
+  COMPOSE_FILE="docker-compose.yml"
+else
+  COMPOSE_FILE="docker-compose.${RAILS_ENV}.yml"
+fi
+
+# Check if an argument is provided
+if [ -n "$1" ]; then
+  ARGUMENT="$1"
+else
+  ARGUMENT=""
+fi
+
+docker compose -f $COMPOSE_FILE build

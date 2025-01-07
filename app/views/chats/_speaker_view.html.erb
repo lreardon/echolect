@@ -1,0 +1,12 @@
+<div
+  id="speaker-view"
+  class="w-full grid grid-cols-4 h-full overflow-y-auto gap-4"
+>
+  <div class="col-span-3 overflow-y-auto">
+    <%= render partial: "chats/chat_messages", locals: { chat: chat } %>
+  </div>
+  <div class="col-span-1 overflow-y-auto">
+    <%= render partial: "chats/chat_reactions", locals: { chat: chat } %>
+  </div>
+
+</div>

@@ -1,0 +1,5 @@
+<div id="user-created-chats" class="flex flex-col gap-2">
+	<% current_user.chats.each do |chat| %>
+			<%= render partial: 'chats/chat', locals: { chat: chat } %>
+	<% end %>
+</div>

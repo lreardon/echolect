@@ -1,0 +1,37 @@
+{
+	// GENERAL
+	"files.associations": {
+		".terminals.json": "jsonc",
+		"*.json": "jsonc",
+	},
+	// CODE ACTIONS ON SAVE
+	"editor.codeActionsOnSave": {
+		"source.fixAll": "always",
+		"source.organizeImports": "always",
+		"quickfix.insertSemicolon": "explicit"
+	},
+	"editor.formatOnSave": true,
+	"[ruby]": {
+		"editor.defaultFormatter": "rubocop.vscode-rubocop",
+	},
+	"npm.packageManager": "yarn",
+	"rubyLsp.formatter": "rubocop",
+	// JSON
+	"[json]": {
+		// "editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "vscode.json-language-features"
+	},
+	"[erb]": {
+		"editor.formatOnSave": true,
+	},
+	"workbench.colorCustomizations": {
+		"textPreformat.background": "#050722",
+		"textPreformat.foreground": "#ffa136",
+	},
+	// "rubocop.mode": "enableUnconditionally",
+	// "solargraph.commandPath": "bin/solargraph",
+	// "solargraph.useBundler": true,
+	// "solargraph.bundlerPath": "/var/folders/q2/1cb0try95cx3ll70t6yybsfr0000gn/T/frum_76899_1718727616121/bin/bundle"
+}

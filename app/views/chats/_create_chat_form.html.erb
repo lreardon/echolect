@@ -1,0 +1,23 @@
+<div>
+  <form
+    data-controller="chats"
+    data-reflex="submit->Chats#create"
+    data-reflex-root="#user-chats"
+    data-reflex-serialize-form
+  >
+    <div class="flex flex-row gap-2">
+      <div class="field">
+        <input
+          class="flex-1 bg-transparent"
+          data-reflex-chat-name
+          type="text"
+          name="chat[name]"
+          placeholder="Chat Name"
+        />
+      </div>
+      <button type="submit" id="create-chat">
+        Create
+      </button>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,130 @@
+services:
+  db:
+    container_name: db
+    image: postgres
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    command: "postgres -c 'max_connections=500'"
+    environment:
+      - POSTGRES_DB=prod
+      - POSTGRES_USER=proddy
+      - POSTGRES_PASSWORD=proddy_password
+      # POSTGRES_PASSWORD: ILoveDoingKnowBe4Training!
+      # env_file:
+      #   - ./env/postgres.env # you can also define env variables like this.
+    ports:
+      - "5432:5432"
+  redis:
+    container_name: redis
+    image: redis
+    volumes:
+      - redis:/data
+    ports:
+      - "6379:6379"
+  webapp:
+    container_name: webapp
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      - redis
+      # DB_NAME: app_db
+      # DB_USERNAME: my_user
+      # DB_PASSWORD: ILoveDoingKnowBe4Training!
+      # env_file:
+      #   - ./env/postgres.env # you can also define env variables like this.
+    volumes:
+      - .:/docker/app
+      - public:/docker/app/public
+    command: "bundle exec rails s -p 3000 -b '0.0.0.0'"
+    # command: "foreman start -f Procfile"
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf
+      - /etc/letsencrypt:/etc/letsencrypt
+      - public:/usr/share/nginx/html
+    depends_on:
+      - webapp
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+  certbot:
+    container_name: certbot
+    image: certbot/certbot
+    volumes:
+      - ./etc/letsencrypt:/etc/letsencrypt
+    depends_on:
+      - nginx
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+  mailserver:
+    image: ghcr.io/docker-mailserver/docker-mailserver:latest
+    # image: docker-mailserver
+    container_name: mail
+    # Provide the FQDN of your mail server here (Your DNS MX record should point to this value)
+    hostname: mail.echolect.co
+    ports:
+      - "25:25"
+      - "465:465"
+      - "587:587"
+      - "993:993"
+    volumes:
+      - mail-data:/var/mail/
+      - mail-state:/var/mail-state/
+      - mail-logs:/var/log/mail/
+      - mail-config:/tmp/docker-mailserver/
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/letsencrypt:/etc/letsencrypt
+      - ./config/postfix/master.cf:/etc/postfix/master.cf
+      - ./config/postfix/main.cf:/etc/postfix/main.cf
+    environment:
+      - ENABLE_RSPAMD=1
+      - ENABLE_AMAVIS=0
+      - ENABLE_OPENDKIM=0
+      - ENABLE_OPENDMARC=0
+      - ENABLE_POLICYD_SPF=0
+      - ENABLE_CLAMAV=0 # This uses more resources than I want to right now, and I don't know what it is.
+      - ENABLE_FAIL2BAN=1
+      - DMS_DEBUG=1
+      - SMTP_ONLY=1
+      - ENABLE_POSTFIX_VIRTUAL_TRANSPORT=1
+      - POSTFIX_DAGENT=lmtp:unix:/var/run/dovecot/lmtp
+      - SSL_TYPE=letsencrypt
+      - PERMIT_DOCKER=network
+      - POSTFIX_mynetworks=127.0.0.0/8 [::1]/128 172.0.0.0/8
+      - POSTFIX_smtpd_client_restrictions=permit_mynetworks,reject_unauth_destination
+      - POSTFIX_debug_peer_list=webapp.echolect
+      - POSTFIX_smtp_tls_security_level=encrypt
+      - POSTFIX_smtpd_tls_security_level=encrypt
+      - POSTFIX_smtpd_tls_chain_files=/etc/letsencrypt/live/echolect.co/fullchain.pem,/etc/letsencrypt/live/echolect.co/privkey.pem
+    cap_add:
+      - NET_ADMIN # For Fail2Ban to work
+    restart: always
+volumes:
+  postgres: {}
+  redis:
+  certbot-etc:
+  certbot-var:
+  mail-data:
+  mail-state:
+  mail-logs:
+  mail-config:
+  public:
+networks:
+  default:
+    name: echolect
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# The first time you run this, you may need to also connect to the webapp container and run:
+# rails db:create. Actually, if the db is specified and matches the db name in the database.yml file, it should create the db automatically.
+
+# Migrations need to be run by ocnnecting to the container and running:
+#' bundle exec rake db:migrate'

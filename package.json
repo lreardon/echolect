@@ -1,0 +1,25 @@
+{
+	"name": "app",
+	"private": "true",
+	"dependencies": {
+		"@hotwired/stimulus": "^3.2.1",
+		"@hotwired/turbo-rails": "^7.3.0",
+		"@rails/actioncable": "^7.1.3-4",
+		"autoprefixer": "^10.4.14",
+		"cable_ready": "5.0.5",
+		"esbuild": "^0.24.2",
+		"esbuild-rails": "^1.0.3",
+		"postcss": "^8.4.24",
+		"stimulus_reflex": "3.5.2",
+		"tailwindcss": "^3.3.2"
+	},
+	"scripts": {
+		"build": "node esbuild.config.mjs",
+		"tailwindcss:watch": "tailwindcss build -o output.css -w",
+		"build:css": "tailwindcss -i ./app/assets/stylesheets/application.tailwind.css -o ./app/assets/builds/application.css --minify",
+		"build:default": "esbuild app/javascript/*.* --bundle --sourcemap --outdir=app/assets/builds --public-path=/assets"
+	},
+	"devDependencies": {
+		"prettier-plugin-erb": "^0.4.0"
+	}
+}

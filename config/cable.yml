@@ -1,0 +1,10 @@
+development:
+  adapter: redis
+  url: redis://redis:6379/0 # Host is redis because we're connecting to the redis service (see docker-compose.yml)
+
+test:
+  adapter: test
+
+production:
+  adapter: redis
+  url: redis://redis:6379/0 # Host is redis because we're connecting to the redis service (see docker-compose.yml)

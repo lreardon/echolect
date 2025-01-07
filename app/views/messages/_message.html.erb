@@ -1,0 +1,7 @@
+<div class="mb-3 px-2">
+  <div class="flex flex-row justify-between gap-5">
+    <p class="text-gray-500 text-xs"><%= message.user.name %></p>
+    <p class="text-gray-500 text-xs"><%= message.created_at.in_time_zone("America/Los_Angeles").strftime("%l:%M %p") %></p>
+  </div>
+  <p><%= message.body %></p>
+</div>

@@ -1,0 +1,37 @@
+<div class="flex flex-row flex-grow overflow-y-scroll">
+	<div class="flex flex-col-reverse text-textColorMain" 
+		data-controller="chat" 
+		data-chat-current-user-id-value="<%= current_user.id %>"
+	>
+		<%= turbo_stream_from "messages" %>
+		<div id="messages"></div> 
+	</div>
+
+	<div class="w-1 bg-white"></div> 
+
+	<%= turbo_stream_from "time" %>
+	<div id="time">
+	</div>
+	<%
+=begin%>
+ <% recent_messages = @messages.where('created_at >= ?', 15.minutes.ago) %>
+	<%= recent_messages.length %>
+	<% thumbs_up_emoji_score = recent_messages %>
+	<% thinking_emoji_score = recent_messages %>
+	<% cool_emoji_score = recent_messages %>
+	<% confused_emoji_score = recent_messages %>  
+<%
+=end%>
+
+	<%
+=begin%>
+	<div class="grid grid-cols-2 gap-4">
+		<div style="font-size: 30px;">👍</div>
+		<div style="font-size: 30px;">🤔</div>
+		<div style="font-size: 30px;">😎</div>
+		<div style="font-size: 30px;">😵‍💫</div>
+	</div> 
+<%
+=end%>
+
+</div>		

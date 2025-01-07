@@ -1,0 +1,3 @@
+#! /bin/bash
+
+rails assets:precompile && bin/dev
