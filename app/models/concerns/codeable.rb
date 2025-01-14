@@ -44,8 +44,8 @@ module Codeable
 					break c unless self.class.exists?(column_name => c)
 				end
 
-				puts 'CODE GENERATED'
-				puts code
+				# puts 'CODE GENERATED'
+				# puts code
 
 				send("#{code_accessor}=", code)
 			end

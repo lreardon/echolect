@@ -28,7 +28,9 @@ services:
 
   webapp:
     container_name: webapp
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.development
     env_file:
       - .env
     ports:
@@ -43,23 +45,28 @@ services:
       # env_file:
       #   - ./env/postgres.env # you can also define env variables like this.
     volumes:
-      - .:/docker/app # TODO: This seems like it should be unnecessary.
+      - .:/docker/app #* Allows seamless co-development from local directory or from within container.
       - public:/docker/app/public
       - recordings:/docker/app/shared/recordings
-    command: bundle exec rails s -p 3000 -b 0.0.0.0
+      - node-modules:/docker/app/node_modules
+      - bundle:/usr/local/bundle
+    # command: bash -c "bundle install && foreman start -f Procfile.dev"
+    command: bash -c "bundle install && bin/dev"
+    tty: true
+    stdin_open: true
 
-  audiotext:
-    container_name: audiotext
-    build:
-      context: services/audiotext
-      dockerfile: Dockerfile
-    volumes:
-      - recordings:/app/recordings
-    command: "python main.py"
+  # audiotext:
+  #   container_name: audiotext
+  #   build:
+  #     context: services/audiotext
+  #     dockerfile: Dockerfile
+  #   volumes:
+  #     - recordings:/app/recordings
+  #   command: "python main.py"
 
   whisper:
     build:
-      context: .
+      context: services/whisper
       dockerfile: Dockerfile
     container_name: whisper
     environment:
@@ -179,6 +186,8 @@ volumes:
   mail-state:
   mail-logs:
   mail-config:
+  node-modules:
+  bundle:
   public:
   letsencrypt:
   localtime:
@@ -190,7 +199,7 @@ volumes:
 
 networks:
   default:
-    name: echolect
+    name: echolect-dev
     driver: bridge
     ipam:
       config:

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_01_07_060344) do
+ActiveRecord::Schema[7.1].define(version: 2025_01_14_071117) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -32,6 +32,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_01_07_060344) do
     t.datetime "updated_at", null: false
     t.string "name"
     t.string "code", null: false
+    t.uuid "lecture_id"
     t.index ["code"], name: "index_chats_on_code", unique: true
     t.index ["user_id"], name: "index_chats_on_user_id"
   end
@@ -39,13 +40,11 @@ ActiveRecord::Schema[7.1].define(version: 2025_01_07_060344) do
   create_table "course_offerings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.uuid "institution_id"
     t.uuid "user_id"
     t.uuid "course_id"
     t.uuid "course_session_id"
     t.index ["course_id"], name: "index_course_offerings_on_course_id"
     t.index ["course_session_id"], name: "index_course_offerings_on_course_session_id"
-    t.index ["institution_id"], name: "index_course_offerings_on_institution_id"
     t.index ["user_id"], name: "index_course_offerings_on_user_id"
   end
 
@@ -70,9 +69,9 @@ ActiveRecord::Schema[7.1].define(version: 2025_01_07_060344) do
     t.uuid "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.boolean "is_lecturer", default: false
+    t.boolean "lecturer", default: false
     t.index ["institution_id"], name: "index_institutional_affiliations_on_institution_id"
-    t.index ["is_lecturer"], name: "index_institutional_affiliations_on_is_lecturer"
+    t.index ["lecturer"], name: "index_institutional_affiliations_on_lecturer"
     t.index ["user_id"], name: "index_institutional_affiliations_on_user_id"
   end
 
@@ -80,6 +79,14 @@ ActiveRecord::Schema[7.1].define(version: 2025_01_07_060344) do
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "lectures", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "course_offering_id"
+    t.datetime "start_time"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "chat_id"
   end
 
   create_table "messages", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -116,6 +123,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_01_07_060344) do
     t.datetime "confirmed_at"
     t.datetime "confirmation_sent_at"
     t.string "unconfirmed_email"
+    t.uuid "active_institution_id"
+    t.index ["active_institution_id"], name: "index_users_on_active_institution_id"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
@@ -124,7 +133,6 @@ ActiveRecord::Schema[7.1].define(version: 2025_01_07_060344) do
   add_foreign_key "chats", "users"
   add_foreign_key "course_offerings", "course_sessions"
   add_foreign_key "course_offerings", "courses"
-  add_foreign_key "course_offerings", "institutions"
   add_foreign_key "course_offerings", "users"
   add_foreign_key "course_sessions", "institutions"
   add_foreign_key "courses", "institutions"

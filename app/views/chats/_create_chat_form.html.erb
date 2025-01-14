@@ -3,8 +3,7 @@
     data-controller="chats"
     data-reflex="submit->Chats#create"
     data-reflex-root="#user-chats"
-    data-reflex-serialize-form
-  >
+    data-reflex-serialize-form>
     <div class="flex flex-row gap-2">
       <div class="field">
         <input
@@ -12,12 +11,9 @@
           data-reflex-chat-name
           type="text"
           name="chat[name]"
-          placeholder="Chat Name"
-        />
+          placeholder="Chat Name">
       </div>
-      <button type="submit" id="create-chat">
-        Create
-      </button>
+      <button type="submit" id="create-chat">Create</button>
     </div>
   </form>
 </div>

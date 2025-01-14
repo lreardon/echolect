@@ -1,8 +1,5 @@
 <div
-  class="
-    flex flex-row items-center py-2 px-3 gap-5 w-full bg-gray-800 rounded-lg
-    hover:cursor-pointer
-  "
+  class="flex flex-row items-center py-2 px-3 gap-5 w-full bg-gray-800 rounded-lg hover:cursor-pointer"
   onclick="window.location.href='<%= chat_path(chat) %>'"
 >
   <div class="flex-1">
@@ -10,9 +7,11 @@
   </div>
   <% if chat.user_id == current_user.id %>
     <button
-      data-reflex="click->Chats#delete"
+    data-reflex="click->Chats#delete"
       data-chat-id="<%= chat.id %>"
       class="text-button text-red-800 hover:text-red-700"
-    >Del</button>
+      >
+      Del
+    </button>
   <% end %>
 </div>

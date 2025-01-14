@@ -1,0 +1,6 @@
+<h1>My Institutions</h1>
+<% current_user.institutions.each do |institution| %>
+  <button class="p-0 bg-transparent" onclick="">
+    <%= render partial: "institutions/institution", locals: { institution: institution } %>
+  </button>
+<% end %>

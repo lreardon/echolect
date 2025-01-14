@@ -1,5 +1,10 @@
+<% chats = current_user.joined_chats %>
 <div id="user-joined-chats" class="flex flex-col gap-2 w-full">
-  <% current_user.joined_chats.each do |chat| %>
-    <%= render partial: "chats/chat", locals: { chat: chat } %>
+  <% if chats.empty? %>
+    <p class="text-gray-400">No chats</p>
+  <% else %>
+    <% chats.each do |chat| %>
+      <%= render partial: "chats/chat", locals: { chat: chat } %>
+    <% end %>
   <% end %>
 </div>

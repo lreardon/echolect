@@ -1,10 +1,10 @@
 <div class="flex flex-col w-full items-center gap-10">
-  <% if !current_user.is_lecturer %>
+  <% if !current_user.lecturer? %>
     <h1>Chats</h1>
   <% end %>
   <div class="flex flex-col gap-2 w-full">
     <div class="flex flex-col sm:flex-row gap-3 items-center justify-between">
-      <% if current_user.is_lecturer %>
+      <% if current_user.lecturer? %>
         <h2>Joined Chats</h2>
       <% end %>
       <div class="flex flex-row min-w-full sm:min-w-0 justify-end">
@@ -13,16 +13,16 @@
     </div>
     <%= render partial: "chats/joined_chats" %>
   </div>
-  <% if current_user.is_lecturer %>
-    <div class="flex flex-col gap-2 w-full">
-      <div class="flex flex-col sm:flex-row gap-3 items-center justify-between">
-        <h2>My Chats</h2>
-        <div class="flex flex-row min-w-full sm:min-w-0 justify-end">
-          <%= render partial: "chats/create_chat_form" %>
-        </div>
+  <!-- <% if current_user.lecturer? %>
+  <div class="flex flex-col gap-2 w-full">
+    <div class="flex flex-col sm:flex-row gap-3 items-center justify-between">
+      <h2>My Chats</h2>
+      <div class="flex flex-row min-w-full sm:min-w-0 justify-end">
+        <%= render partial: "chats/create_chat_form" %>
       </div>
-      <%= render partial: "chats/created_chats" %>
     </div>
+    <%= render partial: "chats/created_chats" %>
+  </div>
 
-  <% end %>
+  <% end %> -->
 </div>

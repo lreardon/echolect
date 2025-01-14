@@ -1,0 +1,26 @@
+<div class="relative" data-controller="institution-select">
+  <!-- Button trigger -->
+  <button data-action="click->institution-select#toggle">
+    <%= current_user.active_institution&.name || "No Institution" %>
+    <%# <svg class="w-4 h-4 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg> %>
+  </button>
+  <!-- Dropdown menu -->
+  <div data-institution-select-target="institutionList" class="absolute p-2 mt-2 w-48 rounded-md bg-gray-700 shadow-lg hidden">
+    <div class="py-1">
+      <% current_user.institutions.each_with_index do |institution, index| %>
+        <button
+          data-reflex="click->Users#update_active_institution"
+          data-institution-id="<%= institution.id %>"
+          class="bg-transparent p-2 text-left"
+          >
+          <%= institution.name %>
+        </button>
+        <% if index < current_user.institutions.size - 1 %>
+          <hr class="my-2 border-gray-600">
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+</div>

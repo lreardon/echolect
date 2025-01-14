@@ -208,6 +208,11 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
+"@prettier/plugin-ruby@^4.0.4":
+  version "4.0.4"
+  resolved "https://registry.yarnpkg.com/@prettier/plugin-ruby/-/plugin-ruby-4.0.4.tgz#73d85fc2a1731a3f62b57ac3116cf1c234027cb6"
+  integrity sha512-lCpvfS/dQU5WrwN3AQ5vR8qrvj2h5gE41X08NNzAAXvHdM4zwwGRcP2sHSxfu6n6No+ljWCVx95NvJPFTTjCTg==
+
 "@rails/actioncable@^6 || ^7":
   version "7.1.3"
   resolved "https://registry.npmjs.org/@rails/actioncable/-/actioncable-7.1.3.tgz"
@@ -288,10 +293,17 @@ browserslist@^4.21.5:
     node-releases "^2.0.12"
     update-browserslist-db "^1.0.11"
 
-cable_ready@5.0.5, cable_ready@^5.0.5:
+cable_ready@5.0.5:
   version "5.0.5"
   resolved "https://registry.npmjs.org/cable_ready/-/cable_ready-5.0.5.tgz"
   integrity sha512-qPC6zaI8h59BzMH3MxtpuMC+H33VJTA2eVddL6fZSWz01jJ2Y3okld01oYWQoKwE2yle/tvHbyuhoKxD4mhEuw==
+  dependencies:
+    morphdom "2.6.1"
+
+cable_ready@^5.0.6:
+  version "5.0.6"
+  resolved "https://registry.yarnpkg.com/cable_ready/-/cable_ready-5.0.6.tgz#d76f7500d73606175645a84aa743b22667c0109a"
+  integrity sha512-SRCLljXFeFVRDeE/f/LutWNo50pkZRPxkKtFhqVMYvCOZhnUTWH3pPjsn8bD9KlRAMUrlrBN6reX8xX7ItvqfA==
   dependencies:
     morphdom "2.6.1"
 
@@ -684,17 +696,10 @@ postcss@^8.4.23, postcss@^8.4.24:
     picocolors "^1.0.0"
     source-map-js "^1.0.2"
 
-prettier-html-templates@^0.1.0:
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/prettier-html-templates/-/prettier-html-templates-0.1.0.tgz#dfa12bd71c032e3b796e8c645210c5614403575d"
-  integrity sha512-KdLveYzO2kJLiwUAebd5UFeKP8h3OqFhOiLbkgeIuS1WNoCRTyxW4KuyGfbh3F+Rp/2A6mipRxCq2zPi+//pmg==
-
-prettier-plugin-erb@^0.4.0:
-  version "0.4.0"
-  resolved "https://registry.yarnpkg.com/prettier-plugin-erb/-/prettier-plugin-erb-0.4.0.tgz#5a2a86e02c6360481187aaadd165bc598eda4412"
-  integrity sha512-5RAdvT5BBf29hfC8GmqiMRFiD5g4BZGZDERZHvM5ouOor2TVT0jM0ntmCzFpS2Q32OkUAGFYsRxXDoYscvToXA==
-  dependencies:
-    prettier-html-templates "^0.1.0"
+prettier@^3.4.2:
+  version "3.4.2"
+  resolved "https://registry.yarnpkg.com/prettier/-/prettier-3.4.2.tgz#a5ce1fb522a588bf2b78ca44c6e6fe5aa5a2b13f"
+  integrity sha512-e9MewbtFo+Fevyuxn/4rrcDAaq0IYxPGLvObpQjiZBMAzB9IGmzlnG9RZy3FFas+eBMu2vA0CszMeduow5dIuQ==
 
 queue-microtask@^1.2.2:
   version "1.2.3"
@@ -741,14 +746,14 @@ source-map-js@^1.0.2:
   resolved "https://registry.npmjs.org/source-map-js/-/source-map-js-1.0.2.tgz"
   integrity sha512-R0XvVJ9WusLiqTCEiGCmICCMplcCkIwwR11mOSD9CR5u+IXYdiseeEuXCVAjS54zqwkLcPNnmU4OeJ6tUrWhDw==
 
-stimulus_reflex@3.5.2:
-  version "3.5.2"
-  resolved "https://registry.npmjs.org/stimulus_reflex/-/stimulus_reflex-3.5.2.tgz"
-  integrity sha512-Mx3G16aydlm5UcmPYRg8vdR0r71ykyfxxPStjZkxmEqEVWWxbH5rTWwTTTS08GvGIf1lqcIwl/r2tkiX2qLKaA==
+stimulus_reflex@^3.5:
+  version "3.5.3"
+  resolved "https://registry.yarnpkg.com/stimulus_reflex/-/stimulus_reflex-3.5.3.tgz#4c73bae6fa9622ca1b835b856782de9aa289a90a"
+  integrity sha512-ejNesmnqAQ0qHMT2oomkC50W/ZY3I4Bi9NmfKOiN9a1esHo7yFOouKhADouIWT59Qyu8ddWr8SDpKTX/Eit67g==
   dependencies:
     "@hotwired/stimulus" "^3"
     "@rails/actioncable" "^6 || ^7"
-    cable_ready "^5.0.5"
+    cable_ready "^5.0.6"
 
 sucrase@^3.32.0:
   version "3.32.0"

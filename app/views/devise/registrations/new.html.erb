@@ -1,50 +1,40 @@
 <%= render layout: 'shared/auth_screen' do %>
+<div class="flex flex-col gap-4">
+  <%= form_for(resource, as: resource_name, url:
+  registration_path(resource_name)) do |f| %>
   <div class="flex flex-col gap-4">
-    <%= form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f| %>
-      <div class="flex flex-col gap-4">
-        <%= render "devise/shared/error_messages", resource: resource %>
-        <div class="flex flex-col sm:flex-row w-full gap-4">
-          <div class="field">
-            <%= f.text_field :first_name,
-                         autofocus: true,
-                         placeholder: "First Name",
-                         class: "w-full" %>
-          </div>
-          <div class="field">
-            <%= f.text_field :last_name, placeholder: "Last Name", class: "w-full" %>
-          </div>
-
-        </div>
-        <div class="field">
-          <%= f.email_field :email,
-                        autocomplete: "email",
-                        placeholder: "Email",
-                        class: "w-full" %>
-        </div>
-
-        <div class="field">
-          <%= f.password_field :password,
-                           autocomplete: "new-password",
-                           placeholder:
-                             "Password (#{@minimum_password_length} characters minimum)",
-                           class: "w-full" %>
-        </div>
-
-        <div class="field">
-          <%= f.password_field :password_confirmation,
-                           autocomplete: "new-password",
-                           placeholder: "Confirm Password",
-                           class: "w-full" %>
-        </div>
-
-        <button class="actions">
-          <%= f.submit "Sign Up" %>
-        </button>
+    <%= render "devise/shared/error_messages", resource: resource %>
+    <div class="flex flex-col sm:flex-row w-full gap-4">
+      <div class="field">
+        <%= f.text_field :first_name, autofocus: true, placeholder: "First
+        Name", class: "w-full" %>
       </div>
-    <% end %>
-    <hr class="border-[#6b7280] rounded-full"/>
-    <%= link_to "Log In",
-    new_session_path(resource_name),
-    class: "special-button w-full" %>
+      <div class="field">
+        <%= f.text_field :last_name, placeholder: "Last Name", class: "w-full"
+        %>
+      </div>
+    </div>
+    <div class="field">
+      <%= f.email_field :email, autocomplete: "email", placeholder: "Email",
+      class: "w-full" %>
+    </div>
+
+    <div class="field">
+      <%= f.password_field :password, autocomplete: "new-password", placeholder:
+      "Password (#{@minimum_password_length} characters minimum)", class:
+      "w-full" %>
+    </div>
+
+    <div class="field">
+      <%= f.password_field :password_confirmation, autocomplete: "new-password",
+      placeholder: "Confirm Password", class: "w-full" %>
+    </div>
+
+    <button class="actions"><%= f.submit "Sign Up" %></button>
   </div>
+  <% end %>
+  <hr class="border-[#6b7280] rounded-full" />
+  <%= link_to "Log In", new_session_path(resource_name), class: "special-button
+  w-full" %>
+</div>
 <% end %>

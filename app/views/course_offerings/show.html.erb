@@ -1,0 +1,10 @@
+<%= link_to 'Home', root_path %>
+<h1>
+  <%= @course_offering.name %>
+</h1>
+<br>
+<% @course_offering.lectures.each do |lecture| %>
+  <p>
+    <%= link_to lecture.start_time_display, lecture_path(lecture) %>
+  </p>
+<% end %>

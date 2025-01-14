@@ -3,8 +3,7 @@
     data-controller="chats"
     data-reflex="submit->Chats#join"
     data-reflex-root="#user-joined-chats"
-    data-reflex-serialize-form
-  >
+    data-reflex-serialize-form>
     <div class="flex flex-row gap-2">
       <div class="field">
         <input
@@ -12,12 +11,9 @@
           data-reflex-chat-code
           type="text"
           name="chat[code]"
-          placeholder="Access Code"
-        />
+          placeholder="Access Code">
       </div>
-      <button type="submit" id="join-chat">
-        Join
-      </button>
+      <button type="submit" id="join-chat">Join</button>
     </div>
   </form>
 </div>

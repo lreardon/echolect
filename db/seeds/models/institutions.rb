@@ -3,5 +3,5 @@
 require 'faker'
 
 3.times do
-	Institution.create(name: Faker::University.name)
+	Institution.create(name: Faker::Educator.university)
 end

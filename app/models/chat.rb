@@ -9,6 +9,7 @@
 #  name       :string
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
+#  lecture_id :uuid
 #  user_id    :uuid             not null
 #
 # Indexes
@@ -24,6 +25,8 @@ class Chat < ApplicationRecord
 	include Codeable
 
 	belongs_to :user
+	belongs_to :lecture, optional: true
+
 	has_many :messages, dependent: :destroy
 	has_many :reactions, dependent: :destroy
 	has_many :chat_memberships, dependent: :destroy

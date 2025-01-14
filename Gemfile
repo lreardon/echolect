@@ -90,6 +90,7 @@ group :development do
 	# gem 'sorbet-rails'
 	# gem 'tapioca', require: false
 
+	gem 'foreman'
 	gem 'pry'
 end
 
@@ -103,12 +104,13 @@ end
 gem 'devise', '~> 4.9', '>= 4.9.3'
 gem 'faker', '~> 3.2'
 
-gem 'stimulus_reflex', '~> 3.5'
+gem 'stimulus_reflex', '3.5.2'
 
 gem 'redis-session-store', '~> 0.11.5'
 
 gem 'tailwindcss-rails', '~> 2.6'
 
-gem 'erb-formatter', '~> 0.7.2'
+# gem 'erb_lint'
+gem 'htmlbeautifier'
 
-gem 'sorbet-runtime'
+# gem 'sorbet-runtime'

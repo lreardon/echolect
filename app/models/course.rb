@@ -23,4 +23,8 @@ class Course < ApplicationRecord
 
 	has_many :course_sessions, through: :course_offerings
 	has_many :course_offerings
+
+	def create_offering(**params)
+		CourseOffering.create!(course: self, **params)
+	end
 end

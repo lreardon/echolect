@@ -5,7 +5,7 @@
 # Table name: institutional_affiliations
 #
 #  id             :uuid             not null, primary key
-#  is_lecturer    :boolean          default(FALSE)
+#  lecturer       :boolean          default(FALSE)
 #  created_at     :datetime         not null
 #  updated_at     :datetime         not null
 #  institution_id :uuid             not null
@@ -14,7 +14,7 @@
 # Indexes
 #
 #  index_institutional_affiliations_on_institution_id  (institution_id)
-#  index_institutional_affiliations_on_is_lecturer     (is_lecturer)
+#  index_institutional_affiliations_on_lecturer        (lecturer)
 #  index_institutional_affiliations_on_user_id         (user_id)
 #
 # Foreign Keys
@@ -26,5 +26,9 @@ class InstitutionalAffiliation < ApplicationRecord
 	belongs_to :institution
 	belongs_to :user
 
-	scope :lecturers, -> { where(is_lecturer: true) }
+	scope :lecturers, -> { where(lecturer: true) }
+
+	def lecturer?
+		lecturer
+	end
 end

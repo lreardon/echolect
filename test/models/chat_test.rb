@@ -7,6 +7,7 @@
 #  name       :string
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
+#  lecture_id :uuid
 #  user_id    :uuid             not null
 #
 # Indexes

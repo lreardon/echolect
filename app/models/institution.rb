@@ -17,5 +17,16 @@ class Institution < ApplicationRecord
 
 	has_many :courses
 	has_many :course_sessions
-	has_many :course_offerings
+	has_many :course_offerings, through: :courses
+
+	def affiliate_user(user)
+		InstitutionalAffiliation.create(
+			user: user,
+			institution: self
+		)
+	end
+
+	def create_course(name:)
+		Course.create!(name: name, institution: self)
+	end
 end

@@ -16,12 +16,14 @@
 #  unconfirmed_email      :string
 #  created_at             :datetime         not null
 #  updated_at             :datetime         not null
+#  active_institution_id  :uuid
 #
 # Indexes
 #
-#  index_users_on_confirmation_token    (confirmation_token) UNIQUE
-#  index_users_on_email                 (email) UNIQUE
-#  index_users_on_reset_password_token  (reset_password_token) UNIQUE
+#  index_users_on_active_institution_id  (active_institution_id)
+#  index_users_on_confirmation_token     (confirmation_token) UNIQUE
+#  index_users_on_email                  (email) UNIQUE
+#  index_users_on_reset_password_token   (reset_password_token) UNIQUE
 #
 require "test_helper"
 

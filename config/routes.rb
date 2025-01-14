@@ -3,6 +3,10 @@
 Rails.application.routes.draw do
 	mount ActionCable.server => '/cable'
 
+	# Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+
+	# Defines the root path route ("/")
+	# root "articles#index"
 	root 'pages#home'
 	get 'offline' => 'pages#offline'
 
@@ -16,8 +20,8 @@ Rails.application.routes.draw do
 	devise_for :users, controllers: {
 		registrations: 'users/registrations'
 	}
-	# Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+	resources :users
 
-	# Defines the root path route ("/")
-	# root "articles#index"
+	resources :course_offerings, only: %i[show]
+	resources :lectures, only: %i[show]
 end

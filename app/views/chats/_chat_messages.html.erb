@@ -6,8 +6,8 @@
     id="chat-<%=chat.id%>-messages"
     class="flex-1 flex flex-col-reverse bg-gray-900 overflow-y-auto"
   >
-    <% chat.messages.order(created_at: :asc).reverse.each do |message| %>
-      <%= render partial: "messages/message", locals: { message: message } %>
-    <% end %>
+    <% chat.messages.order(created_at: :asc).reverse.each do |message| %> <%=
+    render partial: "messages/message", locals: { message: message } %> <% end
+    %>
   </div>
 </div>

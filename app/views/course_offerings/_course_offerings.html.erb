@@ -1,0 +1,9 @@
+<div class="flex flex-col items-left w-full">
+  <h2>Courses</h2>
+  <br>
+  <% current_user.active_institution_course_offerings.each do |course_offering| %>
+    <p>
+      <%= link_to course_offering.course.name, course_offering_path(course_offering) %>
+    </p>
+  <% end %>
+</div>

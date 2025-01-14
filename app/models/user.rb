@@ -18,12 +18,14 @@
 #  unconfirmed_email      :string
 #  created_at             :datetime         not null
 #  updated_at             :datetime         not null
+#  active_institution_id  :uuid
 #
 # Indexes
 #
-#  index_users_on_confirmation_token    (confirmation_token) UNIQUE
-#  index_users_on_email                 (email) UNIQUE
-#  index_users_on_reset_password_token  (reset_password_token) UNIQUE
+#  index_users_on_active_institution_id  (active_institution_id)
+#  index_users_on_confirmation_token     (confirmation_token) UNIQUE
+#  index_users_on_email                  (email) UNIQUE
+#  index_users_on_reset_password_token   (reset_password_token) UNIQUE
 #
 class User < ApplicationRecord
 	# Include default devise modules. Others available are:
@@ -37,6 +39,8 @@ class User < ApplicationRecord
 	has_many :reactions, dependent: :destroy
 	has_many :institutional_affiliations, dependent: :destroy
 	has_many :institutions, through: :institutional_affiliations
+
+	belongs_to :active_institution, class_name: 'Institution', foreign_key: 'active_institution_id', optional: true
 
 	has_and_belongs_to_many :institutions, join_table: :institutional_affiliations
 
@@ -54,7 +58,25 @@ class User < ApplicationRecord
 		chat.user_id == id
 	end
 
-	def is_lecturer
-		institutional_affiliations.where(is_lecturer: true).any?
+	def lecturer?
+		institutional_affiliations.where(lecturer: true).any?
+	end
+
+	def affiliation(institution)
+		institutional_affiliations.find_by(institution: institution)
+	end
+
+	def active_affiliation
+		return nil if active_institution.nil?
+
+		affiliation(active_institution)
+	end
+
+	def active_affiliation?
+		!active_affiliation.nil?
+	end
+
+	def active_institution_course_offerings
+		active_institution&.course_offerings&.where(user_id: id)
 	end
 end

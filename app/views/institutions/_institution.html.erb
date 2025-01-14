@@ -1,0 +1,10 @@
+<%= render "components/card" do %>
+  <div class="flex flex-row justify-center items-center gap-10">
+    <h2><%= institution.name %></h2>
+    <% if current_user.affiliation(institution).lecturer? %>
+      <h3>Lecturer</h3>
+    <% else %>
+      <h3>Not Lecturer</h3>
+    <% end %>
+  </div>
+<% end %>

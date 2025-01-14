@@ -17,6 +17,20 @@ Institution.all.each do |institution|
 		)
 
 		user.institutions << institution
-		user.institutional_affiliations.find_by(institution: institution).update(is_lecturer: true) if user_indices_to_make_lecturers.include?(i)
+		user.institutional_affiliations.find_by(institution: institution).update(lecturer: true) if user_indices_to_make_lecturers.include?(i)
 	end
+end
+
+l = User.create!(
+	first_name: 'Leland',
+	last_name: 'Reardon',
+	email: 'leland6925@gmail.com',
+	password: 'password',
+	password_confirmation: 'password',
+	confirmed_at: Time.now
+)
+
+Institution.all.each do |institution|
+	l.institutions << institution
+	l.institutional_affiliations.find_by(institution: institution).update(lecturer: true)
 end

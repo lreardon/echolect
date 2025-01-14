@@ -1,28 +1,67 @@
 <div
   id="speaker-view"
-	class="w-full flex flex-1 flex-col gap-4 justify-between">
-			<div class="flex flex-col gap-2">
-				<h2>Send a message</h3>
-				<form
-					data-controller='messages'
-					data-reflex="submit->Messages#create"
-					data-reflex-root="#chat-messages"
-					data-reflex-serialize-form
-				>
-					<div class="flex flex-col gap-2">
-						<input data-reflex-chat-id type="hidden" name="message[chat_id]" value="<%= @chat.id %>" />
-						<textarea class="bg-transparent h-48 md:h-16 outline-none focus:outline-white" data-reflex-message-body type="text" name="message[body]"></textarea>
-						<button type="submit">Send</button>
-					</div>
-				</form>
-			</div>			
-			<div class="flex flex-col gap-2">
-				<h2>React</h2>
-				<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-					<button data-reflex="click->Reactions#create" data-reaction="👍" data-chat-id=<%= @chat.id %> class="text-5xl md:text-6xl text-button p-2">👍</button>
-					<button data-reflex="click->Reactions#create" data-reaction="💙" data-chat-id=<%= @chat.id %> class="text-5xl md:text-6xl text-button p-2">💙</button>
-					<button data-reflex="click->Reactions#create" data-reaction="🧠" data-chat-id=<%= @chat.id %> class="text-5xl md:text-6xl text-button p-2">🧠</button>
-					<button data-reflex="click->Reactions#create" data-reaction="💀" data-chat-id=<%= @chat.id %> class="text-5xl md:text-6xl text-button p-2">💀</button>
-				</div>
-			</div>
-		</div>
+  class="w-full flex flex-1 flex-col gap-4 justify-between"
+>
+  <div class="flex flex-col gap-2">
+    <h2>Send a message</h2>
+    <form
+      data-controller="messages"
+      data-reflex="submit->Messages#create"
+      data-reflex-root="#chat-messages"
+      data-reflex-serialize-form
+    >
+      <div class="flex flex-col gap-2">
+        <input
+          data-reflex-chat-id
+          type="hidden"
+          name="message[chat_id]"
+          value="<%= chat.id %>"
+        />
+        <textarea
+          class="bg-transparent h-48 md:h-16 outline-none focus:outline-white"
+          data-reflex-message-body
+          type="text"
+          name="message[body]"
+        ></textarea>
+        <button type="submit">Send</button>
+      </div>
+    </form>
+  </div>
+  <div class="flex flex-col gap-2">
+    <h2>React</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <button
+        data-reflex="click->Reactions#create"
+        data-reaction="👍"
+        data-chat-id="<%= chat.id %>"
+        class="text-5xl md:text-6xl text-button p-2"
+      >
+        👍
+      </button>
+      <button
+        data-reflex="click->Reactions#create"
+        data-reaction="💙"
+        data-chat-id="<%= chat.id %>"
+        class="text-5xl md:text-6xl text-button p-2"
+      >
+        💙
+      </button>
+      <button
+        data-reflex="click->Reactions#create"
+        data-reaction="🧠"
+        data-chat-id="<%= chat.id %>"
+        class="text-5xl md:text-6xl text-button p-2"
+      >
+        🧠
+      </button>
+      <button
+        data-reflex="click->Reactions#create"
+        data-reaction="💀"
+        data-chat-id="<%= chat.id %>"
+        class="text-5xl md:text-6xl text-button p-2"
+      >
+        💀
+      </button>
+    </div>
+  </div>
+</div>

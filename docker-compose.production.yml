@@ -23,7 +23,9 @@ services:
       - "6379:6379"
   webapp:
     container_name: webapp
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.production
     env_file:
       - .env
     ports:
@@ -117,7 +119,7 @@ volumes:
   public:
 networks:
   default:
-    name: echolect
+    name: echolect-prod
     driver: bridge
     ipam:
       config:
