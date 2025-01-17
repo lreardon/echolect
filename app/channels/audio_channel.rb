@@ -33,6 +33,13 @@ class AudioChannel < ApplicationCable::Channel
 		# Any cleanup needed when channel is unsubscribed
 	end
 
+	def upload(form_data)
+		puts form_data
+		audio_data = form_data['recording']
+		file = Base64.decode64(audio_data)
+		puts file
+	end
+
 	private
 
 	def convert_ogg_to_flac(directory:, filestem:)

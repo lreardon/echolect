@@ -1,0 +1,27 @@
+# == Schema Information
+#
+# Table name: recordings
+#
+#  id         :uuid             not null, primary key
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#  lecture_id :uuid
+#
+# Indexes
+#
+#  index_recordings_on_lecture_id  (lecture_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (lecture_id => lectures.id)
+#
+
+# This model initially had no columns defined. If you add columns to the
+# model remove the "{}" from the fixture names and add the columns immediately
+# below each fixture, per the syntax in the comments below
+#
+one: {}
+# column: value
+#
+two: {}
+# column: value

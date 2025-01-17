@@ -15,6 +15,7 @@ class Lecture < ApplicationRecord
 	belongs_to :course_offering
 	has_one :user, through: :course_offering
 	has_one :chat
+	has_one :recording
 
 	after_create :associate_chat
 

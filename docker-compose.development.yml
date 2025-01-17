@@ -39,6 +39,7 @@ services:
       - db
       - redis
       - minio
+      - nginx
       # DB_NAME: app_db
       # DB_USERNAME: my_user
       # DB_PASSWORD: ILoveDoingKnowBe4Training!
@@ -64,11 +65,21 @@ services:
   #     - recordings:/app/recordings
   #   command: "python main.py"
 
+  nginx:
+    container_name: nginx
+    image: nginx:alpine
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./config/nginx.conf.development:/etc/nginx/nginx.conf
+    depends_on:
+      - minio
+
   whisper:
+    container_name: whisper
     build:
       context: services/whisper
       dockerfile: Dockerfile
-    container_name: whisper
     environment:
       - PUID=1000
       - PGID=1000
@@ -89,12 +100,12 @@ services:
     container_name: minio
     image: minio/minio
     ports:
-      - "9000:9000"
+      # - "9000:9000"
       - "9001:9001"
     command: server --console-address :9001 /data
     environment:
-      MINIO_ROOT_USER: dev
-      MINIO_ROOT_PASSWORD: password
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     volumes:
       - minio-data:/data
   # nginx:

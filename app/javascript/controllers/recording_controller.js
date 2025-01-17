@@ -1,8 +1,9 @@
+
 import audioChannel from "../channels/audio_channel";
 import ApplicationController from "./application_controller";
 
 export default class extends ApplicationController {
-  static targets = ["recordingButton"];
+  static targets = ["recordingButton", "recordingInput", "uploadRecordingForm"];
 
   initialize() {
     this.isRecording = false;
@@ -70,5 +71,39 @@ export default class extends ApplicationController {
     button.innerText = button.classList.contains("recording")
       ? "Stop"
       : "Record";
+  }
+
+  triggerFileInput(event) {
+    event.preventDefault();
+    const lectureId = this.uploadRecordingFormTarget.dataset.lectureId;
+    const fileInput = this.recordingInputTarget;
+
+    // console.log(fileInput);
+    
+    fileInput.onchange = (event) => {
+      const file = event.target.files[0];
+      console.log(file);
+
+      if (file == null) {
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+      const base64Data = reader.result.split(',')[1];
+      this.stimulate('Recordings#upload', { 
+        data: base64Data,
+        name: file.name,
+        type: file.type,
+        lectureId: lectureId
+      });
+    };
+    reader.readAsDataURL(file);
+
+      // const form = fileInput.closest("form");
+      // form.submit();
+    };
+
+    fileInput.click();
   }
 }

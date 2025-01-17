@@ -28,5 +28,11 @@ module Echolect
 		config.action_mailer.default_url_options = { host: 'www.echolect.co', protocol: 'https' }
 		config.action_mailer.delivery_method = :smtp
 		config.action_mailer.asset_host = 'https://echolect.co'
+
+		config.generators do |g|
+			g.orm :active_record, primary_key_type: :uuid
+		end
+
+		config.active_storage.service = :minio
 	end
 end

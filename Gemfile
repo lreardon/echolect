@@ -13,6 +13,8 @@ gem 'thor'
 
 gem 'ostruct'
 
+# gem 'aws-sdk-s3', require: false
+
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem 'rails', '~> 7.1.0', '>= 7.1.2'
 
@@ -104,7 +106,7 @@ end
 gem 'devise', '~> 4.9', '>= 4.9.3'
 gem 'faker', '~> 3.2'
 
-gem 'stimulus_reflex', '3.5.2'
+gem 'stimulus_reflex', '3.5.3'
 
 gem 'redis-session-store', '~> 0.11.5'
 
@@ -112,5 +114,7 @@ gem 'tailwindcss-rails', '~> 2.6'
 
 # gem 'erb_lint'
 gem 'htmlbeautifier'
+
+gem 'aws-sdk-s3', require: false
 
 # gem 'sorbet-runtime'

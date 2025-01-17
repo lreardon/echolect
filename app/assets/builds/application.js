@@ -9,21 +9,21 @@
       __defProp(target, name4, { get: all[name4], enumerable: true });
   };
 
-  // ../../node_modules/@rails/actioncable/src/adapters.js
+  // ../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/adapters.js
   var adapters_default;
   var init_adapters = __esm({
-    "../../node_modules/@rails/actioncable/src/adapters.js"() {
+    "../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/adapters.js"() {
       adapters_default = {
-        logger: typeof console !== "undefined" ? console : void 0,
-        WebSocket: typeof WebSocket !== "undefined" ? WebSocket : void 0
+        logger: self.console,
+        WebSocket: self.WebSocket
       };
     }
   });
 
-  // ../../node_modules/@rails/actioncable/src/logger.js
+  // ../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/logger.js
   var logger_default;
   var init_logger = __esm({
-    "../../node_modules/@rails/actioncable/src/logger.js"() {
+    "../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/logger.js"() {
       init_adapters();
       logger_default = {
         log(...messages) {
@@ -36,10 +36,10 @@
     }
   });
 
-  // ../../node_modules/@rails/actioncable/src/connection_monitor.js
+  // ../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/connection_monitor.js
   var now, secondsSince, ConnectionMonitor, connection_monitor_default;
   var init_connection_monitor = __esm({
-    "../../node_modules/@rails/actioncable/src/connection_monitor.js"() {
+    "../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/connection_monitor.js"() {
       init_logger();
       now = () => (/* @__PURE__ */ new Date()).getTime();
       secondsSince = (time) => (now() - time) / 1e3;
@@ -69,11 +69,12 @@
         isRunning() {
           return this.startedAt && !this.stoppedAt;
         }
-        recordMessage() {
+        recordPing() {
           this.pingedAt = now();
         }
         recordConnect() {
           this.reconnectAttempts = 0;
+          this.recordPing();
           delete this.disconnectedAt;
           logger_default.log("ConnectionMonitor recorded connect");
         }
@@ -146,10 +147,10 @@
     }
   });
 
-  // ../../node_modules/@rails/actioncable/src/internal.js
+  // ../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/internal.js
   var internal_default;
   var init_internal = __esm({
-    "../../node_modules/@rails/actioncable/src/internal.js"() {
+    "../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/internal.js"() {
       internal_default = {
         "message_types": {
           "welcome": "welcome",
@@ -161,8 +162,7 @@
         "disconnect_reasons": {
           "unauthorized": "unauthorized",
           "invalid_request": "invalid_request",
-          "server_restart": "server_restart",
-          "remote": "remote"
+          "server_restart": "server_restart"
         },
         "default_mount_path": "/cable",
         "protocols": [
@@ -173,10 +173,10 @@
     }
   });
 
-  // ../../node_modules/@rails/actioncable/src/connection.js
+  // ../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/connection.js
   var message_types, protocols, supportedProtocols, indexOf, Connection, connection_default;
   var init_connection = __esm({
-    "../../node_modules/@rails/actioncable/src/connection.js"() {
+    "../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/connection.js"() {
       init_adapters();
       init_connection_monitor();
       init_internal();
@@ -205,12 +205,11 @@
             logger_default.log(`Attempted to open WebSocket, but existing socket is ${this.getState()}`);
             return false;
           } else {
-            const socketProtocols = [...protocols, ...this.consumer.subprotocols || []];
-            logger_default.log(`Opening WebSocket, current state is ${this.getState()}, subprotocols: ${socketProtocols}`);
+            logger_default.log(`Opening WebSocket, current state is ${this.getState()}, subprotocols: ${protocols}`);
             if (this.webSocket) {
               this.uninstallEventHandlers();
             }
-            this.webSocket = new adapters_default.WebSocket(this.consumer.url, socketProtocols);
+            this.webSocket = new adapters_default.WebSocket(this.consumer.url, protocols);
             this.installEventHandlers();
             this.monitor.start();
             return true;
@@ -250,9 +249,6 @@
         isActive() {
           return this.isState("open", "connecting");
         }
-        triedToReconnect() {
-          return this.monitor.reconnectAttempts > 0;
-        }
         // Private
         isProtocolSupported() {
           return indexOf.call(supportedProtocols, this.getProtocol()) >= 0;
@@ -290,27 +286,18 @@
             return;
           }
           const { identifier, message, reason, reconnect, type } = JSON.parse(event.data);
-          this.monitor.recordMessage();
           switch (type) {
             case message_types.welcome:
-              if (this.triedToReconnect()) {
-                this.reconnectAttempted = true;
-              }
               this.monitor.recordConnect();
               return this.subscriptions.reload();
             case message_types.disconnect:
               logger_default.log(`Disconnecting. Reason: ${reason}`);
               return this.close({ allowReconnect: reconnect });
             case message_types.ping:
-              return null;
+              return this.monitor.recordPing();
             case message_types.confirmation:
               this.subscriptions.confirmSubscription(identifier);
-              if (this.reconnectAttempted) {
-                this.reconnectAttempted = false;
-                return this.subscriptions.notify(identifier, "connected", { reconnected: true });
-              } else {
-                return this.subscriptions.notify(identifier, "connected", { reconnected: false });
-              }
+              return this.subscriptions.notify(identifier, "connected");
             case message_types.rejection:
               return this.subscriptions.reject(identifier);
             default:
@@ -342,10 +329,10 @@
     }
   });
 
-  // ../../node_modules/@rails/actioncable/src/subscription.js
+  // ../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/subscription.js
   var extend, Subscription;
   var init_subscription = __esm({
-    "../../node_modules/@rails/actioncable/src/subscription.js"() {
+    "../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/subscription.js"() {
       extend = function(object, properties) {
         if (properties != null) {
           for (let key in properties) {
@@ -376,10 +363,10 @@
     }
   });
 
-  // ../../node_modules/@rails/actioncable/src/subscription_guarantor.js
+  // ../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/subscription_guarantor.js
   var SubscriptionGuarantor, subscription_guarantor_default;
   var init_subscription_guarantor = __esm({
-    "../../node_modules/@rails/actioncable/src/subscription_guarantor.js"() {
+    "../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/subscription_guarantor.js"() {
       init_logger();
       SubscriptionGuarantor = class {
         constructor(subscriptions) {
@@ -424,10 +411,10 @@
     }
   });
 
-  // ../../node_modules/@rails/actioncable/src/subscriptions.js
+  // ../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/subscriptions.js
   var Subscriptions;
   var init_subscriptions = __esm({
-    "../../node_modules/@rails/actioncable/src/subscriptions.js"() {
+    "../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/subscriptions.js"() {
       init_subscription();
       init_subscription_guarantor();
       init_logger();
@@ -505,7 +492,7 @@
     }
   });
 
-  // ../../node_modules/@rails/actioncable/src/consumer.js
+  // ../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/consumer.js
   function createWebSocketURL(url) {
     if (typeof url === "function") {
       url = url();
@@ -522,7 +509,7 @@
   }
   var Consumer;
   var init_consumer = __esm({
-    "../../node_modules/@rails/actioncable/src/consumer.js"() {
+    "../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/consumer.js"() {
       init_connection();
       init_subscriptions();
       Consumer = class {
@@ -530,7 +517,6 @@
           this._url = url;
           this.subscriptions = new Subscriptions(this);
           this.connection = new connection_default(this);
-          this.subprotocols = [];
         }
         get url() {
           return createWebSocketURL(this._url);
@@ -549,14 +535,11 @@
             return this.connection.open();
           }
         }
-        addSubProtocol(subprotocol) {
-          this.subprotocols = [...this.subprotocols, subprotocol];
-        }
       };
     }
   });
 
-  // ../../node_modules/@rails/actioncable/src/index.js
+  // ../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/index.js
   var src_exports = {};
   __export(src_exports, {
     Connection: () => connection_default,
@@ -582,7 +565,7 @@
     }
   }
   var init_src = __esm({
-    "../../node_modules/@rails/actioncable/src/index.js"() {
+    "../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/index.js"() {
       init_connection();
       init_connection_monitor();
       init_consumer();
@@ -1435,23 +1418,23 @@
     get permanentElements() {
       return queryPermanentElementsAll(this.element);
     }
-    getPermanentElementById(id) {
-      return getPermanentElementById(this.element, id);
+    getPermanentElementById(id2) {
+      return getPermanentElementById(this.element, id2);
     }
     getPermanentElementMapForSnapshot(snapshot) {
       const permanentElementMap = {};
       for (const currentPermanentElement of this.permanentElements) {
-        const { id } = currentPermanentElement;
-        const newPermanentElement = snapshot.getPermanentElementById(id);
+        const { id: id2 } = currentPermanentElement;
+        const newPermanentElement = snapshot.getPermanentElementById(id2);
         if (newPermanentElement) {
-          permanentElementMap[id] = [currentPermanentElement, newPermanentElement];
+          permanentElementMap[id2] = [currentPermanentElement, newPermanentElement];
         }
       }
       return permanentElementMap;
     }
   };
-  function getPermanentElementById(node, id) {
-    return node.querySelector(`#${id}[data-turbo-permanent]`);
+  function getPermanentElementById(node, id2) {
+    return node.querySelector(`#${id2}[data-turbo-permanent]`);
   }
   function queryPermanentElementsAll(node) {
     return node.querySelectorAll("[id][data-turbo-permanent]");
@@ -1757,15 +1740,15 @@
       this.permanentElementMap = permanentElementMap;
     }
     enter() {
-      for (const id in this.permanentElementMap) {
-        const [currentPermanentElement, newPermanentElement] = this.permanentElementMap[id];
+      for (const id2 in this.permanentElementMap) {
+        const [currentPermanentElement, newPermanentElement] = this.permanentElementMap[id2];
         this.delegate.enteringBardo(currentPermanentElement, newPermanentElement);
         this.replaceNewPermanentElementWithPlaceholder(newPermanentElement);
       }
     }
     leave() {
-      for (const id in this.permanentElementMap) {
-        const [currentPermanentElement] = this.permanentElementMap[id];
+      for (const id2 in this.permanentElementMap) {
+        const [currentPermanentElement] = this.permanentElementMap[id2];
         this.replaceCurrentPermanentElementWithClone(currentPermanentElement);
         this.replacePlaceholderWithPermanentElement(currentPermanentElement);
         this.delegate.leavingBardo(currentPermanentElement);
@@ -1783,8 +1766,8 @@
       const placeholder = this.getPlaceholderById(permanentElement.id);
       placeholder === null || placeholder === void 0 ? void 0 : placeholder.replaceWith(permanentElement);
     }
-    getPlaceholderById(id) {
-      return this.placeholders.find((element) => element.content == id);
+    getPlaceholderById(id2) {
+      return this.placeholders.find((element) => element.content == id2);
     }
     get placeholders() {
       return [...document.querySelectorAll("meta[name=turbo-permanent-placeholder][content]")];
@@ -2700,9 +2683,9 @@
       }
     }
     findFrameElement(element, submitter) {
-      const id = (submitter === null || submitter === void 0 ? void 0 : submitter.getAttribute("data-turbo-frame")) || element.getAttribute("data-turbo-frame");
-      if (id && id != "_top") {
-        const frame = this.element.querySelector(`#${id}:not([disabled])`);
+      const id2 = (submitter === null || submitter === void 0 ? void 0 : submitter.getAttribute("data-turbo-frame")) || element.getAttribute("data-turbo-frame");
+      if (id2 && id2 != "_top") {
+        const frame = this.element.querySelector(`#${id2}:not([disabled])`);
         if (frame instanceof FrameElement) {
           return frame;
         }
@@ -2996,11 +2979,11 @@
     const permanentElementsInDocument = queryPermanentElementsAll(document.documentElement);
     const permanentElementMap = {};
     for (const permanentElementInDocument of permanentElementsInDocument) {
-      const { id } = permanentElementInDocument;
+      const { id: id2 } = permanentElementInDocument;
       for (const streamElement of fragment.querySelectorAll("turbo-stream")) {
-        const elementInStream = getPermanentElementById(streamElement.templateElement.content, id);
+        const elementInStream = getPermanentElementById(streamElement.templateElement.content, id2);
         if (elementInStream) {
-          permanentElementMap[id] = [permanentElementInDocument, elementInStream];
+          permanentElementMap[id2] = [permanentElementInDocument, elementInStream];
         }
       }
     }
@@ -4096,18 +4079,18 @@
     }
     findFrameElement(element, submitter) {
       var _a;
-      const id = getAttribute("data-turbo-frame", submitter, element) || this.element.getAttribute("target");
-      return (_a = getFrameElementById(id)) !== null && _a !== void 0 ? _a : this.element;
+      const id2 = getAttribute("data-turbo-frame", submitter, element) || this.element.getAttribute("target");
+      return (_a = getFrameElementById(id2)) !== null && _a !== void 0 ? _a : this.element;
     }
     async extractForeignFrameElement(container) {
       let element;
-      const id = CSS.escape(this.id);
+      const id2 = CSS.escape(this.id);
       try {
-        element = activateElement(container.querySelector(`turbo-frame#${id}`), this.sourceURL);
+        element = activateElement(container.querySelector(`turbo-frame#${id2}`), this.sourceURL);
         if (element) {
           return element;
         }
-        element = activateElement(container.querySelector(`turbo-frame[src][recurse~=${id}]`), this.sourceURL);
+        element = activateElement(container.querySelector(`turbo-frame[src][recurse~=${id2}]`), this.sourceURL);
         if (element) {
           await element.loaded;
           return await this.extractForeignFrameElement(element);
@@ -4123,15 +4106,15 @@
       return locationIsVisitable(expandURL(action), this.rootLocation);
     }
     shouldInterceptNavigation(element, submitter) {
-      const id = getAttribute("data-turbo-frame", submitter, element) || this.element.getAttribute("target");
+      const id2 = getAttribute("data-turbo-frame", submitter, element) || this.element.getAttribute("target");
       if (element instanceof HTMLFormElement && !this.formActionIsVisitable(element, submitter)) {
         return false;
       }
-      if (!this.enabled || id == "_top") {
+      if (!this.enabled || id2 == "_top") {
         return false;
       }
-      if (id) {
-        const frameElement = getFrameElementById(id);
+      if (id2) {
+        const frameElement = getFrameElementById(id2);
         if (frameElement) {
           return !frameElement.disabled;
         }
@@ -4201,9 +4184,9 @@
       delete this.currentNavigationElement;
     }
   };
-  function getFrameElementById(id) {
-    if (id != null) {
-      const element = document.getElementById(id);
+  function getFrameElementById(id2) {
+    if (id2 != null) {
+      const element = document.getElementById(id2);
       if (element instanceof FrameElement) {
         return element;
       }
@@ -4400,8 +4383,8 @@
     return consumer = newConsumer;
   }
   async function createConsumer2() {
-    const { createConsumer: createConsumer4 } = await Promise.resolve().then(() => (init_src(), src_exports));
-    return createConsumer4();
+    const { createConsumer: createConsumer5 } = await Promise.resolve().then(() => (init_src(), src_exports));
+    return createConsumer5();
   }
   async function subscribeTo(channel, mixin) {
     const { subscriptions } = await getConsumer();
@@ -4504,6 +4487,824 @@
   // ../../node_modules/@hotwired/turbo-rails/app/javascript/turbo/index.js
   addEventListener("turbo:before-fetch-request", encodeMethodIntoRequestBody);
 
+  // ../../node_modules/@rails/activestorage/app/assets/javascripts/activestorage.esm.js
+  var sparkMd5 = {
+    exports: {}
+  };
+  (function(module4, exports) {
+    (function(factory) {
+      {
+        module4.exports = factory();
+      }
+    })(function(undefined$1) {
+      var hex_chr = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"];
+      function md5cycle(x, k) {
+        var a = x[0], b = x[1], c = x[2], d = x[3];
+        a += (b & c | ~b & d) + k[0] - 680876936 | 0;
+        a = (a << 7 | a >>> 25) + b | 0;
+        d += (a & b | ~a & c) + k[1] - 389564586 | 0;
+        d = (d << 12 | d >>> 20) + a | 0;
+        c += (d & a | ~d & b) + k[2] + 606105819 | 0;
+        c = (c << 17 | c >>> 15) + d | 0;
+        b += (c & d | ~c & a) + k[3] - 1044525330 | 0;
+        b = (b << 22 | b >>> 10) + c | 0;
+        a += (b & c | ~b & d) + k[4] - 176418897 | 0;
+        a = (a << 7 | a >>> 25) + b | 0;
+        d += (a & b | ~a & c) + k[5] + 1200080426 | 0;
+        d = (d << 12 | d >>> 20) + a | 0;
+        c += (d & a | ~d & b) + k[6] - 1473231341 | 0;
+        c = (c << 17 | c >>> 15) + d | 0;
+        b += (c & d | ~c & a) + k[7] - 45705983 | 0;
+        b = (b << 22 | b >>> 10) + c | 0;
+        a += (b & c | ~b & d) + k[8] + 1770035416 | 0;
+        a = (a << 7 | a >>> 25) + b | 0;
+        d += (a & b | ~a & c) + k[9] - 1958414417 | 0;
+        d = (d << 12 | d >>> 20) + a | 0;
+        c += (d & a | ~d & b) + k[10] - 42063 | 0;
+        c = (c << 17 | c >>> 15) + d | 0;
+        b += (c & d | ~c & a) + k[11] - 1990404162 | 0;
+        b = (b << 22 | b >>> 10) + c | 0;
+        a += (b & c | ~b & d) + k[12] + 1804603682 | 0;
+        a = (a << 7 | a >>> 25) + b | 0;
+        d += (a & b | ~a & c) + k[13] - 40341101 | 0;
+        d = (d << 12 | d >>> 20) + a | 0;
+        c += (d & a | ~d & b) + k[14] - 1502002290 | 0;
+        c = (c << 17 | c >>> 15) + d | 0;
+        b += (c & d | ~c & a) + k[15] + 1236535329 | 0;
+        b = (b << 22 | b >>> 10) + c | 0;
+        a += (b & d | c & ~d) + k[1] - 165796510 | 0;
+        a = (a << 5 | a >>> 27) + b | 0;
+        d += (a & c | b & ~c) + k[6] - 1069501632 | 0;
+        d = (d << 9 | d >>> 23) + a | 0;
+        c += (d & b | a & ~b) + k[11] + 643717713 | 0;
+        c = (c << 14 | c >>> 18) + d | 0;
+        b += (c & a | d & ~a) + k[0] - 373897302 | 0;
+        b = (b << 20 | b >>> 12) + c | 0;
+        a += (b & d | c & ~d) + k[5] - 701558691 | 0;
+        a = (a << 5 | a >>> 27) + b | 0;
+        d += (a & c | b & ~c) + k[10] + 38016083 | 0;
+        d = (d << 9 | d >>> 23) + a | 0;
+        c += (d & b | a & ~b) + k[15] - 660478335 | 0;
+        c = (c << 14 | c >>> 18) + d | 0;
+        b += (c & a | d & ~a) + k[4] - 405537848 | 0;
+        b = (b << 20 | b >>> 12) + c | 0;
+        a += (b & d | c & ~d) + k[9] + 568446438 | 0;
+        a = (a << 5 | a >>> 27) + b | 0;
+        d += (a & c | b & ~c) + k[14] - 1019803690 | 0;
+        d = (d << 9 | d >>> 23) + a | 0;
+        c += (d & b | a & ~b) + k[3] - 187363961 | 0;
+        c = (c << 14 | c >>> 18) + d | 0;
+        b += (c & a | d & ~a) + k[8] + 1163531501 | 0;
+        b = (b << 20 | b >>> 12) + c | 0;
+        a += (b & d | c & ~d) + k[13] - 1444681467 | 0;
+        a = (a << 5 | a >>> 27) + b | 0;
+        d += (a & c | b & ~c) + k[2] - 51403784 | 0;
+        d = (d << 9 | d >>> 23) + a | 0;
+        c += (d & b | a & ~b) + k[7] + 1735328473 | 0;
+        c = (c << 14 | c >>> 18) + d | 0;
+        b += (c & a | d & ~a) + k[12] - 1926607734 | 0;
+        b = (b << 20 | b >>> 12) + c | 0;
+        a += (b ^ c ^ d) + k[5] - 378558 | 0;
+        a = (a << 4 | a >>> 28) + b | 0;
+        d += (a ^ b ^ c) + k[8] - 2022574463 | 0;
+        d = (d << 11 | d >>> 21) + a | 0;
+        c += (d ^ a ^ b) + k[11] + 1839030562 | 0;
+        c = (c << 16 | c >>> 16) + d | 0;
+        b += (c ^ d ^ a) + k[14] - 35309556 | 0;
+        b = (b << 23 | b >>> 9) + c | 0;
+        a += (b ^ c ^ d) + k[1] - 1530992060 | 0;
+        a = (a << 4 | a >>> 28) + b | 0;
+        d += (a ^ b ^ c) + k[4] + 1272893353 | 0;
+        d = (d << 11 | d >>> 21) + a | 0;
+        c += (d ^ a ^ b) + k[7] - 155497632 | 0;
+        c = (c << 16 | c >>> 16) + d | 0;
+        b += (c ^ d ^ a) + k[10] - 1094730640 | 0;
+        b = (b << 23 | b >>> 9) + c | 0;
+        a += (b ^ c ^ d) + k[13] + 681279174 | 0;
+        a = (a << 4 | a >>> 28) + b | 0;
+        d += (a ^ b ^ c) + k[0] - 358537222 | 0;
+        d = (d << 11 | d >>> 21) + a | 0;
+        c += (d ^ a ^ b) + k[3] - 722521979 | 0;
+        c = (c << 16 | c >>> 16) + d | 0;
+        b += (c ^ d ^ a) + k[6] + 76029189 | 0;
+        b = (b << 23 | b >>> 9) + c | 0;
+        a += (b ^ c ^ d) + k[9] - 640364487 | 0;
+        a = (a << 4 | a >>> 28) + b | 0;
+        d += (a ^ b ^ c) + k[12] - 421815835 | 0;
+        d = (d << 11 | d >>> 21) + a | 0;
+        c += (d ^ a ^ b) + k[15] + 530742520 | 0;
+        c = (c << 16 | c >>> 16) + d | 0;
+        b += (c ^ d ^ a) + k[2] - 995338651 | 0;
+        b = (b << 23 | b >>> 9) + c | 0;
+        a += (c ^ (b | ~d)) + k[0] - 198630844 | 0;
+        a = (a << 6 | a >>> 26) + b | 0;
+        d += (b ^ (a | ~c)) + k[7] + 1126891415 | 0;
+        d = (d << 10 | d >>> 22) + a | 0;
+        c += (a ^ (d | ~b)) + k[14] - 1416354905 | 0;
+        c = (c << 15 | c >>> 17) + d | 0;
+        b += (d ^ (c | ~a)) + k[5] - 57434055 | 0;
+        b = (b << 21 | b >>> 11) + c | 0;
+        a += (c ^ (b | ~d)) + k[12] + 1700485571 | 0;
+        a = (a << 6 | a >>> 26) + b | 0;
+        d += (b ^ (a | ~c)) + k[3] - 1894986606 | 0;
+        d = (d << 10 | d >>> 22) + a | 0;
+        c += (a ^ (d | ~b)) + k[10] - 1051523 | 0;
+        c = (c << 15 | c >>> 17) + d | 0;
+        b += (d ^ (c | ~a)) + k[1] - 2054922799 | 0;
+        b = (b << 21 | b >>> 11) + c | 0;
+        a += (c ^ (b | ~d)) + k[8] + 1873313359 | 0;
+        a = (a << 6 | a >>> 26) + b | 0;
+        d += (b ^ (a | ~c)) + k[15] - 30611744 | 0;
+        d = (d << 10 | d >>> 22) + a | 0;
+        c += (a ^ (d | ~b)) + k[6] - 1560198380 | 0;
+        c = (c << 15 | c >>> 17) + d | 0;
+        b += (d ^ (c | ~a)) + k[13] + 1309151649 | 0;
+        b = (b << 21 | b >>> 11) + c | 0;
+        a += (c ^ (b | ~d)) + k[4] - 145523070 | 0;
+        a = (a << 6 | a >>> 26) + b | 0;
+        d += (b ^ (a | ~c)) + k[11] - 1120210379 | 0;
+        d = (d << 10 | d >>> 22) + a | 0;
+        c += (a ^ (d | ~b)) + k[2] + 718787259 | 0;
+        c = (c << 15 | c >>> 17) + d | 0;
+        b += (d ^ (c | ~a)) + k[9] - 343485551 | 0;
+        b = (b << 21 | b >>> 11) + c | 0;
+        x[0] = a + x[0] | 0;
+        x[1] = b + x[1] | 0;
+        x[2] = c + x[2] | 0;
+        x[3] = d + x[3] | 0;
+      }
+      function md5blk(s) {
+        var md5blks = [], i;
+        for (i = 0; i < 64; i += 4) {
+          md5blks[i >> 2] = s.charCodeAt(i) + (s.charCodeAt(i + 1) << 8) + (s.charCodeAt(i + 2) << 16) + (s.charCodeAt(i + 3) << 24);
+        }
+        return md5blks;
+      }
+      function md5blk_array(a) {
+        var md5blks = [], i;
+        for (i = 0; i < 64; i += 4) {
+          md5blks[i >> 2] = a[i] + (a[i + 1] << 8) + (a[i + 2] << 16) + (a[i + 3] << 24);
+        }
+        return md5blks;
+      }
+      function md51(s) {
+        var n = s.length, state = [1732584193, -271733879, -1732584194, 271733878], i, length, tail, tmp, lo, hi;
+        for (i = 64; i <= n; i += 64) {
+          md5cycle(state, md5blk(s.substring(i - 64, i)));
+        }
+        s = s.substring(i - 64);
+        length = s.length;
+        tail = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        for (i = 0; i < length; i += 1) {
+          tail[i >> 2] |= s.charCodeAt(i) << (i % 4 << 3);
+        }
+        tail[i >> 2] |= 128 << (i % 4 << 3);
+        if (i > 55) {
+          md5cycle(state, tail);
+          for (i = 0; i < 16; i += 1) {
+            tail[i] = 0;
+          }
+        }
+        tmp = n * 8;
+        tmp = tmp.toString(16).match(/(.*?)(.{0,8})$/);
+        lo = parseInt(tmp[2], 16);
+        hi = parseInt(tmp[1], 16) || 0;
+        tail[14] = lo;
+        tail[15] = hi;
+        md5cycle(state, tail);
+        return state;
+      }
+      function md51_array(a) {
+        var n = a.length, state = [1732584193, -271733879, -1732584194, 271733878], i, length, tail, tmp, lo, hi;
+        for (i = 64; i <= n; i += 64) {
+          md5cycle(state, md5blk_array(a.subarray(i - 64, i)));
+        }
+        a = i - 64 < n ? a.subarray(i - 64) : new Uint8Array(0);
+        length = a.length;
+        tail = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        for (i = 0; i < length; i += 1) {
+          tail[i >> 2] |= a[i] << (i % 4 << 3);
+        }
+        tail[i >> 2] |= 128 << (i % 4 << 3);
+        if (i > 55) {
+          md5cycle(state, tail);
+          for (i = 0; i < 16; i += 1) {
+            tail[i] = 0;
+          }
+        }
+        tmp = n * 8;
+        tmp = tmp.toString(16).match(/(.*?)(.{0,8})$/);
+        lo = parseInt(tmp[2], 16);
+        hi = parseInt(tmp[1], 16) || 0;
+        tail[14] = lo;
+        tail[15] = hi;
+        md5cycle(state, tail);
+        return state;
+      }
+      function rhex(n) {
+        var s = "", j;
+        for (j = 0; j < 4; j += 1) {
+          s += hex_chr[n >> j * 8 + 4 & 15] + hex_chr[n >> j * 8 & 15];
+        }
+        return s;
+      }
+      function hex(x) {
+        var i;
+        for (i = 0; i < x.length; i += 1) {
+          x[i] = rhex(x[i]);
+        }
+        return x.join("");
+      }
+      if (hex(md51("hello")) !== "5d41402abc4b2a76b9719d911017c592") ;
+      if (typeof ArrayBuffer !== "undefined" && !ArrayBuffer.prototype.slice) {
+        (function() {
+          function clamp(val, length) {
+            val = val | 0 || 0;
+            if (val < 0) {
+              return Math.max(val + length, 0);
+            }
+            return Math.min(val, length);
+          }
+          ArrayBuffer.prototype.slice = function(from, to) {
+            var length = this.byteLength, begin = clamp(from, length), end = length, num, target, targetArray, sourceArray;
+            if (to !== undefined$1) {
+              end = clamp(to, length);
+            }
+            if (begin > end) {
+              return new ArrayBuffer(0);
+            }
+            num = end - begin;
+            target = new ArrayBuffer(num);
+            targetArray = new Uint8Array(target);
+            sourceArray = new Uint8Array(this, begin, num);
+            targetArray.set(sourceArray);
+            return target;
+          };
+        })();
+      }
+      function toUtf8(str) {
+        if (/[\u0080-\uFFFF]/.test(str)) {
+          str = unescape(encodeURIComponent(str));
+        }
+        return str;
+      }
+      function utf8Str2ArrayBuffer(str, returnUInt8Array) {
+        var length = str.length, buff = new ArrayBuffer(length), arr = new Uint8Array(buff), i;
+        for (i = 0; i < length; i += 1) {
+          arr[i] = str.charCodeAt(i);
+        }
+        return returnUInt8Array ? arr : buff;
+      }
+      function arrayBuffer2Utf8Str(buff) {
+        return String.fromCharCode.apply(null, new Uint8Array(buff));
+      }
+      function concatenateArrayBuffers(first, second, returnUInt8Array) {
+        var result = new Uint8Array(first.byteLength + second.byteLength);
+        result.set(new Uint8Array(first));
+        result.set(new Uint8Array(second), first.byteLength);
+        return returnUInt8Array ? result : result.buffer;
+      }
+      function hexToBinaryString(hex2) {
+        var bytes = [], length = hex2.length, x;
+        for (x = 0; x < length - 1; x += 2) {
+          bytes.push(parseInt(hex2.substr(x, 2), 16));
+        }
+        return String.fromCharCode.apply(String, bytes);
+      }
+      function SparkMD52() {
+        this.reset();
+      }
+      SparkMD52.prototype.append = function(str) {
+        this.appendBinary(toUtf8(str));
+        return this;
+      };
+      SparkMD52.prototype.appendBinary = function(contents) {
+        this._buff += contents;
+        this._length += contents.length;
+        var length = this._buff.length, i;
+        for (i = 64; i <= length; i += 64) {
+          md5cycle(this._hash, md5blk(this._buff.substring(i - 64, i)));
+        }
+        this._buff = this._buff.substring(i - 64);
+        return this;
+      };
+      SparkMD52.prototype.end = function(raw) {
+        var buff = this._buff, length = buff.length, i, tail = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], ret;
+        for (i = 0; i < length; i += 1) {
+          tail[i >> 2] |= buff.charCodeAt(i) << (i % 4 << 3);
+        }
+        this._finish(tail, length);
+        ret = hex(this._hash);
+        if (raw) {
+          ret = hexToBinaryString(ret);
+        }
+        this.reset();
+        return ret;
+      };
+      SparkMD52.prototype.reset = function() {
+        this._buff = "";
+        this._length = 0;
+        this._hash = [1732584193, -271733879, -1732584194, 271733878];
+        return this;
+      };
+      SparkMD52.prototype.getState = function() {
+        return {
+          buff: this._buff,
+          length: this._length,
+          hash: this._hash.slice()
+        };
+      };
+      SparkMD52.prototype.setState = function(state) {
+        this._buff = state.buff;
+        this._length = state.length;
+        this._hash = state.hash;
+        return this;
+      };
+      SparkMD52.prototype.destroy = function() {
+        delete this._hash;
+        delete this._buff;
+        delete this._length;
+      };
+      SparkMD52.prototype._finish = function(tail, length) {
+        var i = length, tmp, lo, hi;
+        tail[i >> 2] |= 128 << (i % 4 << 3);
+        if (i > 55) {
+          md5cycle(this._hash, tail);
+          for (i = 0; i < 16; i += 1) {
+            tail[i] = 0;
+          }
+        }
+        tmp = this._length * 8;
+        tmp = tmp.toString(16).match(/(.*?)(.{0,8})$/);
+        lo = parseInt(tmp[2], 16);
+        hi = parseInt(tmp[1], 16) || 0;
+        tail[14] = lo;
+        tail[15] = hi;
+        md5cycle(this._hash, tail);
+      };
+      SparkMD52.hash = function(str, raw) {
+        return SparkMD52.hashBinary(toUtf8(str), raw);
+      };
+      SparkMD52.hashBinary = function(content, raw) {
+        var hash = md51(content), ret = hex(hash);
+        return raw ? hexToBinaryString(ret) : ret;
+      };
+      SparkMD52.ArrayBuffer = function() {
+        this.reset();
+      };
+      SparkMD52.ArrayBuffer.prototype.append = function(arr) {
+        var buff = concatenateArrayBuffers(this._buff.buffer, arr, true), length = buff.length, i;
+        this._length += arr.byteLength;
+        for (i = 64; i <= length; i += 64) {
+          md5cycle(this._hash, md5blk_array(buff.subarray(i - 64, i)));
+        }
+        this._buff = i - 64 < length ? new Uint8Array(buff.buffer.slice(i - 64)) : new Uint8Array(0);
+        return this;
+      };
+      SparkMD52.ArrayBuffer.prototype.end = function(raw) {
+        var buff = this._buff, length = buff.length, tail = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], i, ret;
+        for (i = 0; i < length; i += 1) {
+          tail[i >> 2] |= buff[i] << (i % 4 << 3);
+        }
+        this._finish(tail, length);
+        ret = hex(this._hash);
+        if (raw) {
+          ret = hexToBinaryString(ret);
+        }
+        this.reset();
+        return ret;
+      };
+      SparkMD52.ArrayBuffer.prototype.reset = function() {
+        this._buff = new Uint8Array(0);
+        this._length = 0;
+        this._hash = [1732584193, -271733879, -1732584194, 271733878];
+        return this;
+      };
+      SparkMD52.ArrayBuffer.prototype.getState = function() {
+        var state = SparkMD52.prototype.getState.call(this);
+        state.buff = arrayBuffer2Utf8Str(state.buff);
+        return state;
+      };
+      SparkMD52.ArrayBuffer.prototype.setState = function(state) {
+        state.buff = utf8Str2ArrayBuffer(state.buff, true);
+        return SparkMD52.prototype.setState.call(this, state);
+      };
+      SparkMD52.ArrayBuffer.prototype.destroy = SparkMD52.prototype.destroy;
+      SparkMD52.ArrayBuffer.prototype._finish = SparkMD52.prototype._finish;
+      SparkMD52.ArrayBuffer.hash = function(arr, raw) {
+        var hash = md51_array(new Uint8Array(arr)), ret = hex(hash);
+        return raw ? hexToBinaryString(ret) : ret;
+      };
+      return SparkMD52;
+    });
+  })(sparkMd5);
+  var SparkMD5 = sparkMd5.exports;
+  var fileSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
+  var FileChecksum = class _FileChecksum {
+    static create(file, callback) {
+      const instance = new _FileChecksum(file);
+      instance.create(callback);
+    }
+    constructor(file) {
+      this.file = file;
+      this.chunkSize = 2097152;
+      this.chunkCount = Math.ceil(this.file.size / this.chunkSize);
+      this.chunkIndex = 0;
+    }
+    create(callback) {
+      this.callback = callback;
+      this.md5Buffer = new SparkMD5.ArrayBuffer();
+      this.fileReader = new FileReader();
+      this.fileReader.addEventListener("load", (event) => this.fileReaderDidLoad(event));
+      this.fileReader.addEventListener("error", (event) => this.fileReaderDidError(event));
+      this.readNextChunk();
+    }
+    fileReaderDidLoad(event) {
+      this.md5Buffer.append(event.target.result);
+      if (!this.readNextChunk()) {
+        const binaryDigest = this.md5Buffer.end(true);
+        const base64digest = btoa(binaryDigest);
+        this.callback(null, base64digest);
+      }
+    }
+    fileReaderDidError(event) {
+      this.callback(`Error reading ${this.file.name}`);
+    }
+    readNextChunk() {
+      if (this.chunkIndex < this.chunkCount || this.chunkIndex == 0 && this.chunkCount == 0) {
+        const start3 = this.chunkIndex * this.chunkSize;
+        const end = Math.min(start3 + this.chunkSize, this.file.size);
+        const bytes = fileSlice.call(this.file, start3, end);
+        this.fileReader.readAsArrayBuffer(bytes);
+        this.chunkIndex++;
+        return true;
+      } else {
+        return false;
+      }
+    }
+  };
+  function getMetaValue(name4) {
+    const element = findElement(document.head, `meta[name="${name4}"]`);
+    if (element) {
+      return element.getAttribute("content");
+    }
+  }
+  function findElements(root, selector) {
+    if (typeof root == "string") {
+      selector = root;
+      root = document;
+    }
+    const elements = root.querySelectorAll(selector);
+    return toArray(elements);
+  }
+  function findElement(root, selector) {
+    if (typeof root == "string") {
+      selector = root;
+      root = document;
+    }
+    return root.querySelector(selector);
+  }
+  function dispatchEvent2(element, type, eventInit = {}) {
+    const { disabled } = element;
+    const { bubbles, cancelable, detail } = eventInit;
+    const event = document.createEvent("Event");
+    event.initEvent(type, bubbles || true, cancelable || true);
+    event.detail = detail || {};
+    try {
+      element.disabled = false;
+      element.dispatchEvent(event);
+    } finally {
+      element.disabled = disabled;
+    }
+    return event;
+  }
+  function toArray(value) {
+    if (Array.isArray(value)) {
+      return value;
+    } else if (Array.from) {
+      return Array.from(value);
+    } else {
+      return [].slice.call(value);
+    }
+  }
+  var BlobRecord = class {
+    constructor(file, checksum, url, customHeaders = {}) {
+      this.file = file;
+      this.attributes = {
+        filename: file.name,
+        content_type: file.type || "application/octet-stream",
+        byte_size: file.size,
+        checksum
+      };
+      this.xhr = new XMLHttpRequest();
+      this.xhr.open("POST", url, true);
+      this.xhr.responseType = "json";
+      this.xhr.setRequestHeader("Content-Type", "application/json");
+      this.xhr.setRequestHeader("Accept", "application/json");
+      this.xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+      Object.keys(customHeaders).forEach((headerKey) => {
+        this.xhr.setRequestHeader(headerKey, customHeaders[headerKey]);
+      });
+      const csrfToken = getMetaValue("csrf-token");
+      if (csrfToken != void 0) {
+        this.xhr.setRequestHeader("X-CSRF-Token", csrfToken);
+      }
+      this.xhr.addEventListener("load", (event) => this.requestDidLoad(event));
+      this.xhr.addEventListener("error", (event) => this.requestDidError(event));
+    }
+    get status() {
+      return this.xhr.status;
+    }
+    get response() {
+      const { responseType, response: response3 } = this.xhr;
+      if (responseType == "json") {
+        return response3;
+      } else {
+        return JSON.parse(response3);
+      }
+    }
+    create(callback) {
+      this.callback = callback;
+      this.xhr.send(JSON.stringify({
+        blob: this.attributes
+      }));
+    }
+    requestDidLoad(event) {
+      if (this.status >= 200 && this.status < 300) {
+        const { response: response3 } = this;
+        const { direct_upload } = response3;
+        delete response3.direct_upload;
+        this.attributes = response3;
+        this.directUploadData = direct_upload;
+        this.callback(null, this.toJSON());
+      } else {
+        this.requestDidError(event);
+      }
+    }
+    requestDidError(event) {
+      this.callback(`Error creating Blob for "${this.file.name}". Status: ${this.status}`);
+    }
+    toJSON() {
+      const result = {};
+      for (const key in this.attributes) {
+        result[key] = this.attributes[key];
+      }
+      return result;
+    }
+  };
+  var BlobUpload = class {
+    constructor(blob) {
+      this.blob = blob;
+      this.file = blob.file;
+      const { url, headers } = blob.directUploadData;
+      this.xhr = new XMLHttpRequest();
+      this.xhr.open("PUT", url, true);
+      this.xhr.responseType = "text";
+      for (const key in headers) {
+        this.xhr.setRequestHeader(key, headers[key]);
+      }
+      this.xhr.addEventListener("load", (event) => this.requestDidLoad(event));
+      this.xhr.addEventListener("error", (event) => this.requestDidError(event));
+    }
+    create(callback) {
+      this.callback = callback;
+      this.xhr.send(this.file.slice());
+    }
+    requestDidLoad(event) {
+      const { status, response: response3 } = this.xhr;
+      if (status >= 200 && status < 300) {
+        this.callback(null, response3);
+      } else {
+        this.requestDidError(event);
+      }
+    }
+    requestDidError(event) {
+      this.callback(`Error storing "${this.file.name}". Status: ${this.xhr.status}`);
+    }
+  };
+  var id = 0;
+  var DirectUpload = class {
+    constructor(file, url, delegate, customHeaders = {}) {
+      this.id = ++id;
+      this.file = file;
+      this.url = url;
+      this.delegate = delegate;
+      this.customHeaders = customHeaders;
+    }
+    create(callback) {
+      FileChecksum.create(this.file, (error3, checksum) => {
+        if (error3) {
+          callback(error3);
+          return;
+        }
+        const blob = new BlobRecord(this.file, checksum, this.url, this.customHeaders);
+        notify(this.delegate, "directUploadWillCreateBlobWithXHR", blob.xhr);
+        blob.create((error4) => {
+          if (error4) {
+            callback(error4);
+          } else {
+            const upload = new BlobUpload(blob);
+            notify(this.delegate, "directUploadWillStoreFileWithXHR", upload.xhr);
+            upload.create((error5) => {
+              if (error5) {
+                callback(error5);
+              } else {
+                callback(null, blob.toJSON());
+              }
+            });
+          }
+        });
+      });
+    }
+  };
+  function notify(object, methodName, ...messages) {
+    if (object && typeof object[methodName] == "function") {
+      return object[methodName](...messages);
+    }
+  }
+  var DirectUploadController = class {
+    constructor(input, file) {
+      this.input = input;
+      this.file = file;
+      this.directUpload = new DirectUpload(this.file, this.url, this);
+      this.dispatch("initialize");
+    }
+    start(callback) {
+      const hiddenInput = document.createElement("input");
+      hiddenInput.type = "hidden";
+      hiddenInput.name = this.input.name;
+      this.input.insertAdjacentElement("beforebegin", hiddenInput);
+      this.dispatch("start");
+      this.directUpload.create((error3, attributes) => {
+        if (error3) {
+          hiddenInput.parentNode.removeChild(hiddenInput);
+          this.dispatchError(error3);
+        } else {
+          hiddenInput.value = attributes.signed_id;
+        }
+        this.dispatch("end");
+        callback(error3);
+      });
+    }
+    uploadRequestDidProgress(event) {
+      const progress2 = event.loaded / event.total * 100;
+      if (progress2) {
+        this.dispatch("progress", {
+          progress: progress2
+        });
+      }
+    }
+    get url() {
+      return this.input.getAttribute("data-direct-upload-url");
+    }
+    dispatch(name4, detail = {}) {
+      detail.file = this.file;
+      detail.id = this.directUpload.id;
+      return dispatchEvent2(this.input, `direct-upload:${name4}`, {
+        detail
+      });
+    }
+    dispatchError(error3) {
+      const event = this.dispatch("error", {
+        error: error3
+      });
+      if (!event.defaultPrevented) {
+        alert(error3);
+      }
+    }
+    directUploadWillCreateBlobWithXHR(xhr) {
+      this.dispatch("before-blob-request", {
+        xhr
+      });
+    }
+    directUploadWillStoreFileWithXHR(xhr) {
+      this.dispatch("before-storage-request", {
+        xhr
+      });
+      xhr.upload.addEventListener("progress", (event) => this.uploadRequestDidProgress(event));
+    }
+  };
+  var inputSelector = "input[type=file][data-direct-upload-url]:not([disabled])";
+  var DirectUploadsController = class {
+    constructor(form) {
+      this.form = form;
+      this.inputs = findElements(form, inputSelector).filter((input) => input.files.length);
+    }
+    start(callback) {
+      const controllers = this.createDirectUploadControllers();
+      const startNextController = () => {
+        const controller = controllers.shift();
+        if (controller) {
+          controller.start((error3) => {
+            if (error3) {
+              callback(error3);
+              this.dispatch("end");
+            } else {
+              startNextController();
+            }
+          });
+        } else {
+          callback();
+          this.dispatch("end");
+        }
+      };
+      this.dispatch("start");
+      startNextController();
+    }
+    createDirectUploadControllers() {
+      const controllers = [];
+      this.inputs.forEach((input) => {
+        toArray(input.files).forEach((file) => {
+          const controller = new DirectUploadController(input, file);
+          controllers.push(controller);
+        });
+      });
+      return controllers;
+    }
+    dispatch(name4, detail = {}) {
+      return dispatchEvent2(this.form, `direct-uploads:${name4}`, {
+        detail
+      });
+    }
+  };
+  var processingAttribute = "data-direct-uploads-processing";
+  var submitButtonsByForm = /* @__PURE__ */ new WeakMap();
+  var started = false;
+  function start2() {
+    if (!started) {
+      started = true;
+      document.addEventListener("click", didClick, true);
+      document.addEventListener("submit", didSubmitForm, true);
+      document.addEventListener("ajax:before", didSubmitRemoteElement);
+    }
+  }
+  function didClick(event) {
+    const button = event.target.closest("button, input");
+    if (button && button.type === "submit" && button.form) {
+      submitButtonsByForm.set(button.form, button);
+    }
+  }
+  function didSubmitForm(event) {
+    handleFormSubmissionEvent(event);
+  }
+  function didSubmitRemoteElement(event) {
+    if (event.target.tagName == "FORM") {
+      handleFormSubmissionEvent(event);
+    }
+  }
+  function handleFormSubmissionEvent(event) {
+    const form = event.target;
+    if (form.hasAttribute(processingAttribute)) {
+      event.preventDefault();
+      return;
+    }
+    const controller = new DirectUploadsController(form);
+    const { inputs } = controller;
+    if (inputs.length) {
+      event.preventDefault();
+      form.setAttribute(processingAttribute, "");
+      inputs.forEach(disable);
+      controller.start((error3) => {
+        form.removeAttribute(processingAttribute);
+        if (error3) {
+          inputs.forEach(enable);
+        } else {
+          submitForm(form);
+        }
+      });
+    }
+  }
+  function submitForm(form) {
+    let button = submitButtonsByForm.get(form) || findElement(form, "input[type=submit], button[type=submit]");
+    if (button) {
+      const { disabled } = button;
+      button.disabled = false;
+      button.focus();
+      button.click();
+      button.disabled = disabled;
+    } else {
+      button = document.createElement("input");
+      button.type = "submit";
+      button.style.display = "none";
+      form.appendChild(button);
+      button.click();
+      form.removeChild(button);
+    }
+    submitButtonsByForm.delete(form);
+  }
+  function disable(input) {
+    input.disabled = true;
+  }
+  function enable(input) {
+    input.disabled = false;
+  }
+  function autostart() {
+    if (window.ActiveStorage) {
+      start2();
+    }
+  }
+  setTimeout(autostart, 1);
+
   // ../../node_modules/@rails/actioncable/app/assets/javascripts/actioncable.esm.js
   var adapters = {
     logger: typeof console !== "undefined" ? console : void 0,
@@ -4545,11 +5346,12 @@
     isRunning() {
       return this.startedAt && !this.stoppedAt;
     }
-    recordMessage() {
+    recordPing() {
       this.pingedAt = now2();
     }
     recordConnect() {
       this.reconnectAttempts = 0;
+      this.recordPing();
       delete this.disconnectedAt;
       logger.log("ConnectionMonitor recorded connect");
     }
@@ -4738,7 +5540,6 @@
         return;
       }
       const { identifier, message, reason, reconnect, type } = JSON.parse(event.data);
-      this.monitor.recordMessage();
       switch (type) {
         case message_types2.welcome:
           if (this.triedToReconnect()) {
@@ -4752,7 +5553,7 @@
             allowReconnect: reconnect
           });
         case message_types2.ping:
-          return null;
+          return this.monitor.recordPing();
         case message_types2.confirmation:
           this.subscriptions.confirmSubscription(identifier);
           if (this.reconnectAttempted) {
@@ -5010,6 +5811,13 @@
     },
     processAudio(recordingId) {
       this.perform("process", { recordingId });
+    },
+    uploadRecording(file) {
+      console.log(file);
+      const formData = new FormData();
+      formData.append("audio[file]", file);
+      console.log(formData);
+      this.perform("upload", { recording: formData });
     }
   });
   var audio_channel_default = audioChannel;
@@ -6961,23 +7769,23 @@
       }
     }
   };
-  var descriptorPattern = /^(?:(?:([^.]+?)\+)?(.+?)(?:\.(.+?))?(?:@(window|document))?->)?(.+?)(?:#([^:]+?))(?::(.+))?$/;
+  var descriptorPattern = /^(?:(.+?)(?:\.(.+?))?(?:@(window|document))?->)?(.+?)(?:#([^:]+?))(?::(.+))?$/;
   function parseActionDescriptorString(descriptorString) {
     const source = descriptorString.trim();
     const matches = source.match(descriptorPattern) || [];
-    let eventName = matches[2];
-    let keyFilter = matches[3];
+    let eventName = matches[1];
+    let keyFilter = matches[2];
     if (keyFilter && !["keydown", "keyup", "keypress"].includes(eventName)) {
       eventName += `.${keyFilter}`;
       keyFilter = "";
     }
     return {
-      eventTarget: parseEventTarget(matches[4]),
+      eventTarget: parseEventTarget(matches[3]),
       eventName,
-      eventOptions: matches[7] ? parseEventOptions(matches[7]) : {},
-      identifier: matches[5],
-      methodName: matches[6],
-      keyFilter: matches[1] || keyFilter
+      eventOptions: matches[6] ? parseEventOptions(matches[6]) : {},
+      identifier: matches[4],
+      methodName: matches[5],
+      keyFilter
     };
   }
   function parseEventTarget(eventTargetName) {
@@ -7012,13 +7820,6 @@
   function tokenize(value) {
     return value.match(/[^\s]+/g) || [];
   }
-  function isSomething(object) {
-    return object !== null && object !== void 0;
-  }
-  function hasProperty(object, property) {
-    return Object.prototype.hasOwnProperty.call(object, property);
-  }
-  var allModifiers = ["meta", "ctrl", "alt", "shift"];
   var Action = class {
     constructor(element, index, descriptor, schema2) {
       this.element = element;
@@ -7039,32 +7840,24 @@
       const eventTarget = this.eventTargetName ? `@${this.eventTargetName}` : "";
       return `${this.eventName}${eventFilter}${eventTarget}->${this.identifier}#${this.methodName}`;
     }
-    shouldIgnoreKeyboardEvent(event) {
+    isFilterTarget(event) {
       if (!this.keyFilter) {
         return false;
       }
-      const filters = this.keyFilter.split("+");
-      if (this.keyFilterDissatisfied(event, filters)) {
+      const filteres = this.keyFilter.split("+");
+      const modifiers = ["meta", "ctrl", "alt", "shift"];
+      const [meta, ctrl, alt, shift] = modifiers.map((modifier) => filteres.includes(modifier));
+      if (event.metaKey !== meta || event.ctrlKey !== ctrl || event.altKey !== alt || event.shiftKey !== shift) {
         return true;
       }
-      const standardFilter = filters.filter((key) => !allModifiers.includes(key))[0];
+      const standardFilter = filteres.filter((key) => !modifiers.includes(key))[0];
       if (!standardFilter) {
         return false;
       }
-      if (!hasProperty(this.keyMappings, standardFilter)) {
+      if (!Object.prototype.hasOwnProperty.call(this.keyMappings, standardFilter)) {
         error(`contains unknown key filter: ${this.keyFilter}`);
       }
       return this.keyMappings[standardFilter].toLowerCase() !== event.key.toLowerCase();
-    }
-    shouldIgnoreMouseEvent(event) {
-      if (!this.keyFilter) {
-        return false;
-      }
-      const filters = [this.keyFilter];
-      if (this.keyFilterDissatisfied(event, filters)) {
-        return true;
-      }
-      return false;
     }
     get params() {
       const params2 = {};
@@ -7083,10 +7876,6 @@
     }
     get keyMappings() {
       return this.schema.keyMappings;
-    }
-    keyFilterDissatisfied(event, filters) {
-      const [meta, ctrl, alt, shift] = allModifiers.map((modifier) => filters.includes(modifier));
-      return event.metaKey !== meta || event.ctrlKey !== ctrl || event.altKey !== alt || event.shiftKey !== shift;
     }
   };
   var defaultEventNames = {
@@ -7132,9 +7921,8 @@
       return this.context.identifier;
     }
     handleEvent(event) {
-      const actionEvent = this.prepareActionEvent(event);
-      if (this.willBeInvokedByEvent(event) && this.applyEventModifiers(actionEvent)) {
-        this.invokeWithEvent(actionEvent);
+      if (this.willBeInvokedByEvent(event) && this.applyEventModifiers(event)) {
+        this.invokeWithEvent(event);
       }
     }
     get eventName() {
@@ -7150,25 +7938,23 @@
     applyEventModifiers(event) {
       const { element } = this.action;
       const { actionDescriptorFilters } = this.context.application;
-      const { controller } = this.context;
       let passes = true;
       for (const [name4, value] of Object.entries(this.eventOptions)) {
         if (name4 in actionDescriptorFilters) {
           const filter = actionDescriptorFilters[name4];
-          passes = passes && filter({ name: name4, value, event, element, controller });
+          passes = passes && filter({ name: name4, value, event, element });
         } else {
           continue;
         }
       }
       return passes;
     }
-    prepareActionEvent(event) {
-      return Object.assign(event, { params: this.action.params });
-    }
     invokeWithEvent(event) {
       const { target, currentTarget } = event;
       try {
-        this.method.call(this.controller, event);
+        const { params: params2 } = this.action;
+        const actionEvent = Object.assign(event, { params: params2 });
+        this.method.call(this.controller, actionEvent);
         this.context.logDebugActivity(this.methodName, { event, target, currentTarget, action: this.methodName });
       } catch (error3) {
         const { identifier, controller, element, index } = this;
@@ -7178,10 +7964,7 @@
     }
     willBeInvokedByEvent(event) {
       const eventTarget = event.target;
-      if (event instanceof KeyboardEvent && this.action.shouldIgnoreKeyboardEvent(event)) {
-        return false;
-      }
-      if (event instanceof MouseEvent && this.action.shouldIgnoreMouseEvent(event)) {
+      if (event instanceof KeyboardEvent && this.action.isFilterTarget(event)) {
         return false;
       }
       if (this.element === eventTarget) {
@@ -7267,7 +8050,8 @@
         this.processAddedNodes(mutation.addedNodes);
       }
     }
-    processAttributeChange(element, attributeName) {
+    processAttributeChange(node, attributeName) {
+      const element = node;
       if (this.elements.has(element)) {
         if (this.delegate.elementAttributeChanged && this.matchElement(element)) {
           this.delegate.elementAttributeChanged(element, attributeName);
@@ -7449,8 +8233,8 @@
     }
   };
   var SelectorObserver = class {
-    constructor(element, selector, delegate, details) {
-      this._selector = selector;
+    constructor(element, selector, delegate, details = {}) {
+      this.selector = selector;
       this.details = details;
       this.elementObserver = new ElementObserver(element, this);
       this.delegate = delegate;
@@ -7458,13 +8242,6 @@
     }
     get started() {
       return this.elementObserver.started;
-    }
-    get selector() {
-      return this._selector;
-    }
-    set selector(selector) {
-      this._selector = selector;
-      this.refresh();
     }
     start() {
       this.elementObserver.start();
@@ -7482,58 +8259,39 @@
       return this.elementObserver.element;
     }
     matchElement(element) {
-      const { selector } = this;
-      if (selector) {
-        const matches = element.matches(selector);
-        if (this.delegate.selectorMatchElement) {
-          return matches && this.delegate.selectorMatchElement(element, this.details);
-        }
-        return matches;
-      } else {
-        return false;
+      const matches = element.matches(this.selector);
+      if (this.delegate.selectorMatchElement) {
+        return matches && this.delegate.selectorMatchElement(element, this.details);
       }
+      return matches;
     }
     matchElementsInTree(tree) {
-      const { selector } = this;
-      if (selector) {
-        const match = this.matchElement(tree) ? [tree] : [];
-        const matches = Array.from(tree.querySelectorAll(selector)).filter((match2) => this.matchElement(match2));
-        return match.concat(matches);
-      } else {
-        return [];
-      }
+      const match = this.matchElement(tree) ? [tree] : [];
+      const matches = Array.from(tree.querySelectorAll(this.selector)).filter((match2) => this.matchElement(match2));
+      return match.concat(matches);
     }
     elementMatched(element) {
-      const { selector } = this;
-      if (selector) {
-        this.selectorMatched(element, selector);
-      }
+      this.selectorMatched(element);
     }
     elementUnmatched(element) {
-      const selectors = this.matchesByElement.getKeysForValue(element);
-      for (const selector of selectors) {
-        this.selectorUnmatched(element, selector);
-      }
+      this.selectorUnmatched(element);
     }
     elementAttributeChanged(element, _attributeName) {
-      const { selector } = this;
-      if (selector) {
-        const matches = this.matchElement(element);
-        const matchedBefore = this.matchesByElement.has(selector, element);
-        if (matches && !matchedBefore) {
-          this.selectorMatched(element, selector);
-        } else if (!matches && matchedBefore) {
-          this.selectorUnmatched(element, selector);
-        }
+      const matches = this.matchElement(element);
+      const matchedBefore = this.matchesByElement.has(this.selector, element);
+      if (!matches && matchedBefore) {
+        this.selectorUnmatched(element);
       }
     }
-    selectorMatched(element, selector) {
-      this.delegate.selectorMatched(element, selector, this.details);
-      this.matchesByElement.add(selector, element);
+    selectorMatched(element) {
+      if (this.delegate.selectorMatched) {
+        this.delegate.selectorMatched(element, this.selector, this.details);
+        this.matchesByElement.add(this.selector, element);
+      }
     }
-    selectorUnmatched(element, selector) {
-      this.delegate.selectorUnmatched(element, selector, this.details);
-      this.matchesByElement.delete(selector, element);
+    selectorUnmatched(element) {
+      this.delegate.selectorUnmatched(element, this.selector, this.details);
+      this.matchesByElement.delete(this.selector, element);
     }
   };
   var StringMapObserver = class {
@@ -8013,47 +8771,34 @@
   }
   var OutletObserver = class {
     constructor(context, delegate) {
-      this.started = false;
       this.context = context;
       this.delegate = delegate;
       this.outletsByName = new Multimap();
       this.outletElementsByName = new Multimap();
       this.selectorObserverMap = /* @__PURE__ */ new Map();
-      this.attributeObserverMap = /* @__PURE__ */ new Map();
     }
     start() {
-      if (!this.started) {
+      if (this.selectorObserverMap.size === 0) {
         this.outletDefinitions.forEach((outletName) => {
-          this.setupSelectorObserverForOutlet(outletName);
-          this.setupAttributeObserverForOutlet(outletName);
+          const selector = this.selector(outletName);
+          const details = { outletName };
+          if (selector) {
+            this.selectorObserverMap.set(outletName, new SelectorObserver(document.body, selector, this, details));
+          }
         });
-        this.started = true;
-        this.dependentContexts.forEach((context) => context.refresh());
+        this.selectorObserverMap.forEach((observer) => observer.start());
       }
-    }
-    refresh() {
-      this.selectorObserverMap.forEach((observer) => observer.refresh());
-      this.attributeObserverMap.forEach((observer) => observer.refresh());
+      this.dependentContexts.forEach((context) => context.refresh());
     }
     stop() {
-      if (this.started) {
-        this.started = false;
-        this.disconnectAllOutlets();
-        this.stopSelectorObservers();
-        this.stopAttributeObservers();
-      }
-    }
-    stopSelectorObservers() {
       if (this.selectorObserverMap.size > 0) {
+        this.disconnectAllOutlets();
         this.selectorObserverMap.forEach((observer) => observer.stop());
         this.selectorObserverMap.clear();
       }
     }
-    stopAttributeObservers() {
-      if (this.attributeObserverMap.size > 0) {
-        this.attributeObserverMap.forEach((observer) => observer.stop());
-        this.attributeObserverMap.clear();
-      }
+    refresh() {
+      this.selectorObserverMap.forEach((observer) => observer.refresh());
     }
     selectorMatched(element, _selector, { outletName }) {
       const outlet = this.getOutlet(element, outletName);
@@ -8068,32 +8813,7 @@
       }
     }
     selectorMatchElement(element, { outletName }) {
-      const selector = this.selector(outletName);
-      const hasOutlet = this.hasOutlet(element, outletName);
-      const hasOutletController = element.matches(`[${this.schema.controllerAttribute}~=${outletName}]`);
-      if (selector) {
-        return hasOutlet && hasOutletController && element.matches(selector);
-      } else {
-        return false;
-      }
-    }
-    elementMatchedAttribute(_element, attributeName) {
-      const outletName = this.getOutletNameFromOutletAttributeName(attributeName);
-      if (outletName) {
-        this.updateSelectorObserverForOutlet(outletName);
-      }
-    }
-    elementAttributeValueChanged(_element, attributeName) {
-      const outletName = this.getOutletNameFromOutletAttributeName(attributeName);
-      if (outletName) {
-        this.updateSelectorObserverForOutlet(outletName);
-      }
-    }
-    elementUnmatchedAttribute(_element, attributeName) {
-      const outletName = this.getOutletNameFromOutletAttributeName(attributeName);
-      if (outletName) {
-        this.updateSelectorObserverForOutlet(outletName);
-      }
+      return this.hasOutlet(element, outletName) && element.matches(`[${this.context.application.schema.controllerAttribute}~=${outletName}]`);
     }
     connectOutlet(outlet, element, outletName) {
       var _a;
@@ -8120,32 +8840,8 @@
         }
       }
     }
-    updateSelectorObserverForOutlet(outletName) {
-      const observer = this.selectorObserverMap.get(outletName);
-      if (observer) {
-        observer.selector = this.selector(outletName);
-      }
-    }
-    setupSelectorObserverForOutlet(outletName) {
-      const selector = this.selector(outletName);
-      const selectorObserver = new SelectorObserver(document.body, selector, this, { outletName });
-      this.selectorObserverMap.set(outletName, selectorObserver);
-      selectorObserver.start();
-    }
-    setupAttributeObserverForOutlet(outletName) {
-      const attributeName = this.attributeNameForOutletName(outletName);
-      const attributeObserver = new AttributeObserver(this.scope.element, attributeName, this);
-      this.attributeObserverMap.set(outletName, attributeObserver);
-      attributeObserver.start();
-    }
     selector(outletName) {
       return this.scope.outlets.getSelectorForOutletName(outletName);
-    }
-    attributeNameForOutletName(outletName) {
-      return this.scope.schema.outletAttributeForScope(this.identifier, outletName);
-    }
-    getOutletNameFromOutletAttributeName(attributeName) {
-      return this.outletDefinitions.find((outletName) => this.attributeNameForOutletName(outletName) === attributeName);
     }
     get outletDependencies() {
       const dependencies4 = new Multimap();
@@ -8177,9 +8873,6 @@
     }
     get scope() {
       return this.context.scope;
-    }
-    get schema() {
-      return this.context.schema;
     }
     get identifier() {
       return this.context.identifier;
@@ -8461,9 +9154,9 @@
     }
   };
   var Guide = class {
-    constructor(logger2) {
+    constructor(logger3) {
       this.warnedKeysByObject = /* @__PURE__ */ new WeakMap();
-      this.logger = logger2;
+      this.logger = logger3;
     }
     warn(object, key, message) {
       let warnedKeys = this.warnedKeysByObject.get(object);
@@ -8593,7 +9286,7 @@
     }
   };
   var Scope = class _Scope {
-    constructor(schema2, element, identifier, logger2) {
+    constructor(schema2, element, identifier, logger3) {
       this.targets = new TargetSet(this);
       this.classes = new ClassMap(this);
       this.data = new DataMap(this);
@@ -8603,7 +9296,7 @@
       this.schema = schema2;
       this.element = element;
       this.identifier = identifier;
-      this.guide = new Guide(logger2);
+      this.guide = new Guide(logger3);
       this.outlets = new OutletSet(this.documentScope, element);
     }
     findElement(selector) {
@@ -8648,9 +9341,6 @@
     }
     parseValueForToken(token) {
       const { element, content: identifier } = token;
-      return this.parseValueForElementAndIdentifier(element, identifier);
-    }
-    parseValueForElementAndIdentifier(element, identifier) {
       const scopesByIdentifier = this.fetchScopesByIdentifierForElement(element);
       let scope = scopesByIdentifier.get(identifier);
       if (!scope) {
@@ -8721,7 +9411,7 @@
       this.connectModule(module4);
       const afterLoad = definition.controllerConstructor.afterLoad;
       if (afterLoad) {
-        afterLoad.call(definition.controllerConstructor, definition.identifier, this.application);
+        afterLoad(definition.identifier, this.application);
       }
     }
     unloadIdentifier(identifier) {
@@ -8734,14 +9424,6 @@
       const module4 = this.modulesByIdentifier.get(identifier);
       if (module4) {
         return module4.contexts.find((context) => context.element == element);
-      }
-    }
-    proposeToConnectScopeForElementAndIdentifier(element, identifier) {
-      const scope = this.scopeObserver.parseValueForElementAndIdentifier(element, identifier);
-      if (scope) {
-        this.scopeObserver.elementMatchedValue(scope.element, scope);
-      } else {
-        console.error(`Couldn't find or create scope for identifier: "${identifier}" and element:`, element);
       }
     }
     handleError(error3, message, detail) {
@@ -8781,7 +9463,7 @@
     targetAttribute: "data-target",
     targetAttributeForScope: (identifier) => `data-${identifier}-target`,
     outletAttributeForScope: (identifier, outlet) => `data-${identifier}-${outlet}-outlet`,
-    keyMappings: Object.assign(Object.assign({ enter: "Enter", tab: "Tab", esc: "Escape", space: " ", up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight", home: "Home", end: "End", page_up: "PageUp", page_down: "PageDown" }, objectFromEntries("abcdefghijklmnopqrstuvwxyz".split("").map((c) => [c, c]))), objectFromEntries("0123456789".split("").map((n) => [n, n])))
+    keyMappings: Object.assign(Object.assign({ enter: "Enter", tab: "Tab", esc: "Escape", space: " ", up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight", home: "Home", end: "End" }, objectFromEntries("abcdefghijklmnopqrstuvwxyz".split("").map((c) => [c, c]))), objectFromEntries("0123456789".split("").map((n) => [n, n])))
   };
   function objectFromEntries(array) {
     return array.reduce((memo, [k, v]) => Object.assign(Object.assign({}, memo), { [k]: v }), {});
@@ -8906,43 +9588,34 @@
       return Object.assign(properties, propertiesForOutletDefinition(outletDefinition));
     }, {});
   }
-  function getOutletController(controller, element, identifier) {
-    return controller.application.getControllerForElementAndIdentifier(element, identifier);
-  }
-  function getControllerAndEnsureConnectedScope(controller, element, outletName) {
-    let outletController = getOutletController(controller, element, outletName);
-    if (outletController)
-      return outletController;
-    controller.application.router.proposeToConnectScopeForElementAndIdentifier(element, outletName);
-    outletController = getOutletController(controller, element, outletName);
-    if (outletController)
-      return outletController;
-  }
   function propertiesForOutletDefinition(name4) {
     const camelizedName = namespaceCamelize(name4);
     return {
       [`${camelizedName}Outlet`]: {
         get() {
-          const outletElement = this.outlets.find(name4);
-          const selector = this.outlets.getSelectorForOutletName(name4);
-          if (outletElement) {
-            const outletController = getControllerAndEnsureConnectedScope(this, outletElement, name4);
-            if (outletController)
+          const outlet = this.outlets.find(name4);
+          if (outlet) {
+            const outletController = this.application.getControllerForElementAndIdentifier(outlet, name4);
+            if (outletController) {
               return outletController;
-            throw new Error(`The provided outlet element is missing an outlet controller "${name4}" instance for host controller "${this.identifier}"`);
+            } else {
+              throw new Error(`Missing "data-controller=${name4}" attribute on outlet element for "${this.identifier}" controller`);
+            }
           }
-          throw new Error(`Missing outlet element "${name4}" for host controller "${this.identifier}". Stimulus couldn't find a matching outlet element using selector "${selector}".`);
+          throw new Error(`Missing outlet element "${name4}" for "${this.identifier}" controller`);
         }
       },
       [`${camelizedName}Outlets`]: {
         get() {
           const outlets = this.outlets.findAll(name4);
           if (outlets.length > 0) {
-            return outlets.map((outletElement) => {
-              const outletController = getControllerAndEnsureConnectedScope(this, outletElement, name4);
-              if (outletController)
-                return outletController;
-              console.warn(`The provided outlet element is missing an outlet controller "${name4}" instance for host controller "${this.identifier}"`, outletElement);
+            return outlets.map((outlet) => {
+              const controller = this.application.getControllerForElementAndIdentifier(outlet, name4);
+              if (controller) {
+                return controller;
+              } else {
+                console.warn(`The provided outlet element is missing the outlet controller "${name4}" for "${this.identifier}"`, outlet);
+              }
             }).filter((controller) => controller);
           }
           return [];
@@ -8950,12 +9623,11 @@
       },
       [`${camelizedName}OutletElement`]: {
         get() {
-          const outletElement = this.outlets.find(name4);
-          const selector = this.outlets.getSelectorForOutletName(name4);
-          if (outletElement) {
-            return outletElement;
+          const outlet = this.outlets.find(name4);
+          if (outlet) {
+            return outlet;
           } else {
-            throw new Error(`Missing outlet element "${name4}" for host controller "${this.identifier}". Stimulus couldn't find a matching outlet element using selector "${selector}".`);
+            throw new Error(`Missing outlet element "${name4}" for "${this.identifier}" controller`);
           }
         }
       },
@@ -9082,67 +9754,51 @@
       return "object";
   }
   function parseValueTypeObject(payload) {
-    const { controller, token, typeObject } = payload;
-    const hasType = isSomething(typeObject.type);
-    const hasDefault = isSomething(typeObject.default);
-    const fullObject = hasType && hasDefault;
-    const onlyType = hasType && !hasDefault;
-    const onlyDefault = !hasType && hasDefault;
-    const typeFromObject = parseValueTypeConstant(typeObject.type);
-    const typeFromDefaultValue = parseValueTypeDefault(payload.typeObject.default);
-    if (onlyType)
-      return typeFromObject;
-    if (onlyDefault)
-      return typeFromDefaultValue;
-    if (typeFromObject !== typeFromDefaultValue) {
-      const propertyPath = controller ? `${controller}.${token}` : token;
-      throw new Error(`The specified default value for the Stimulus Value "${propertyPath}" must match the defined type "${typeFromObject}". The provided default value of "${typeObject.default}" is of type "${typeFromDefaultValue}".`);
+    const typeFromObject = parseValueTypeConstant(payload.typeObject.type);
+    if (!typeFromObject)
+      return;
+    const defaultValueType = parseValueTypeDefault(payload.typeObject.default);
+    if (typeFromObject !== defaultValueType) {
+      const propertyPath = payload.controller ? `${payload.controller}.${payload.token}` : payload.token;
+      throw new Error(`The specified default value for the Stimulus Value "${propertyPath}" must match the defined type "${typeFromObject}". The provided default value of "${payload.typeObject.default}" is of type "${defaultValueType}".`);
     }
-    if (fullObject)
-      return typeFromObject;
+    return typeFromObject;
   }
   function parseValueTypeDefinition(payload) {
-    const { controller, token, typeDefinition } = payload;
-    const typeObject = { controller, token, typeObject: typeDefinition };
-    const typeFromObject = parseValueTypeObject(typeObject);
-    const typeFromDefaultValue = parseValueTypeDefault(typeDefinition);
-    const typeFromConstant = parseValueTypeConstant(typeDefinition);
+    const typeFromObject = parseValueTypeObject({
+      controller: payload.controller,
+      token: payload.token,
+      typeObject: payload.typeDefinition
+    });
+    const typeFromDefaultValue = parseValueTypeDefault(payload.typeDefinition);
+    const typeFromConstant = parseValueTypeConstant(payload.typeDefinition);
     const type = typeFromObject || typeFromDefaultValue || typeFromConstant;
     if (type)
       return type;
-    const propertyPath = controller ? `${controller}.${typeDefinition}` : token;
-    throw new Error(`Unknown value type "${propertyPath}" for "${token}" value`);
+    const propertyPath = payload.controller ? `${payload.controller}.${payload.typeDefinition}` : payload.token;
+    throw new Error(`Unknown value type "${propertyPath}" for "${payload.token}" value`);
   }
   function defaultValueForDefinition(typeDefinition) {
     const constant = parseValueTypeConstant(typeDefinition);
     if (constant)
       return defaultValuesByType[constant];
-    const hasDefault = hasProperty(typeDefinition, "default");
-    const hasType = hasProperty(typeDefinition, "type");
-    const typeObject = typeDefinition;
-    if (hasDefault)
-      return typeObject.default;
-    if (hasType) {
-      const { type } = typeObject;
-      const constantFromType = parseValueTypeConstant(type);
-      if (constantFromType)
-        return defaultValuesByType[constantFromType];
-    }
+    const defaultValue = typeDefinition.default;
+    if (defaultValue !== void 0)
+      return defaultValue;
     return typeDefinition;
   }
   function valueDescriptorForTokenAndTypeDefinition(payload) {
-    const { token, typeDefinition } = payload;
-    const key = `${dasherize(token)}-value`;
+    const key = `${dasherize(payload.token)}-value`;
     const type = parseValueTypeDefinition(payload);
     return {
       type,
       key,
       name: camelize(key),
       get defaultValue() {
-        return defaultValueForDefinition(typeDefinition);
+        return defaultValueForDefinition(payload.typeDefinition);
       },
       get hasCustomDefaultValue() {
-        return parseValueTypeDefault(typeDefinition) !== void 0;
+        return parseValueTypeDefault(payload.typeDefinition) !== void 0;
       },
       reader: readers[type],
       writer: writers[type] || writers.default
@@ -9171,7 +9827,7 @@
       return !(value == "0" || String(value).toLowerCase() == "false");
     },
     number(value) {
-      return Number(value.replace(/_/g, ""));
+      return Number(value);
     },
     object(value) {
       const object = JSON.parse(value);
@@ -10488,6 +11144,493 @@
   };
   window.CableReady = global2;
 
+  // ../../node_modules/stimulus_reflex/node_modules/@rails/actioncable/app/assets/javascripts/actioncable.esm.js
+  var adapters2 = {
+    logger: typeof console !== "undefined" ? console : void 0,
+    WebSocket: typeof WebSocket !== "undefined" ? WebSocket : void 0
+  };
+  var logger2 = {
+    log(...messages) {
+      if (this.enabled) {
+        messages.push(Date.now());
+        adapters2.logger.log("[ActionCable]", ...messages);
+      }
+    }
+  };
+  var now3 = () => (/* @__PURE__ */ new Date()).getTime();
+  var secondsSince3 = (time) => (now3() - time) / 1e3;
+  var ConnectionMonitor3 = class {
+    constructor(connection) {
+      this.visibilityDidChange = this.visibilityDidChange.bind(this);
+      this.connection = connection;
+      this.reconnectAttempts = 0;
+    }
+    start() {
+      if (!this.isRunning()) {
+        this.startedAt = now3();
+        delete this.stoppedAt;
+        this.startPolling();
+        addEventListener("visibilitychange", this.visibilityDidChange);
+        logger2.log(`ConnectionMonitor started. stale threshold = ${this.constructor.staleThreshold} s`);
+      }
+    }
+    stop() {
+      if (this.isRunning()) {
+        this.stoppedAt = now3();
+        this.stopPolling();
+        removeEventListener("visibilitychange", this.visibilityDidChange);
+        logger2.log("ConnectionMonitor stopped");
+      }
+    }
+    isRunning() {
+      return this.startedAt && !this.stoppedAt;
+    }
+    recordPing() {
+      this.pingedAt = now3();
+    }
+    recordConnect() {
+      this.reconnectAttempts = 0;
+      this.recordPing();
+      delete this.disconnectedAt;
+      logger2.log("ConnectionMonitor recorded connect");
+    }
+    recordDisconnect() {
+      this.disconnectedAt = now3();
+      logger2.log("ConnectionMonitor recorded disconnect");
+    }
+    startPolling() {
+      this.stopPolling();
+      this.poll();
+    }
+    stopPolling() {
+      clearTimeout(this.pollTimeout);
+    }
+    poll() {
+      this.pollTimeout = setTimeout(() => {
+        this.reconnectIfStale();
+        this.poll();
+      }, this.getPollInterval());
+    }
+    getPollInterval() {
+      const { staleThreshold, reconnectionBackoffRate } = this.constructor;
+      const backoff = Math.pow(1 + reconnectionBackoffRate, Math.min(this.reconnectAttempts, 10));
+      const jitterMax = this.reconnectAttempts === 0 ? 1 : reconnectionBackoffRate;
+      const jitter = jitterMax * Math.random();
+      return staleThreshold * 1e3 * backoff * (1 + jitter);
+    }
+    reconnectIfStale() {
+      if (this.connectionIsStale()) {
+        logger2.log(`ConnectionMonitor detected stale connection. reconnectAttempts = ${this.reconnectAttempts}, time stale = ${secondsSince3(this.refreshedAt)} s, stale threshold = ${this.constructor.staleThreshold} s`);
+        this.reconnectAttempts++;
+        if (this.disconnectedRecently()) {
+          logger2.log(`ConnectionMonitor skipping reopening recent disconnect. time disconnected = ${secondsSince3(this.disconnectedAt)} s`);
+        } else {
+          logger2.log("ConnectionMonitor reopening");
+          this.connection.reopen();
+        }
+      }
+    }
+    get refreshedAt() {
+      return this.pingedAt ? this.pingedAt : this.startedAt;
+    }
+    connectionIsStale() {
+      return secondsSince3(this.refreshedAt) > this.constructor.staleThreshold;
+    }
+    disconnectedRecently() {
+      return this.disconnectedAt && secondsSince3(this.disconnectedAt) < this.constructor.staleThreshold;
+    }
+    visibilityDidChange() {
+      if (document.visibilityState === "visible") {
+        setTimeout(() => {
+          if (this.connectionIsStale() || !this.connection.isOpen()) {
+            logger2.log(`ConnectionMonitor reopening stale connection on visibilitychange. visibilityState = ${document.visibilityState}`);
+            this.connection.reopen();
+          }
+        }, 200);
+      }
+    }
+  };
+  ConnectionMonitor3.staleThreshold = 6;
+  ConnectionMonitor3.reconnectionBackoffRate = 0.15;
+  var INTERNAL2 = {
+    message_types: {
+      welcome: "welcome",
+      disconnect: "disconnect",
+      ping: "ping",
+      confirmation: "confirm_subscription",
+      rejection: "reject_subscription"
+    },
+    disconnect_reasons: {
+      unauthorized: "unauthorized",
+      invalid_request: "invalid_request",
+      server_restart: "server_restart",
+      remote: "remote"
+    },
+    default_mount_path: "/cable",
+    protocols: ["actioncable-v1-json", "actioncable-unsupported"]
+  };
+  var { message_types: message_types3, protocols: protocols3 } = INTERNAL2;
+  var supportedProtocols3 = protocols3.slice(0, protocols3.length - 1);
+  var indexOf3 = [].indexOf;
+  var Connection3 = class {
+    constructor(consumer5) {
+      this.open = this.open.bind(this);
+      this.consumer = consumer5;
+      this.subscriptions = this.consumer.subscriptions;
+      this.monitor = new ConnectionMonitor3(this);
+      this.disconnected = true;
+    }
+    send(data) {
+      if (this.isOpen()) {
+        this.webSocket.send(JSON.stringify(data));
+        return true;
+      } else {
+        return false;
+      }
+    }
+    open() {
+      if (this.isActive()) {
+        logger2.log(`Attempted to open WebSocket, but existing socket is ${this.getState()}`);
+        return false;
+      } else {
+        const socketProtocols = [...protocols3, ...this.consumer.subprotocols || []];
+        logger2.log(`Opening WebSocket, current state is ${this.getState()}, subprotocols: ${socketProtocols}`);
+        if (this.webSocket) {
+          this.uninstallEventHandlers();
+        }
+        this.webSocket = new adapters2.WebSocket(this.consumer.url, socketProtocols);
+        this.installEventHandlers();
+        this.monitor.start();
+        return true;
+      }
+    }
+    close({ allowReconnect } = {
+      allowReconnect: true
+    }) {
+      if (!allowReconnect) {
+        this.monitor.stop();
+      }
+      if (this.isOpen()) {
+        return this.webSocket.close();
+      }
+    }
+    reopen() {
+      logger2.log(`Reopening WebSocket, current state is ${this.getState()}`);
+      if (this.isActive()) {
+        try {
+          return this.close();
+        } catch (error3) {
+          logger2.log("Failed to reopen WebSocket", error3);
+        } finally {
+          logger2.log(`Reopening WebSocket in ${this.constructor.reopenDelay}ms`);
+          setTimeout(this.open, this.constructor.reopenDelay);
+        }
+      } else {
+        return this.open();
+      }
+    }
+    getProtocol() {
+      if (this.webSocket) {
+        return this.webSocket.protocol;
+      }
+    }
+    isOpen() {
+      return this.isState("open");
+    }
+    isActive() {
+      return this.isState("open", "connecting");
+    }
+    triedToReconnect() {
+      return this.monitor.reconnectAttempts > 0;
+    }
+    isProtocolSupported() {
+      return indexOf3.call(supportedProtocols3, this.getProtocol()) >= 0;
+    }
+    isState(...states) {
+      return indexOf3.call(states, this.getState()) >= 0;
+    }
+    getState() {
+      if (this.webSocket) {
+        for (let state in adapters2.WebSocket) {
+          if (adapters2.WebSocket[state] === this.webSocket.readyState) {
+            return state.toLowerCase();
+          }
+        }
+      }
+      return null;
+    }
+    installEventHandlers() {
+      for (let eventName in this.events) {
+        const handler = this.events[eventName].bind(this);
+        this.webSocket[`on${eventName}`] = handler;
+      }
+    }
+    uninstallEventHandlers() {
+      for (let eventName in this.events) {
+        this.webSocket[`on${eventName}`] = function() {
+        };
+      }
+    }
+  };
+  Connection3.reopenDelay = 500;
+  Connection3.prototype.events = {
+    message(event) {
+      if (!this.isProtocolSupported()) {
+        return;
+      }
+      const { identifier, message, reason, reconnect, type } = JSON.parse(event.data);
+      switch (type) {
+        case message_types3.welcome:
+          if (this.triedToReconnect()) {
+            this.reconnectAttempted = true;
+          }
+          this.monitor.recordConnect();
+          return this.subscriptions.reload();
+        case message_types3.disconnect:
+          logger2.log(`Disconnecting. Reason: ${reason}`);
+          return this.close({
+            allowReconnect: reconnect
+          });
+        case message_types3.ping:
+          return this.monitor.recordPing();
+        case message_types3.confirmation:
+          this.subscriptions.confirmSubscription(identifier);
+          if (this.reconnectAttempted) {
+            this.reconnectAttempted = false;
+            return this.subscriptions.notify(identifier, "connected", {
+              reconnected: true
+            });
+          } else {
+            return this.subscriptions.notify(identifier, "connected", {
+              reconnected: false
+            });
+          }
+        case message_types3.rejection:
+          return this.subscriptions.reject(identifier);
+        default:
+          return this.subscriptions.notify(identifier, "received", message);
+      }
+    },
+    open() {
+      logger2.log(`WebSocket onopen event, using '${this.getProtocol()}' subprotocol`);
+      this.disconnected = false;
+      if (!this.isProtocolSupported()) {
+        logger2.log("Protocol is unsupported. Stopping monitor and disconnecting.");
+        return this.close({
+          allowReconnect: false
+        });
+      }
+    },
+    close(event) {
+      logger2.log("WebSocket onclose event");
+      if (this.disconnected) {
+        return;
+      }
+      this.disconnected = true;
+      this.monitor.recordDisconnect();
+      return this.subscriptions.notifyAll("disconnected", {
+        willAttemptReconnect: this.monitor.isRunning()
+      });
+    },
+    error() {
+      logger2.log("WebSocket onerror event");
+    }
+  };
+  var extend4 = function(object, properties) {
+    if (properties != null) {
+      for (let key in properties) {
+        const value = properties[key];
+        object[key] = value;
+      }
+    }
+    return object;
+  };
+  var Subscription3 = class {
+    constructor(consumer5, params2 = {}, mixin) {
+      this.consumer = consumer5;
+      this.identifier = JSON.stringify(params2);
+      extend4(this, mixin);
+    }
+    perform(action, data = {}) {
+      data.action = action;
+      return this.send(data);
+    }
+    send(data) {
+      return this.consumer.send({
+        command: "message",
+        identifier: this.identifier,
+        data: JSON.stringify(data)
+      });
+    }
+    unsubscribe() {
+      return this.consumer.subscriptions.remove(this);
+    }
+  };
+  var SubscriptionGuarantor3 = class {
+    constructor(subscriptions) {
+      this.subscriptions = subscriptions;
+      this.pendingSubscriptions = [];
+    }
+    guarantee(subscription2) {
+      if (this.pendingSubscriptions.indexOf(subscription2) == -1) {
+        logger2.log(`SubscriptionGuarantor guaranteeing ${subscription2.identifier}`);
+        this.pendingSubscriptions.push(subscription2);
+      } else {
+        logger2.log(`SubscriptionGuarantor already guaranteeing ${subscription2.identifier}`);
+      }
+      this.startGuaranteeing();
+    }
+    forget(subscription2) {
+      logger2.log(`SubscriptionGuarantor forgetting ${subscription2.identifier}`);
+      this.pendingSubscriptions = this.pendingSubscriptions.filter((s) => s !== subscription2);
+    }
+    startGuaranteeing() {
+      this.stopGuaranteeing();
+      this.retrySubscribing();
+    }
+    stopGuaranteeing() {
+      clearTimeout(this.retryTimeout);
+    }
+    retrySubscribing() {
+      this.retryTimeout = setTimeout(() => {
+        if (this.subscriptions && typeof this.subscriptions.subscribe === "function") {
+          this.pendingSubscriptions.map((subscription2) => {
+            logger2.log(`SubscriptionGuarantor resubscribing ${subscription2.identifier}`);
+            this.subscriptions.subscribe(subscription2);
+          });
+        }
+      }, 500);
+    }
+  };
+  var Subscriptions3 = class {
+    constructor(consumer5) {
+      this.consumer = consumer5;
+      this.guarantor = new SubscriptionGuarantor3(this);
+      this.subscriptions = [];
+    }
+    create(channelName, mixin) {
+      const channel = channelName;
+      const params2 = typeof channel === "object" ? channel : {
+        channel
+      };
+      const subscription2 = new Subscription3(this.consumer, params2, mixin);
+      return this.add(subscription2);
+    }
+    add(subscription2) {
+      this.subscriptions.push(subscription2);
+      this.consumer.ensureActiveConnection();
+      this.notify(subscription2, "initialized");
+      this.subscribe(subscription2);
+      return subscription2;
+    }
+    remove(subscription2) {
+      this.forget(subscription2);
+      if (!this.findAll(subscription2.identifier).length) {
+        this.sendCommand(subscription2, "unsubscribe");
+      }
+      return subscription2;
+    }
+    reject(identifier) {
+      return this.findAll(identifier).map((subscription2) => {
+        this.forget(subscription2);
+        this.notify(subscription2, "rejected");
+        return subscription2;
+      });
+    }
+    forget(subscription2) {
+      this.guarantor.forget(subscription2);
+      this.subscriptions = this.subscriptions.filter((s) => s !== subscription2);
+      return subscription2;
+    }
+    findAll(identifier) {
+      return this.subscriptions.filter((s) => s.identifier === identifier);
+    }
+    reload() {
+      return this.subscriptions.map((subscription2) => this.subscribe(subscription2));
+    }
+    notifyAll(callbackName, ...args) {
+      return this.subscriptions.map((subscription2) => this.notify(subscription2, callbackName, ...args));
+    }
+    notify(subscription2, callbackName, ...args) {
+      let subscriptions;
+      if (typeof subscription2 === "string") {
+        subscriptions = this.findAll(subscription2);
+      } else {
+        subscriptions = [subscription2];
+      }
+      return subscriptions.map((subscription3) => typeof subscription3[callbackName] === "function" ? subscription3[callbackName](...args) : void 0);
+    }
+    subscribe(subscription2) {
+      if (this.sendCommand(subscription2, "subscribe")) {
+        this.guarantor.guarantee(subscription2);
+      }
+    }
+    confirmSubscription(identifier) {
+      logger2.log(`Subscription confirmed ${identifier}`);
+      this.findAll(identifier).map((subscription2) => this.guarantor.forget(subscription2));
+    }
+    sendCommand(subscription2, command) {
+      const { identifier } = subscription2;
+      return this.consumer.send({
+        command,
+        identifier
+      });
+    }
+  };
+  var Consumer3 = class {
+    constructor(url) {
+      this._url = url;
+      this.subscriptions = new Subscriptions3(this);
+      this.connection = new Connection3(this);
+      this.subprotocols = [];
+    }
+    get url() {
+      return createWebSocketURL3(this._url);
+    }
+    send(data) {
+      return this.connection.send(data);
+    }
+    connect() {
+      return this.connection.open();
+    }
+    disconnect() {
+      return this.connection.close({
+        allowReconnect: false
+      });
+    }
+    ensureActiveConnection() {
+      if (!this.connection.isActive()) {
+        return this.connection.open();
+      }
+    }
+    addSubProtocol(subprotocol) {
+      this.subprotocols = [...this.subprotocols, subprotocol];
+    }
+  };
+  function createWebSocketURL3(url) {
+    if (typeof url === "function") {
+      url = url();
+    }
+    if (url && !/^wss?:/i.test(url)) {
+      const a = document.createElement("a");
+      a.href = url;
+      a.href = a.href;
+      a.protocol = a.protocol.replace("http", "ws");
+      return a.href;
+    } else {
+      return url;
+    }
+  }
+  function createConsumer4(url = getConfig3("url") || INTERNAL2.default_mount_path) {
+    return new Consumer3(url);
+  }
+  function getConfig3(name4) {
+    const element = document.head.querySelector(`meta[name='action-cable-${name4}']`);
+    if (element) {
+      return element.getAttribute("content");
+    }
+  }
+
   // ../../node_modules/stimulus_reflex/dist/stimulus_reflex.js
   var Toastify = class {
     defaults = {
@@ -10749,15 +11892,15 @@
     }).showToast();
   };
   function setupToastify() {
-    const id = "stimulus-reflex-toast-element";
-    let element = document.querySelector(`#${id}`);
+    const id2 = "stimulus-reflex-toast-element";
+    let element = document.querySelector(`#${id2}`);
     if (!element) {
       element = document.createElement("div");
-      element.id = id;
+      element.id = id2;
       document.documentElement.appendChild(element);
       const styles = document.createElement("style");
       styles.innerHTML = `
-      #${id} .toastify {
+      #${id2} .toastify {
          padding: 12px 20px;
          color: #ffffff;
          display: inline-block;
@@ -10775,11 +11918,11 @@
          right: 15px;
       }
 
-      #${id} .toastify.on {
+      #${id2} .toastify.on {
         opacity: 1;
       }
 
-      #${id} .toast-close {
+      #${id2} .toast-close {
         background: transparent;
         border: 0;
         color: white;
@@ -11113,26 +12256,26 @@ cable_ready npm: ${global2.version}`;
       reflexData.payload = reflexOperations[0].payload;
     }
     if (reflexData) {
-      const { id, payload } = reflexData;
+      const { id: id2, payload } = reflexData;
       let reflex;
-      if (!reflexes[id] && IsolationMode.disabled) {
+      if (!reflexes[id2] && IsolationMode.disabled) {
         const controllerElement = XPathToElement(reflexData.xpathController);
         const reflexElement = XPathToElement(reflexData.xpathElement);
         controllerElement.reflexController = controllerElement.reflexController || {};
         controllerElement.reflexData = controllerElement.reflexData || {};
         controllerElement.reflexError = controllerElement.reflexError || {};
         const controller = App.app.getControllerForElementAndIdentifier(controllerElement, reflexData.reflexController);
-        controllerElement.reflexController[id] = controller;
-        controllerElement.reflexData[id] = reflexData;
+        controllerElement.reflexController[id2] = controller;
+        controllerElement.reflexData[id2] = reflexData;
         reflex = new Reflex(reflexData, controller);
-        reflexes[id] = reflex;
+        reflexes[id2] = reflex;
         reflex.cloned = true;
         reflex.element = reflexElement;
         controller.lastReflex = reflex;
         dispatchLifecycleEvent(reflex, "before");
         reflex.getPromise;
       } else {
-        reflex = reflexes[id];
+        reflex = reflexes[id2];
       }
       if (reflex) {
         reflex.payload = payload;
@@ -11165,7 +12308,7 @@ cable_ready npm: ${global2.version}`;
   };
   var subscribe = (controller) => {
     if (subscription) return;
-    consumer4 = consumer4 || controller.application.consumer || createConsumer3();
+    consumer4 = consumer4 || controller.application.consumer || createConsumer4();
     const { channel } = controller.StimulusReflex;
     const request4 = {
       channel,
@@ -11384,7 +12527,7 @@ cable_ready npm: ${global2.version}`;
     return attrs;
   };
   var name3 = "stimulus_reflex";
-  var version3 = "3.5.2";
+  var version3 = "3.5.3";
   var description3 = "Build reactive applications with the Rails tooling you already know and love.";
   var keywords3 = ["ruby", "rails", "websockets", "actioncable", "turbolinks", "reactive", "cable", "ujs", "ssr", "stimulus", "reflex", "stimulus_reflex", "dom", "morphdom"];
   var homepage3 = "https://docs.stimulusreflex.com";
@@ -11417,18 +12560,18 @@ cable_ready npm: ${global2.version}`;
   var dependencies3 = {
     "@hotwired/stimulus": "^3",
     "@rails/actioncable": "^6 || ^7",
-    cable_ready: "^5.0.5"
+    cable_ready: "^5.0.6"
   };
   var devDependencies3 = {
-    "@open-wc/testing": "^3.1.7",
-    "@rollup/plugin-json": "^6.0.0",
-    "@rollup/plugin-node-resolve": "^15.0.1",
-    "@rollup/plugin-terser": "^0.4.0",
-    "@web/dev-server-esbuild": "^0.3.3",
-    "@web/dev-server-rollup": "^0.3.21",
-    "@web/test-runner": "^0.15.1",
+    "@open-wc/testing": "^4.0.0",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^15.3.0",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@web/dev-server-esbuild": "^1.0.2",
+    "@web/dev-server-rollup": "^0.6.4",
+    "@web/test-runner": "^0.19.0",
     "prettier-standard": "^16.4.1",
-    rollup: "^3.19.1",
+    rollup: "^4.22.4",
     "toastify-js": "^1.12.0",
     vitepress: "^1.0.0-beta.1"
   };
@@ -11755,18 +12898,18 @@ cable_ready npm: ${global2.version}`;
         }
         const options2 = getReflexOptions(args);
         const reflexData = new ReflexData(options2, reflexElement, controllerElement, this.identifier, Schema.reflexPermanent, target, args, url, tabId);
-        const id = reflexData.id;
+        const id2 = reflexData.id;
         controllerElement.reflexController = controllerElement.reflexController || {};
         controllerElement.reflexData = controllerElement.reflexData || {};
         controllerElement.reflexError = controllerElement.reflexError || {};
-        controllerElement.reflexController[id] = this;
-        controllerElement.reflexData[id] = reflexData.valueOf();
+        controllerElement.reflexController[id2] = this;
+        controllerElement.reflexData[id2] = reflexData.valueOf();
         const reflex = new Reflex(reflexData, this);
-        reflexes[id] = reflex;
+        reflexes[id2] = reflex;
         this.lastReflex = reflex;
         dispatchLifecycleEvent(reflex, "before");
         setTimeout(() => {
-          const { params: params2 } = controllerElement.reflexData[id] || {};
+          const { params: params2 } = controllerElement.reflexData[id2] || {};
           const check = reflexElement.attributes[Schema.reflexSerializeForm];
           if (check) {
             options2["serializeForm"] = check.value !== "false";
@@ -11782,7 +12925,7 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
             params: params2,
             formData
           };
-          controllerElement.reflexData[id] = reflex.data;
+          controllerElement.reflexData[id2] = reflex.data;
           Transport.plugin.deliver(reflex);
         });
         Log3.request(reflex);
@@ -11892,23 +13035,23 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
     //
     //   id - a UUID4 or developer-provided unique identifier for each Reflex
     //
-    beforeReflex(element, reflex, noop2, id) {
+    beforeReflex(element, reflex, noop2, id2) {
     }
-    reflexQueued(element, reflex, noop2, id) {
+    reflexQueued(element, reflex, noop2, id2) {
     }
-    reflexDelivered(element, reflex, noop2, id) {
+    reflexDelivered(element, reflex, noop2, id2) {
     }
-    reflexSuccess(element, reflex, noop2, id) {
+    reflexSuccess(element, reflex, noop2, id2) {
     }
-    reflexError(element, reflex, error3, id) {
+    reflexError(element, reflex, error3, id2) {
     }
-    reflexForbidden(element, reflex, noop2, id) {
+    reflexForbidden(element, reflex, noop2, id2) {
     }
-    reflexHalted(element, reflex, noop2, id) {
+    reflexHalted(element, reflex, noop2, id2) {
     }
-    afterReflex(element, reflex, noop2, id) {
+    afterReflex(element, reflex, noop2, id2) {
     }
-    finalizeReflex(element, reflex, noop2, id) {
+    finalizeReflex(element, reflex, noop2, id2) {
     }
   };
 
@@ -12065,7 +13208,7 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
     default: () => recording_controller_default
   });
   var recording_controller_default = class extends application_controller_default {
-    static targets = ["recordingButton"];
+    static targets = ["recordingButton", "recordingInput", "uploadRecordingForm"];
     initialize() {
       this.isRecording = false;
       this.mediaRecorder = null;
@@ -12119,6 +13262,30 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
         button.innerText = "Record";
       }
       button.innerText = button.classList.contains("recording") ? "Stop" : "Record";
+    }
+    triggerFileInput(event) {
+      event.preventDefault();
+      const lectureId = this.uploadRecordingFormTarget.dataset.lectureId;
+      const fileInput = this.recordingInputTarget;
+      fileInput.onchange = (event2) => {
+        const file = event2.target.files[0];
+        console.log(file);
+        if (file == null) {
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64Data = reader.result.split(",")[1];
+          this.stimulate("Recordings#upload", {
+            data: base64Data,
+            name: file.name,
+            type: file.type,
+            lectureId
+          });
+        };
+        reader.readAsDataURL(file);
+      };
+      fileInput.click();
     }
   };
 
