@@ -117,4 +117,6 @@ gem 'htmlbeautifier'
 
 gem 'aws-sdk-s3', require: false
 
-# gem 'sorbet-runtime'
+gem 'font-awesome-sass'
+
+gem 'sassc-rails'

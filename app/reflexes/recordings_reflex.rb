@@ -2,6 +2,7 @@
 
 class RecordingsReflex < ApplicationReflex
 	def upload(params)
+		puts params
 		lecture_id = params[:lecture_id]
 		file_data = Base64.decode64(params[:data])
 
@@ -24,6 +25,6 @@ class RecordingsReflex < ApplicationReflex
 		puts recording
 		recording.save
 
-		morph :none
+		# morph :none
 	end
 end

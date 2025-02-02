@@ -90,18 +90,15 @@ export default class extends ApplicationController {
 
       const reader = new FileReader();
       reader.onload = () => {
-      const base64Data = reader.result.split(',')[1];
-      this.stimulate('Recordings#upload', { 
-        data: base64Data,
-        name: file.name,
-        type: file.type,
-        lectureId: lectureId
-      });
-    };
-    reader.readAsDataURL(file);
-
-      // const form = fileInput.closest("form");
-      // form.submit();
+        const base64Data = reader.result.split(',')[1];
+        this.stimulate('Recordings#upload', {
+          data: base64Data,
+          name: file.name,
+          type: file.type,
+          lectureId: lectureId
+        });
+      };
+      reader.readAsDataURL(file);
     };
 
     fileInput.click();

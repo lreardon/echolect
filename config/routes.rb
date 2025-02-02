@@ -25,4 +25,7 @@ Rails.application.routes.draw do
 	resources :course_offerings, only: %i[show]
 	resources :lectures, only: %i[show]
 	resources :recordings, only: %i[create]
+
+	# direct_uploads = ActiveStorage::DirectUploadsController
+	post '/rails/active_storage/direct_uploads', to: ActiveStorage::DirectUploadsController.action(:create), as: :direct_uploads
 end

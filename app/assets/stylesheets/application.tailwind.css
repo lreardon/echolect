@@ -23,8 +23,8 @@
     @apply cursor-pointer;
   }
 
-  button {
-    @apply bg-indigo-900 text-white font-bold py-2 px-4 rounded hover:bg-indigo-800;
+  button, .button {
+    @apply bg-indigo-900 text-white font-bold py-2 px-4 rounded hover:bg-indigo-800 hover:no-underline;
   }
 
   .special-button {
@@ -86,6 +86,7 @@
   .flash-error {
     @apply text-red-700;
   }
+  
 }
 
 * {

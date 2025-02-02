@@ -1,0 +1,51 @@
+<div class="flex flex-col gap-4">
+  <div class="flex flex-row gap-4">
+    <button
+      data-controller="recording"
+      data-action="click->recording#toggleRecording"
+      data-recording-target="recordingButton"
+      class="bg-red-600 hover:bg-red-500"
+      >
+      Record
+    </button>
+    <%= form_with url: recordings_path, html: {data: {controller: :recording, "lecture-id": lecture.id, "recording-target": "uploadRecordingForm"}} do %>
+      <input
+        type="file"
+        accept="audio/*"
+        data-recording-target="recordingInput"
+        class="hidden"
+        >
+        <button
+          data-action="click->recording#triggerFileInput"
+          class="bg-yellow-600 hover:bg-yellow-500"
+          >
+          Upload Recording
+        </button>
+      <% end %>
+      <button
+        data-controller="transcription"
+        data-action="click->transcription#downloadTranscription"
+        data-transcription-target="transcriptionButton"
+        class="bg-green-600 hover:bg-green-500"
+        >
+        Download Transcription
+      </button>
+    </div>
+    <% if lecture.recording? %>
+      <div>
+        <%= link_to lecture.recording.audio_file.url, class: "button bg-blue-600 hover:bg-blue-500" do %>
+          <i class="fa fa-download"></i> Download Recording
+        <% end %>
+      </div>
+    <% end %>
+    <%= form_with do |form| %>
+      <%= render "dropzone/dropzone_files_input",
+        form: form,
+        file_input_name: :files,
+        max_size: 50,
+        max_files: 5
+        # attachments: @lecture.recording.audio_file
+      %>
+    <% end %>
+    <div data-controller="dropzone" class="dropzone dz-clickable"></div>
+  </div>

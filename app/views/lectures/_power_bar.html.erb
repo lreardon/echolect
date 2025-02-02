@@ -1,39 +1,8 @@
 <div class="flex flex-row justify-between">
   <% if current_user.owns_chat(@lecture.chat) %>
-    <div class="flex flex-row gap-4">
-      <button
-      data-controller="recording"
-      data-action="click->recording#toggleRecording"
-        data-recording-target="recordingButton"
-        class="bg-red-600 hover:bg-red-500"
-        >
-        Record
-      </button>
-      <%= form_with url: recordings_path, html: {data: {controller: :recording, "lecture-id": @lecture.id, "recording-target": "uploadRecordingForm"}} do %>
-        <input
-        type="file"
-        accept="audio/*"
-        data-recording-target="recordingInput"
-        class="hidden"
-        >
-          <button
-          data-action="click->recording#triggerFileInput"
-            class="bg-yellow-600 hover:bg-yellow-500"
-            >
-            Upload Recording
-          </button>
-        <% end %>
-        <button
-        data-controller="transcription"
-        data-action="click->transcription#downloadTranscription"
-          data-transcription-target="transcriptionButton"
-          class="bg-green-600 hover:bg-green-500"
-          >
-          Download Transcription
-        </button>
-      </div>
-    <% end %>
-    <div class="flex flex-row gap-4">
-      <%= icon_button "settings" do %> <% end %>
-    </div>
+    <%= render partial: "lectures/recording_panel", locals: { lecture: @lecture } %>
+  <% end %>
+  <div class="flex flex-row gap-4">
+    <%= icon_button "settings" do %> <% end %>
   </div>
+</div>

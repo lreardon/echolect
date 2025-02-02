@@ -23,6 +23,10 @@ class Lecture < ApplicationRecord
 		start_time.strftime('%B %d, %Y %I:%M %p')
 	end
 
+	def recording?
+		recording.present?
+	end
+
 	private
 
 	def associate_chat
