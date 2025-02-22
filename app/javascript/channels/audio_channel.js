@@ -13,8 +13,14 @@ const audioChannel = consumer.subscriptions.create("AudioChannel", {
     console.log("Received data:", data);
   },
 
-  sendAudioData(recordingId, audioData) {
-    this.perform('receive', { recordingId: recordingId, audioData: audioData });
+  // sendAudioData(recordingId, audioData) {
+  //   console.log("Sending audio data:", recordingId, audioData);
+  //   this.perform('receive', { recordingId: recordingId, audioData: audioData });
+  // },
+
+  async sendAudioChunk(lectureId, timestamp, chunk) {
+    const chunkBytes = new Uint8Array(await chunk.arrayBuffer());
+    this.perform('receive_chunk', { lectureId: lectureId, timestamp: timestamp, audioData: chunkBytes });
   },
 
 	processAudio(recordingId) {

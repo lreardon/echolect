@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'rake'
+require 'fileutils'
 
 # app/channels/audio_channel.rb
 class AudioChannel < ApplicationCable::Channel
@@ -10,14 +11,28 @@ class AudioChannel < ApplicationCable::Channel
 		stream_from 'audio_channel'
 	end
 
-	def receive(params)
-		recording_id = params['recordingId']
-		audio_data = params['audioData']
-		puts "received data: #{audio_data.length} bytes"
+	# def receive(params)
+	# 	recording_id = params['recordingId']
+	# 	audio_data = params['audioData']
+	# 	puts "received data: #{audio_data.length} bytes"
 
-		File.open("#{RECORDINGS_DIR}/#{recording_id}/#{recording_id}.ogg", 'ab') do |file|
-			file.write(Base64.decode64(data))
-			puts "wrote data: #{data.length} bytes"
+	# 	File.open("#{RECORDINGS_DIR}/#{recording_id}/#{recording_id}.ogg", 'ab') do |file|
+	# 		file.write(Base64.decode64(data))
+	# 		puts "wrote data: #{data.length} bytes"
+	# 	end
+	# end
+
+	def receive_chunk(params)
+		lecture_id = params['lectureId']
+		timestamp = params['timestamp']
+		audio_data = params['audioData']
+
+		recording_path = "#{RECORDINGS_DIR}/lectures/#{lecture_id}/#{timestamp}/lecture_#{lecture_id}_#{timestamp}.ogg"
+		dirname = File.dirname(recording_path)
+		FileUtils.mkdir_p(dirname)
+
+		File.open(recording_path, 'ab') do |file|
+			file.append(audio_data)
 		end
 	end
 

@@ -48,7 +48,7 @@ services:
     volumes:
       - .:/docker/app #* Allows seamless co-development from local directory or from within container.
       - public:/docker/app/public
-      - recordings:/docker/app/shared/recordings
+      - ./shared/recordings:/docker/app/shared/recordings
       - node-modules:/docker/app/node_modules
       - bundle:/usr/local/bundle
     # command: bash -c "bundle install && foreman start -f Procfile.dev"
@@ -75,26 +75,26 @@ services:
     depends_on:
       - minio
 
-  whisper:
-    container_name: whisper
-    build:
-      context: services/whisper
-      dockerfile: Dockerfile
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Etc/UTC
-      - WHISPER_MODEL=large-v3
-      - WHISPER_BEAM=1 #optional
-      - WHISPER_LANG=en #optional
-    volumes:
-      - 'recordings:/app/recordings'
-      - 'whisper-models:/app/models'
-      - 'whisper-transcriptions:/app/transcriptions'
-      # - /path/to/faster-whisper/data:/config
-    ports:
-      - 10300:10300
-    restart: unless-stopped
+  # whisper:
+  #   container_name: whisper
+  #   build:
+  #     context: services/whisper
+  #     dockerfile: Dockerfile
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=Etc/UTC
+  #     - WHISPER_MODEL=large-v3
+  #     - WHISPER_BEAM=1 #optional
+  #     - WHISPER_LANG=en #optional
+  #   volumes:
+  #     - 'recordings:/app/recordings'
+  #     - 'whisper-models:/app/models'
+  #     - 'whisper-transcriptions:/app/transcriptions'
+  #     # - /path/to/faster-whisper/data:/config
+  #   ports:
+  #     - 10300:10300
+  #   restart: unless-stopped
 
   minio:
     container_name: minio
@@ -202,7 +202,7 @@ volumes:
   public:
   letsencrypt:
   localtime:
-  recordings:
+  # recordings:
   minio-data:
   whisper-models:
   whisper-transcriptions:

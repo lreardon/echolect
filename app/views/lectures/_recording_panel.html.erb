@@ -4,6 +4,7 @@
       data-controller="recording"
       data-action="click->recording#toggleRecording"
       data-recording-target="recordingButton"
+      data-lecture-id="<%= lecture.id %>"
       class="bg-red-600 hover:bg-red-500"
       >
       Record
@@ -13,6 +14,7 @@
         type="file"
         accept="audio/*"
         data-recording-target="recordingInput"
+        data-lecture-id="<%= lecture.id %>"
         class="hidden"
         >
         <button

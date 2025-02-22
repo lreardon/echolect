@@ -5806,8 +5806,13 @@
     received(data) {
       console.log("Received data:", data);
     },
-    sendAudioData(recordingId, audioData) {
-      this.perform("receive", { recordingId, audioData });
+    // sendAudioData(recordingId, audioData) {
+    //   console.log("Sending audio data:", recordingId, audioData);
+    //   this.perform('receive', { recordingId: recordingId, audioData: audioData });
+    // },
+    async sendAudioChunk(lectureId, timestamp, chunk) {
+      const chunkBytes = new Uint8Array(await chunk.arrayBuffer());
+      this.perform("receive_chunk", { lectureId, timestamp, audioData: chunkBytes });
     },
     processAudio(recordingId) {
       this.perform("process", { recordingId });
@@ -5881,6 +5886,34 @@
     }
   );
   var transcription_channel_default = transcriptionChannel;
+
+  // classes/queue_processor.js
+  var QueueProcessor = class {
+    constructor(queue, processor) {
+      this.queue = queue;
+      this.processor = processor;
+      this.isProcessing = false;
+    }
+    async processQueue() {
+      if (this.isProcessing) return;
+      this.isProcessing = true;
+      while (this.queue.length > 0) {
+        const itemToProcess = this.queue.at(0);
+        const didProcess = await this.processor(itemToProcess);
+        if (didProcess) {
+          this.queue.shift();
+        } else {
+          console.error("Failed to process item:", itemToProcess);
+          break;
+        }
+      }
+      this.isProcessing = false;
+    }
+    addToQueue(item) {
+      this.queue.push(item);
+      this.processQueue();
+    }
+  };
 
   // ../../node_modules/morphdom/dist/morphdom-esm.js
   var DOCUMENT_FRAGMENT_NODE = 11;
@@ -15361,42 +15394,31 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
     initialize() {
       this.isRecording = false;
       this.mediaRecorder = null;
-      this.audioChunks = [];
     }
     async toggleRecording() {
       const button = this.recordingButtonTarget;
-      button.classList.toggle("recording");
+      const lectureId = this.recordingButtonTarget.dataset.lectureId;
       if (!this.isRecording) {
         try {
+          const timestamp = (/* @__PURE__ */ new Date()).toISOString();
+          const audioChunksUploader = new QueueProcessor([], async (chunk) => {
+            try {
+              audio_channel_default.sendAudioChunk(lectureId, timestamp, chunk);
+              return true;
+            } catch (error3) {
+              console.error("Error sending audio data:", error3);
+              return false;
+            }
+          });
           const stream = await navigator.mediaDevices.getUserMedia({
             audio: true
           });
-          let options;
-          if (MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")) {
-            options = { mimeType: "audio/ogg;codecs=opus" };
-          } else if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
-            options = { mimeType: "audio/webm;codecs=opus" };
-          } else {
-            console.warn(
-              "Neither Ogg Opus nor WebM Opus are supported, using default codec"
-            );
-            options = {};
-          }
-          const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[-:.]/g, "");
-          const filename = `lecture_${timestamp}`;
           this.mediaRecorder = new MediaRecorder(stream);
           this.mediaRecorder.ondataavailable = (event) => {
-            this.audioChunks.push(event.data);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              const base64data = reader.result.split(",")[1];
-              audio_channel_default.sendAudioData(filename, base64data);
-            };
-            reader.readAsDataURL(event.data);
+            const chunk = event.data;
+            audioChunksUploader.addToQueue(chunk);
           };
           this.mediaRecorder.onstop = () => {
-            audio_channel_default.processAudio(filename);
-            this.audioChunks = [];
           };
           this.mediaRecorder.start(1e3);
           this.isRecording = true;
@@ -15405,7 +15427,6 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
           console.error("Error accessing the microphone", error3);
         }
       } else {
-        this.mediaRecorder.requestData();
         this.mediaRecorder.stop();
         this.isRecording = false;
         button.innerText = "Record";
