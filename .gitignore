@@ -49,3 +49,5 @@
 # !/services/whisper/recordings/
 /services/whisper/transcriptions/
 # !/services/whisper/transcriptions/
+
+/shared/recordings
