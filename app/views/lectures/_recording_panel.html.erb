@@ -40,14 +40,8 @@
         <% end %>
       </div>
     <% end %>
-    <%= form_with do |form| %>
-      <%= render "dropzone/dropzone_files_input",
-        form: form,
-        file_input_name: :files,
-        max_size: 50,
-        max_files: 5
-        # attachments: @lecture.recording.audio_file
-      %>
-    <% end %>
-    <div data-controller="dropzone" class="dropzone dz-clickable"></div>
-  </div>
+    <%# form_with do |form| %>
+      <%# render "dropzone/dropzone_files_input", form: form, file_input_name: :files, max_size: 50, max_files: 5, attachments: @lecture.recording.audio_file %>
+      <%# end %>
+      <%# <div data-controller="dropzone" class="dropzone dz-clickable"></div> %>
+    </div>

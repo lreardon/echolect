@@ -1,3 +1,4 @@
+"use strict";
 (() => {
   var __defProp = Object.defineProperty;
   var __getOwnPropNames = Object.getOwnPropertyNames;
@@ -15422,14 +15423,14 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
           };
           this.mediaRecorder.start(1e3);
           this.isRecording = true;
-          button.innerText = "Stop";
+          button.classList.add("recording");
         } catch (error3) {
           console.error("Error accessing the microphone", error3);
         }
       } else {
         this.mediaRecorder.stop();
         this.isRecording = false;
-        button.innerText = "Record";
+        button.classList.remove("recording");
       }
       button.innerText = button.classList.contains("recording") ? "Stop" : "Record";
     }

@@ -60,15 +60,15 @@ export default class extends ApplicationController {
         this.mediaRecorder.start(1000);
         this.isRecording = true;
 
-        button.innerText = "Stop";
+        button.classList.add("recording");
       } catch (error) {
         console.error("Error accessing the microphone", error);
       }
     } else {
-      // this.mediaRecorder.requestData();
       this.mediaRecorder.stop();
       this.isRecording = false;
-      button.innerText = "Record";
+      button.classList.remove("recording");
+
     }
     button.innerText = button.classList.contains("recording")
       ? "Stop"
