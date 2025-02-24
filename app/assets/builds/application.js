@@ -15385,16 +15385,16 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
     }
   };
 
-  // controllers/recording_controller.js
+  // controllers/recording_controller.ts
   var recording_controller_exports = {};
   __export(recording_controller_exports, {
     default: () => recording_controller_default
   });
   var recording_controller_default = class extends application_controller_default {
     static targets = ["recordingButton", "recordingInput", "uploadRecordingForm"];
+    // private recordingInputTarget: HTMLInputElement;
     initialize() {
       this.isRecording = false;
-      this.mediaRecorder = null;
     }
     async toggleRecording() {
       const button = this.recordingButtonTarget;
@@ -15402,15 +15402,19 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
       if (!this.isRecording) {
         try {
           const timestamp = (/* @__PURE__ */ new Date()).toISOString();
-          const audioChunksUploader = new QueueProcessor([], async (chunk) => {
-            try {
-              audio_channel_default.sendAudioChunk(lectureId, timestamp, chunk);
-              return true;
-            } catch (error3) {
-              console.error("Error sending audio data:", error3);
-              return false;
+          console.log(timestamp);
+          const audioChunksUploader = new QueueProcessor(
+            new Array(),
+            async (chunk) => {
+              try {
+                audio_channel_default.sendAudioChunk(lectureId, timestamp, chunk);
+                return true;
+              } catch (error3) {
+                console.error("Error sending audio data:", error3);
+                return false;
+              }
             }
-          });
+          );
           const stream = await navigator.mediaDevices.getUserMedia({
             audio: true
           });
@@ -15418,8 +15422,6 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
           this.mediaRecorder.ondataavailable = (event) => {
             const chunk = event.data;
             audioChunksUploader.addToQueue(chunk);
-          };
-          this.mediaRecorder.onstop = () => {
           };
           this.mediaRecorder.start(1e3);
           this.isRecording = true;
@@ -15434,30 +15436,31 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
       }
       button.innerText = button.classList.contains("recording") ? "Stop" : "Record";
     }
-    triggerFileInput(event) {
-      event.preventDefault();
-      const lectureId = this.uploadRecordingFormTarget.dataset.lectureId;
-      const fileInput = this.recordingInputTarget;
-      fileInput.onchange = (event2) => {
-        const file = event2.target.files[0];
-        console.log(file);
-        if (file == null) {
-          return;
-        }
-        const reader = new FileReader();
-        reader.onload = () => {
-          const base64Data = reader.result.split(",")[1];
-          this.stimulate("Recordings#upload", {
-            data: base64Data,
-            name: file.name,
-            type: file.type,
-            lectureId
-          });
-        };
-        reader.readAsDataURL(file);
-      };
-      fileInput.click();
-    }
+    // triggerFileInput(event) {
+    //   event.preventDefault();
+    //   const lectureId = this.uploadRecordingFormTarget.dataset.lectureId;
+    //   const fileInput = this.recordingInputTarget;
+    //   // console.log(fileInput);
+    //   fileInput.onchange = (event) => {
+    //     const file = event.target.files[0];
+    //     console.log(file);
+    //     if (file == null) {
+    //       return;
+    //     }
+    //     const reader = new FileReader();
+    //     reader.onload = () => {
+    //       const base64Data = reader.result.split(',')[1];
+    //       this.stimulate('Recordings#upload', {
+    //         data: base64Data,
+    //         name: file.name,
+    //         type: file.type,
+    //         lectureId: lectureId
+    //       });
+    //     };
+    //     reader.readAsDataURL(file);
+    //   };
+    //   fileInput.click();
+    // }
   };
 
   // controllers/transcription_controller.js
@@ -15485,8 +15488,8 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
     }
   };
 
-  // rails:/docker/app/app/javascript/controllers/**/*_controller.js
-  var modules = [{ name: "application", module: application_controller_exports, filename: "application_controller.js" }, { name: "chats", module: chats_controller_exports, filename: "chats_controller.js" }, { name: "dropzone", module: dropzone_controller_exports, filename: "dropzone_controller.js" }, { name: "example", module: example_controller_exports, filename: "example_controller.js" }, { name: "institution-select", module: institution_select_controller_exports, filename: "institution_select_controller.js" }, { name: "messages", module: messages_controller_exports, filename: "messages_controller.js" }, { name: "recording", module: recording_controller_exports, filename: "recording_controller.js" }, { name: "transcription", module: transcription_controller_exports, filename: "transcription_controller.js" }];
+  // rails:/docker/app/app/javascript/controllers/**/*_controller.{js,ts}
+  var modules = [{ name: "application", module: application_controller_exports, filename: "application_controller.js" }, { name: "chats", module: chats_controller_exports, filename: "chats_controller.js" }, { name: "dropzone", module: dropzone_controller_exports, filename: "dropzone_controller.js" }, { name: "example", module: example_controller_exports, filename: "example_controller.js" }, { name: "institution-select", module: institution_select_controller_exports, filename: "institution_select_controller.js" }, { name: "messages", module: messages_controller_exports, filename: "messages_controller.js" }, { name: "recording", module: recording_controller_exports, filename: "recording_controller.ts" }, { name: "transcription", module: transcription_controller_exports, filename: "transcription_controller.js" }];
   var controller_default = modules;
 
   // controllers/index.js

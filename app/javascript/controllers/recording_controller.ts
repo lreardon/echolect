@@ -6,9 +6,13 @@ import ApplicationController from "./application_controller";
 export default class extends ApplicationController {
   static targets = ["recordingButton", "recordingInput", "uploadRecordingForm"];
 
+  declare isRecording: boolean;
+  declare mediaRecorder: MediaRecorder;
+  declare recordingButtonTarget: HTMLButtonElement;
+  // private recordingInputTarget: HTMLInputElement;
+
   initialize() {
     this.isRecording = false;
-    this.mediaRecorder = null;
   }
 
   async toggleRecording() {
@@ -29,19 +33,22 @@ export default class extends ApplicationController {
         //   );
         //   options = {};
         // }
-
         const timestamp = new Date().toISOString();
+        console.log(timestamp);
 
-        const audioChunksUploader = new QueueProcessor([], async (chunk) => {
-          try {
-            audioChannel.sendAudioChunk(lectureId, timestamp, chunk);
-            return true;
+        const audioChunksUploader = new QueueProcessor(
+          new Array<Blob>(),
+          async (chunk: Blob) => {
+            try {
+              audioChannel.sendAudioChunk(lectureId, timestamp, chunk);
+              return true;
+            }
+            catch (error) {
+              console.error("Error sending audio data:", error);
+              return false;
+            }
           }
-          catch (error) {
-            console.error("Error sending audio data:", error);
-            return false;
-          }
-        });
+        );
 
         // Request access to the microphone if necessary.
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -54,55 +61,52 @@ export default class extends ApplicationController {
           audioChunksUploader.addToQueue(chunk);
         };
 
-        this.mediaRecorder.onstop = () => {
-        };
-
         this.mediaRecorder.start(1000);
         this.isRecording = true;
-
         button.classList.add("recording");
       } catch (error) {
         console.error("Error accessing the microphone", error);
       }
     } else {
+      // this.mediaRecorder.requestData();
       this.mediaRecorder.stop();
       this.isRecording = false;
       button.classList.remove("recording");
-
     }
+    
     button.innerText = button.classList.contains("recording")
       ? "Stop"
       : "Record";
   }
 
-  triggerFileInput(event) {
-    event.preventDefault();
-    const lectureId = this.uploadRecordingFormTarget.dataset.lectureId;
-    const fileInput = this.recordingInputTarget;
+  // triggerFileInput(event) {
+  //   event.preventDefault();
+  //   const lectureId = this.uploadRecordingFormTarget.dataset.lectureId;
+  //   const fileInput = this.recordingInputTarget;
 
-    // console.log(fileInput);
+  //   // console.log(fileInput);
     
-    fileInput.onchange = (event) => {
-      const file = event.target.files[0];
-      console.log(file);
+  //   fileInput.onchange = (event) => {
+  //     const file = event.target.files[0];
+  //     console.log(file);
 
-      if (file == null) {
-        return;
-      }
+  //     if (file == null) {
+  //       return;
+  //     }
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64Data = reader.result.split(',')[1];
-        this.stimulate('Recordings#upload', {
-          data: base64Data,
-          name: file.name,
-          type: file.type,
-          lectureId: lectureId
-        });
-      };
-      reader.readAsDataURL(file);
-    };
+  //     const reader = new FileReader();
+  //     reader.onload = () => {
+  //       const base64Data = reader.result.split(',')[1];
+  //       this.stimulate('Recordings#upload', {
+  //         data: base64Data,
+  //         name: file.name,
+  //         type: file.type,
+  //         lectureId: lectureId
+  //       });
+  //     };
+  //     reader.readAsDataURL(file);
+  //   };
 
-    fileInput.click();
-  }
+  //   fileInput.click();
+  // }
 }
