@@ -25,14 +25,18 @@ class AudioChannel < ApplicationCable::Channel
 	def receive_chunk(params)
 		lecture_id = params['lectureId']
 		timestamp = params['timestamp']
+		# encoding_data = params['encodingData']
 		audio_data = params['audioData']
 
-		recording_path = "#{RECORDINGS_DIR}/lectures/#{lecture_id}/#{timestamp}/lecture_#{lecture_id}_#{timestamp}.ogg"
+		decoded_data = Base64.decode64(audio_data)
+
+		recording_path = "#{RECORDINGS_DIR}/lectures/#{lecture_id}/#{timestamp}/lecture_#{lecture_id}_#{timestamp}.webm"
 		dirname = File.dirname(recording_path)
 		FileUtils.mkdir_p(dirname)
 
 		File.open(recording_path, 'ab') do |file|
-			file.append(audio_data)
+			# file.write(encoding_data) if file.blank?
+			file.write(decoded_data)
 		end
 	end
 

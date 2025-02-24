@@ -9,7 +9,7 @@ const audioChannel = consumer.subscriptions.create("AudioChannel", {
     console.log("Disconnected from AudioChannel");
   },
 
-  received(data) {
+  received(data: Blob) {
     console.log("Received data:", data);
   },
 
@@ -18,16 +18,15 @@ const audioChannel = consumer.subscriptions.create("AudioChannel", {
   //   this.perform('receive', { recordingId: recordingId, audioData: audioData });
   // },
 
-  async sendAudioChunk(lectureId, timestamp, chunk) {
-    const chunkBytes = new Uint8Array(await chunk.arrayBuffer());
-    this.perform('receive_chunk', { lectureId: lectureId, timestamp: timestamp, audioData: chunkBytes });
+  async sendAudioChunk(lectureId: String, timestamp: String, encodingData: String, base64String: String) {
+    this.perform('receive_chunk', { lectureId: lectureId, timestamp: timestamp, encodingData: encodingData, audioData: base64String });
   },
 
-	processAudio(recordingId) {
+	processAudio(recordingId: String) {
 		this.perform('process', { recordingId: recordingId });
 	},
 
-  uploadRecording(file) {
+  uploadRecording(file: any) {
     console.log(file);
     const formData = new FormData();
     formData.append('audio[file]', file);

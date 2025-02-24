@@ -5796,7 +5796,7 @@
   // channels/consumer.js
   var consumer_default = createConsumer3();
 
-  // channels/audio_channel.js
+  // channels/audio_channel.ts
   var audioChannel = consumer_default.subscriptions.create("AudioChannel", {
     connected() {
       console.log("Connected to AudioChannel");
@@ -5811,9 +5811,8 @@
     //   console.log("Sending audio data:", recordingId, audioData);
     //   this.perform('receive', { recordingId: recordingId, audioData: audioData });
     // },
-    async sendAudioChunk(lectureId, timestamp, chunk) {
-      const chunkBytes = new Uint8Array(await chunk.arrayBuffer());
-      this.perform("receive_chunk", { lectureId, timestamp, audioData: chunkBytes });
+    async sendAudioChunk(lectureId, timestamp, encodingData, base64String) {
+      this.perform("receive_chunk", { lectureId, timestamp, encodingData, audioData: base64String });
     },
     processAudio(recordingId) {
       this.perform("process", { recordingId });
@@ -5888,8 +5887,11 @@
   );
   var transcription_channel_default = transcriptionChannel;
 
-  // classes/queue_processor.js
+  // classes/queue_processor.ts
   var QueueProcessor = class {
+    queue;
+    processor;
+    isProcessing;
     constructor(queue, processor) {
       this.queue = queue;
       this.processor = processor;
@@ -5900,12 +5902,14 @@
       this.isProcessing = true;
       while (this.queue.length > 0) {
         const itemToProcess = this.queue.at(0);
+        if (itemToProcess === void 0) {
+          throw new Error("No item to process");
+        }
         const didProcess = await this.processor(itemToProcess);
         if (didProcess) {
           this.queue.shift();
         } else {
-          console.error("Failed to process item:", itemToProcess);
-          break;
+          throw new Error(`Failed to process item: ${itemToProcess}`);
         }
       }
       this.isProcessing = false;
@@ -15402,17 +15406,28 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
       if (!this.isRecording) {
         try {
           const timestamp = (/* @__PURE__ */ new Date()).toISOString();
-          console.log(timestamp);
           const audioChunksUploader = new QueueProcessor(
             new Array(),
             async (chunk) => {
               try {
-                audio_channel_default.sendAudioChunk(lectureId, timestamp, chunk);
-                return true;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                  const base64data = reader.result;
+                  if (base64data) {
+                    const encodingData = base64data.toString().split(",")[0];
+                    const base64String = base64data.toString().split(",")[1];
+                    audio_channel_default.sendAudioChunk(lectureId, timestamp, encodingData, base64String);
+                  }
+                };
+                reader.onerror = () => {
+                  console.log("error");
+                };
+                reader.readAsDataURL(chunk);
               } catch (error3) {
                 console.error("Error sending audio data:", error3);
                 return false;
               }
+              return true;
             }
           );
           const stream = await navigator.mediaDevices.getUserMedia({

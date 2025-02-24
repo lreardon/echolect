@@ -34,19 +34,35 @@ export default class extends ApplicationController {
         //   options = {};
         // }
         const timestamp = new Date().toISOString();
-        console.log(timestamp);
 
         const audioChunksUploader = new QueueProcessor(
           new Array<Blob>(),
           async (chunk: Blob) => {
             try {
-              audioChannel.sendAudioChunk(lectureId, timestamp, chunk);
-              return true;
+              const reader = new FileReader()
+              reader.onload = (e) => {
+                  const base64data = reader.result
+
+                  if (base64data) {
+                    const encodingData = base64data.toString().split(',')[0];
+                    const base64String = base64data.toString().split(',')[1];
+                    audioChannel.sendAudioChunk(lectureId, timestamp, encodingData, base64String);
+                  }
+                  
+              }
+              reader.onerror = () => {                
+                  console.log('error')
+              }
+              reader.readAsDataURL(chunk)
+              
+              // audioChannel.sendAudioChunk(lectureId, timestamp, chunk);
             }
             catch (error) {
               console.error("Error sending audio data:", error);
               return false;
             }
+
+            return true;
           }
         );
 
