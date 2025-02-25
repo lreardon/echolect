@@ -5811,18 +5811,47 @@
     //   console.log("Sending audio data:", recordingId, audioData);
     //   this.perform('receive', { recordingId: recordingId, audioData: audioData });
     // },
-    async sendAudioChunk(lectureId, timestamp, encodingData, base64String) {
-      this.perform("receive_chunk", { lectureId, timestamp, encodingData, audioData: base64String });
+    async initializeRecording(opts) {
+      const recordingId = opts.recordingId;
+      const lectureId = opts.lectureId;
+      this.perform("initialize_recording", {
+        recordingId,
+        lectureId
+      });
+    },
+    async sendAudioChunk(opts) {
+      const lectureId = opts.lectureId;
+      const recordingId = opts.recordingId;
+      const timestamp = opts.timestamp;
+      const encodingData = opts.encodingData;
+      const base64String = opts.base64String;
+      this.perform("receive_chunk", {
+        lectureId,
+        recordingId,
+        timestamp,
+        encodingData,
+        audioData: base64String
+      });
+    },
+    async informRecordingDone(opts) {
+      const recordingId = opts.recordingId;
+      this.perform("transfer_recording_to_object_storage", {
+        recordingId
+      });
     },
     processAudio(recordingId) {
-      this.perform("process", { recordingId });
+      this.perform("process", {
+        recordingId
+      });
     },
     uploadRecording(file) {
       console.log(file);
       const formData = new FormData();
       formData.append("audio[file]", file);
       console.log(formData);
-      this.perform("upload", { recording: formData });
+      this.perform("upload", {
+        recording: formData
+      });
     }
   });
   var audio_channel_default = audioChannel;
@@ -12041,8 +12070,8 @@
   };
   var { debounce: debounce3, dispatch: dispatch4, xpathToElement: xpathToElement3, xpathToElementArray: xpathToElementArray3 } = utils2;
   var uuidv4 = () => {
-    const crypto = window.crypto || window.msCrypto;
-    return ("10000000-1000-4000-8000" + -1e11).replace(/[018]/g, (c) => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+    const crypto2 = window.crypto || window.msCrypto;
+    return ("10000000-1000-4000-8000" + -1e11).replace(/[018]/g, (c) => (c ^ crypto2.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
   };
   var serializeForm = (form, options = {}) => {
     if (!form) return "";
@@ -15402,7 +15431,11 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
     }
     async toggleRecording() {
       const button = this.recordingButtonTarget;
-      const lectureId = this.recordingButtonTarget.dataset.lectureId;
+      const lectureId = button.dataset.lectureId;
+      if (!lectureId) {
+        console.error("Could not find active lecture.");
+        return;
+      }
       if (!this.isRecording) {
         try {
           const timestamp = (/* @__PURE__ */ new Date()).toISOString();
@@ -15413,10 +15446,10 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
                 const reader = new FileReader();
                 reader.onload = (e) => {
                   const base64data = reader.result;
-                  if (base64data) {
+                  if (lectureId && this.recordingId && base64data) {
                     const encodingData = base64data.toString().split(",")[0];
                     const base64String = base64data.toString().split(",")[1];
-                    audio_channel_default.sendAudioChunk(lectureId, timestamp, encodingData, base64String);
+                    audio_channel_default.sendAudioChunk({ lectureId, recordingId: this.recordingId, timestamp, encodingData, base64String });
                   }
                 };
                 reader.onerror = () => {
@@ -15434,9 +15467,21 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
             audio: true
           });
           this.mediaRecorder = new MediaRecorder(stream);
+          this.mediaRecorder.onstart = () => {
+            this.recordingId = crypto.randomUUID();
+            audio_channel_default.initializeRecording({
+              recordingId: this.recordingId,
+              lectureId
+            });
+          };
           this.mediaRecorder.ondataavailable = (event) => {
             const chunk = event.data;
             audioChunksUploader.addToQueue(chunk);
+          };
+          this.mediaRecorder.onstop = () => {
+            audio_channel_default.informRecordingDone({
+              recordingId: this.recordingId
+            });
           };
           this.mediaRecorder.start(1e3);
           this.isRecording = true;

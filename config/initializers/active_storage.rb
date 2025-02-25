@@ -6,6 +6,8 @@ require 'active_storage/service/s3_service'
 module BlobUrlOverride
 	def url(**)
 		original_url = super
+		return nil if original_url.nil?
+
 		original_url.gsub('minio:9000', 'localhost:9000')
 		# original_url.gsub(ENV.fetch('MINIO_HOST', 'minio:9000'),
 		# 	ENV.fetch('PUBLIC_MINIO_HOST', 'localhost:9000'))
@@ -15,6 +17,8 @@ end
 module DirectUploadUrlOverride
 	def url_for_direct_upload(key, **)
 		original_url = super
+		return nil if original_url.nil?
+
 		original_url.gsub('minio:9000', 'localhost:9000')
 		# original_url.gsub(ENV.fetch('MINIO_HOST', 'minio:9000'),
 		# 	ENV.fetch('PUBLIC_MINIO_HOST', 'localhost:9000'))

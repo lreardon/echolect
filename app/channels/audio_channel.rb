@@ -22,21 +22,63 @@ class AudioChannel < ApplicationCable::Channel
 	# 	end
 	# end
 
+	def initialize_recording(params)
+		recording_id = params['recordingId']
+		lecture_id = params['lectureId']
+
+		recording = Recording.create(
+			id: recording_id,
+			lecture_id: lecture_id
+		)
+		puts recording
+		puts recording.audio_file
+		puts recording.audio_file_url
+	end
+
 	def receive_chunk(params)
 		lecture_id = params['lectureId']
-		timestamp = params['timestamp']
+		# timestamp = params['timestamp']
+		recording_id = params['recordingId']
 		# encoding_data = params['encodingData']
 		audio_data = params['audioData']
 
+		# recording = Recording.find(recording_id)
+		# puts 'RECORDING'
+		# puts recording
+		# puts recording.audio_file
+
 		decoded_data = Base64.decode64(audio_data)
 
-		recording_path = "#{RECORDINGS_DIR}/lectures/#{lecture_id}/#{timestamp}/lecture_#{lecture_id}_#{timestamp}.webm"
+		recording_path = "#{RECORDINGS_DIR}/lectures/#{lecture_id}/recordings/#{recording_id}/audio.webm"
 		dirname = File.dirname(recording_path)
 		FileUtils.mkdir_p(dirname)
 
 		File.open(recording_path, 'ab') do |file|
 			# file.write(encoding_data) if file.blank?
 			file.write(decoded_data)
+		end
+	end
+
+	def transfer_recording_to_object_storage(params)
+		recording_id = params['recordingId']
+
+		recording = Recording.find(recording_id)
+		lecture_id = recording.lecture_id
+		recording_path = "#{RECORDINGS_DIR}/lectures/#{lecture_id}/recordings/#{recording_id}/audio.webm"
+		if File.exist?(recording_path)
+			File.open(recording_path) do |file|
+				puts 'here the file'
+				puts file
+				recording.audio_file.attach(
+					io: file,
+					filename: 'audio.webm',
+					content_type: 'audio/webm'
+				)
+				puts 'attached weeeeeeeee'
+			end
+			puts 'did something after'
+		else
+			puts 'File not found!'
 		end
 	end
 

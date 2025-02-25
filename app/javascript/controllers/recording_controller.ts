@@ -9,6 +9,7 @@ export default class extends ApplicationController {
   declare isRecording: boolean;
   declare mediaRecorder: MediaRecorder;
   declare recordingButtonTarget: HTMLButtonElement;
+  declare recordingId: String;
   // private recordingInputTarget: HTMLInputElement;
 
   initialize() {
@@ -17,7 +18,13 @@ export default class extends ApplicationController {
 
   async toggleRecording() {
     const button = this.recordingButtonTarget;
-    const lectureId = this.recordingButtonTarget.dataset.lectureId;
+    
+    const lectureId = button.dataset.lectureId;
+    if (!lectureId) {
+      console.error("Could not find active lecture.");
+      return;
+    }
+
     if (!this.isRecording) {
       try {
         // //* Set options
@@ -43,10 +50,10 @@ export default class extends ApplicationController {
               reader.onload = (e) => {
                   const base64data = reader.result
 
-                  if (base64data) {
+                  if (lectureId && this.recordingId && base64data) {
                     const encodingData = base64data.toString().split(',')[0];
                     const base64String = base64data.toString().split(',')[1];
-                    audioChannel.sendAudioChunk(lectureId, timestamp, encodingData, base64String);
+                    audioChannel.sendAudioChunk({lectureId, recordingId: this.recordingId, timestamp, encodingData, base64String});
                   }
                   
               }
@@ -71,12 +78,26 @@ export default class extends ApplicationController {
           audio: true,
         });
 
+        // Initialize the MediaRecorder with callbacks.
         this.mediaRecorder = new MediaRecorder(stream);
+        this.mediaRecorder.onstart = () => {
+          this.recordingId = crypto.randomUUID();
+          audioChannel.initializeRecording({
+            recordingId: this.recordingId,
+            lectureId: lectureId,
+          });
+        }
         this.mediaRecorder.ondataavailable = (event) => {
           const chunk = event.data;
           audioChunksUploader.addToQueue(chunk);
         };
+        this.mediaRecorder.onstop = () => {
+          audioChannel.informRecordingDone({
+            recordingId: this.recordingId
+          });
+        };
 
+        // Start recording with a 1-second interval, and inform the UI of the recording state.
         this.mediaRecorder.start(1000);
         this.isRecording = true;
         button.classList.add("recording");

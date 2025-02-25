@@ -18,12 +18,52 @@ const audioChannel = consumer.subscriptions.create("AudioChannel", {
   //   this.perform('receive', { recordingId: recordingId, audioData: audioData });
   // },
 
-  async sendAudioChunk(lectureId: String, timestamp: String, encodingData: String, base64String: String) {
-    this.perform('receive_chunk', { lectureId: lectureId, timestamp: timestamp, encodingData: encodingData, audioData: base64String });
+  async initializeRecording(opts: {
+    recordingId: String,
+    lectureId: String,
+  }) {
+    const recordingId = opts.recordingId;
+    const lectureId = opts.lectureId;
+    this.perform('initialize_recording', {
+      recordingId: recordingId,
+      lectureId: lectureId,
+    });
+  },
+
+  async sendAudioChunk(opts: {
+    lectureId: String,
+    recordingId: String,
+    timestamp: String,
+    encodingData: String,
+    base64String: String,
+  }) {
+    const lectureId = opts.lectureId;
+    const recordingId = opts.recordingId;
+    const timestamp = opts.timestamp;
+    const encodingData = opts.encodingData;
+    const base64String = opts.base64String;
+    this.perform('receive_chunk', {
+      lectureId: lectureId,
+      recordingId: recordingId,
+      timestamp: timestamp,
+      encodingData: encodingData,
+      audioData: base64String,
+    });
+  },
+
+  async informRecordingDone(opts: {
+    recordingId: String,
+  }) {
+    const recordingId = opts.recordingId;
+    this.perform('transfer_recording_to_object_storage', {
+      recordingId: recordingId,
+    });
   },
 
 	processAudio(recordingId: String) {
-		this.perform('process', { recordingId: recordingId });
+		this.perform('process', {
+      recordingId: recordingId,
+    });
 	},
 
   uploadRecording(file: any) {
@@ -33,7 +73,9 @@ const audioChannel = consumer.subscriptions.create("AudioChannel", {
 
     console.log(formData);
 
-   this.perform('upload', { recording: formData });
+   this.perform('upload', {
+    recording: formData,
+  });
   }
 });
 

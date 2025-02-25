@@ -240,6 +240,11 @@
   resolved "https://registry.yarnpkg.com/@swc/helpers/-/helpers-0.2.14.tgz#20288c3627442339dd3d743c944f7043ee3590f0"
   integrity sha512-wpCQMhf5p5GhNg2MmGKXzUNwxe7zRiCsmqYsamez2beP7mKPCSiu+BjZcdN95yYSzO857kr0VfQewmGpS77nqA==
 
+"@types/rails__actioncable@^6.1.11":
+  version "6.1.11"
+  resolved "https://registry.yarnpkg.com/@types/rails__actioncable/-/rails__actioncable-6.1.11.tgz#908f230ec599662eda2b4a98c03683abed0e0dd5"
+  integrity sha512-L6A3Rg6sGsv2cqalOgdOmyFvL1Pw69Mg0WuG6NtY9chzabhtkiSFY5fczo72mqRGezrMvl0Jy80v+N719CW+Tg==
+
 activestorage@^5.2.8-1:
   version "5.2.8-1"
   resolved "https://registry.yarnpkg.com/activestorage/-/activestorage-5.2.8-1.tgz#18cca0d7f81da42ebaf3ec04b393209d740f4fa0"

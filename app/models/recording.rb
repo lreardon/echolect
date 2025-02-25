@@ -21,7 +21,7 @@ class Recording < ApplicationRecord
 	belongs_to :lecture
 	has_one_attached :audio_file
 
-	def audio_file_url
-		audio_file.url.gsub('minio:9000', 'localhost:9000')
-	end
+	# def audio_file_url
+	# 	audio_file.url.gsub('minio:9000', 'localhost:9000')
+	# end
 end
