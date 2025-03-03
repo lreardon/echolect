@@ -15423,13 +15423,30 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
   __export(recording_controller_exports, {
     default: () => recording_controller_default
   });
+
+  // utils/format_time.ts
+  function formatTime(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor(seconds % 3600 / 60);
+    const secs = seconds % 60;
+    const formattedMinutes = minutes.toString().padStart(2, "0");
+    const formattedSeconds = secs.toString().padStart(2, "0");
+    if (hours > 0) {
+      const formattedHours = hours.toString().padStart(2, "0");
+      return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+    } else {
+      return `${formattedMinutes}:${formattedSeconds}`;
+    }
+  }
+
+  // controllers/recording_controller.ts
   var recording_controller_default = class extends application_controller_default {
-    static targets = ["recordingButton", "recordingInput", "uploadRecordingForm"];
-    // private recordingInputTarget: HTMLInputElement;
+    static targets = ["recordingButton", "uploadRecordingForm"];
     initialize() {
       this.isRecording = false;
     }
     async toggleRecording() {
+      const recordingStatusDisplay = document.getElementById("recording-status-display");
       const button = this.recordingButtonTarget;
       const lectureId = button.dataset.lectureId;
       if (!lectureId) {
@@ -15449,7 +15466,13 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
                   if (lectureId && this.recordingId && base64data) {
                     const encodingData = base64data.toString().split(",")[0];
                     const base64String = base64data.toString().split(",")[1];
-                    audio_channel_default.sendAudioChunk({ lectureId, recordingId: this.recordingId, timestamp, encodingData, base64String });
+                    audio_channel_default.sendAudioChunk({
+                      lectureId,
+                      recordingId: this.recordingId,
+                      timestamp,
+                      encodingData,
+                      base64String
+                    });
                   }
                 };
                 reader.onerror = () => {
@@ -15473,7 +15496,22 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
               recordingId: this.recordingId,
               lectureId
             });
+            this.recordingDuration = 0;
+            this.recordingInterval = window.setInterval(
+              () => {
+                this.recordingDuration++;
+                if (recordingStatusDisplay) {
+                  recordingStatusDisplay.textContent = formatTime(this.recordingDuration);
+                }
+              },
+              1e3
+            );
           };
+          if (recordingStatusDisplay) {
+            this.recordingDuration = 0;
+            recordingStatusDisplay.textContent = formatTime(this.recordingDuration);
+            recordingStatusDisplay.classList.remove("hidden");
+          }
           this.mediaRecorder.ondataavailable = (event) => {
             const chunk = event.data;
             audioChunksUploader.addToQueue(chunk);
@@ -15490,6 +15528,16 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
           console.error("Error accessing the microphone", error3);
         }
       } else {
+        if (this.recordingInterval) {
+          clearInterval(this.recordingInterval);
+          this.recordingInterval = void 0;
+          const recordingStatusDisplay2 = document.getElementById("recording-status-display");
+          if (recordingStatusDisplay2) {
+            recordingStatusDisplay2.textContent = "";
+            recordingStatusDisplay2.classList.add("hidden");
+          }
+        }
+        this.mediaRecorder.requestData();
         this.mediaRecorder.stop();
         this.isRecording = false;
         button.classList.remove("recording");
@@ -15521,6 +15569,19 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
     //   };
     //   fileInput.click();
     // }
+    formatTime(seconds) {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor(seconds % 3600 / 60);
+      const secs = seconds % 60;
+      const formattedMinutes = minutes.toString().padStart(2, "0");
+      const formattedSeconds = secs.toString().padStart(2, "0");
+      if (hours > 0) {
+        const formattedHours = hours.toString().padStart(2, "0");
+        return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+      } else {
+        return `${formattedMinutes}:${formattedSeconds}`;
+      }
+    }
   };
 
   // controllers/transcription_controller.js

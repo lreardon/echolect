@@ -1,14 +1,17 @@
 <div class="flex flex-col gap-4">
   <div class="flex flex-row gap-4">
-    <button
+    <div class="flex flex-col gap-2">
+      <button
       data-controller="recording"
       data-action="click->recording#toggleRecording"
-      data-recording-target="recordingButton"
-      data-lecture-id="<%= lecture.id %>"
-      class="bg-red-600 hover:bg-red-500"
-      >
-      Record
-    </button>
+        data-recording-target="recordingButton"
+        data-lecture-id="<%= lecture.id %>"
+        class="bg-red-600 hover:bg-red-500"
+        >
+        Record
+      </button>
+      <p id="recording-status-display" class="hidden"></p>
+    </div>
     <%= form_with url: recordings_path, html: {data: {controller: :recording, "lecture-id": lecture.id, "recording-target": "uploadRecordingForm"}} do %>
       <input
         type="file"

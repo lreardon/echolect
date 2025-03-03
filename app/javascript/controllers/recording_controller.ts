@@ -1,22 +1,25 @@
 
 import audioChannel from "../channels/audio_channel";
 import QueueProcessor from "../classes/queue_processor";
+import formatTime from "../utils/format_time";
 import ApplicationController from "./application_controller";
 
 export default class extends ApplicationController {
-  static targets = ["recordingButton", "recordingInput", "uploadRecordingForm"];
+  static targets = ["recordingButton", "uploadRecordingForm"];
 
   declare isRecording: boolean;
   declare mediaRecorder: MediaRecorder;
   declare recordingButtonTarget: HTMLButtonElement;
   declare recordingId: String;
-  // private recordingInputTarget: HTMLInputElement;
+  declare recordingDuration: number;
+  declare recordingInterval: number | undefined;
 
   initialize() {
     this.isRecording = false;
   }
 
   async toggleRecording() {
+    const recordingStatusDisplay = document.getElementById("recording-status-display");
     const button = this.recordingButtonTarget;
     
     const lectureId = button.dataset.lectureId;
@@ -24,60 +27,53 @@ export default class extends ApplicationController {
       console.error("Could not find active lecture.");
       return;
     }
-
+    
     if (!this.isRecording) {
       try {
-        // //* Set options
-        // // const options = { mimeType: 'audio/ogg' };
-        // let options;
-        // if (MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")) {
-        //   options = { mimeType: "audio/ogg;codecs=opus" };
-        // } else if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
-        //   options = { mimeType: "audio/webm;codecs=opus" };
-        // } else {
-        //   console.warn(
-        //     "Neither Ogg Opus nor WebM Opus are supported, using default codec"
-        //   );
-        //   options = {};
-        // }
+        //* Set options
+        // const options = { mimeType: 'audio/ogg' };
         const timestamp = new Date().toISOString();
-
+        
         const audioChunksUploader = new QueueProcessor(
           new Array<Blob>(),
           async (chunk: Blob) => {
             try {
               const reader = new FileReader()
               reader.onload = (e) => {
-                  const base64data = reader.result
-
-                  if (lectureId && this.recordingId && base64data) {
-                    const encodingData = base64data.toString().split(',')[0];
-                    const base64String = base64data.toString().split(',')[1];
-                    audioChannel.sendAudioChunk({lectureId, recordingId: this.recordingId, timestamp, encodingData, base64String});
-                  }
-                  
+                const base64data = reader.result
+                
+                if (lectureId && this.recordingId && base64data) {
+                  const encodingData = base64data.toString().split(',')[0];
+                  const base64String = base64data.toString().split(',')[1];
+                  audioChannel.sendAudioChunk({
+                    lectureId,
+                    recordingId: this.recordingId,
+                    timestamp,
+                    encodingData,
+                    base64String
+                  });
+                }
+                
               }
               reader.onerror = () => {                
-                  console.log('error')
+                console.log('error')
               }
               reader.readAsDataURL(chunk)
-              
-              // audioChannel.sendAudioChunk(lectureId, timestamp, chunk);
             }
             catch (error) {
               console.error("Error sending audio data:", error);
               return false;
             }
-
+            
             return true;
           }
         );
-
+        
         // Request access to the microphone if necessary.
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: true,
         });
-
+        
         // Initialize the MediaRecorder with callbacks.
         this.mediaRecorder = new MediaRecorder(stream);
         this.mediaRecorder.onstart = () => {
@@ -86,7 +82,25 @@ export default class extends ApplicationController {
             recordingId: this.recordingId,
             lectureId: lectureId,
           });
+          
+          this.recordingDuration = 0;
+          this.recordingInterval = window.setInterval(
+            () => {
+              this.recordingDuration++;
+              if (recordingStatusDisplay) {
+                recordingStatusDisplay.textContent = formatTime(this.recordingDuration)
+              }
+            },
+            1000,
+          );
         }
+        
+        if (recordingStatusDisplay) {
+          this.recordingDuration = 0;
+          recordingStatusDisplay.textContent = formatTime(this.recordingDuration);
+          recordingStatusDisplay.classList.remove("hidden");
+        }
+
         this.mediaRecorder.ondataavailable = (event) => {
           const chunk = event.data;
           audioChunksUploader.addToQueue(chunk);
@@ -105,7 +119,16 @@ export default class extends ApplicationController {
         console.error("Error accessing the microphone", error);
       }
     } else {
-      // this.mediaRecorder.requestData();
+      if (this.recordingInterval) {
+        clearInterval(this.recordingInterval);
+        this.recordingInterval = undefined;
+        const recordingStatusDisplay = document.getElementById("recording-status-display");
+        if (recordingStatusDisplay) {
+          recordingStatusDisplay.textContent = "";
+          recordingStatusDisplay.classList.add("hidden");
+        }
+      }
+      this.mediaRecorder.requestData();
       this.mediaRecorder.stop();
       this.isRecording = false;
       button.classList.remove("recording");
@@ -114,7 +137,7 @@ export default class extends ApplicationController {
     button.innerText = button.classList.contains("recording")
       ? "Stop"
       : "Record";
-  }
+    }
 
   // triggerFileInput(event) {
   //   event.preventDefault();
@@ -146,4 +169,20 @@ export default class extends ApplicationController {
 
   //   fileInput.click();
   // }
+
+  formatTime(seconds: number): string {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+  
+    const formattedMinutes = minutes.toString().padStart(2, '0');
+    const formattedSeconds = secs.toString().padStart(2, '0');
+  
+    if (hours > 0) {
+      const formattedHours = hours.toString().padStart(2, '0');
+      return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+    } else {
+      return `${formattedMinutes}:${formattedSeconds}`;
+    }
+  }
 }
