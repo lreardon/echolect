@@ -205,7 +205,6 @@ volumes:
   whisper-models:
   whisper-transcriptions:
 
-
 networks:
   default:
     name: echolect-dev
