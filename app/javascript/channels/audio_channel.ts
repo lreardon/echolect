@@ -36,18 +36,21 @@ const audioChannel = consumer.subscriptions.create("AudioChannel", {
     timestamp: String,
     encodingData: String,
     base64String: String,
+    chunkNumber: Number,
   }) {
     const lectureId = opts.lectureId;
     const recordingId = opts.recordingId;
     const timestamp = opts.timestamp;
     const encodingData = opts.encodingData;
     const base64String = opts.base64String;
+    const chunkNumber = opts.chunkNumber;
     this.perform('receive_chunk', {
       lectureId: lectureId,
       recordingId: recordingId,
       timestamp: timestamp,
       encodingData: encodingData,
       audioData: base64String,
+      chunkNumber: chunkNumber,
     });
   },
 

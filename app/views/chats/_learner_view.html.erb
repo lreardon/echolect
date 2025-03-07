@@ -5,9 +5,9 @@
   <div class="flex flex-col gap-2">
     <h2>Send a message</h2>
     <form
-      data-controller="messages"
+      <%# data-controller="messages" %>
       data-reflex="submit->Messages#create"
-      data-reflex-root="#chat-messages"
+      <%# data-reflex-root="#chat-messages" %>
       data-reflex-serialize-form
     >
       <div class="flex flex-col gap-2">
@@ -27,6 +27,7 @@
       </div>
     </form>
   </div>
+
   <div class="flex flex-col gap-2">
     <h2>React</h2>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">

@@ -1,14 +1,37 @@
 "use strict";
 (() => {
+  var __create = Object.create;
   var __defProp = Object.defineProperty;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
   var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __getProtoOf = Object.getPrototypeOf;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
   var __esm = (fn, res) => function __init() {
     return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+  };
+  var __commonJS = (cb, mod) => function __require() {
+    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
   };
   var __export = (target, all) => {
     for (var name4 in all)
       __defProp(target, name4, { get: all[name4], enumerable: true });
   };
+  var __copyProps = (to, from, except, desc) => {
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (let key of __getOwnPropNames(from))
+        if (!__hasOwnProp.call(to, key) && key !== except)
+          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+    }
+    return to;
+  };
+  var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+    // If the importer is in node compatibility mode or this is not an ESM
+    // file that has been converted to a CommonJS file using a Babel-
+    // compatible transform (i.e. "__esModule" has not been set), then set
+    // "default" to the CommonJS "module.exports" for node compatibility.
+    isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+    mod
+  ));
 
   // ../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/adapters.js
   var adapters_default;
@@ -576,6 +599,13 @@
       init_subscription_guarantor();
       init_adapters();
       init_logger();
+    }
+  });
+
+  // controllers/_messages_controller.js
+  var require_messages_controller = __commonJS({
+    "controllers/_messages_controller.js"() {
+      "use strict";
     }
   });
 
@@ -5825,12 +5855,14 @@
       const timestamp = opts.timestamp;
       const encodingData = opts.encodingData;
       const base64String = opts.base64String;
+      const chunkNumber = opts.chunkNumber;
       this.perform("receive_chunk", {
         lectureId,
         recordingId,
         timestamp,
         encodingData,
-        audioData: base64String
+        audioData: base64String,
+        chunkNumber
       });
     },
     async informRecordingDone(opts) {
@@ -13126,6 +13158,9 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
   global3.initialize(application, { controller: application_controller_default, isolate: true, debug: true });
   global3.debug = true;
 
+  // rails:/docker/app/app/javascript/controllers/**/*_controller.{js,ts}
+  var module0 = __toESM(require_messages_controller());
+
   // controllers/chats_controller.js
   var chats_controller_exports = {};
   __export(chats_controller_exports, {
@@ -15407,17 +15442,6 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
     }
   };
 
-  // controllers/messages_controller.js
-  var messages_controller_exports = {};
-  __export(messages_controller_exports, {
-    default: () => messages_controller_default
-  });
-  var messages_controller_default = class extends application_controller_default {
-    createSuccess(element) {
-      element.reset();
-    }
-  };
-
   // controllers/recording_controller.ts
   var recording_controller_exports = {};
   __export(recording_controller_exports, {
@@ -15456,6 +15480,7 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
       if (!this.isRecording) {
         try {
           const timestamp = (/* @__PURE__ */ new Date()).toISOString();
+          this.chunkCounter = 0;
           const audioChunksUploader = new QueueProcessor(
             new Array(),
             async (chunk) => {
@@ -15471,8 +15496,10 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
                       recordingId: this.recordingId,
                       timestamp,
                       encodingData,
-                      base64String
+                      base64String,
+                      chunkNumber: this.chunkCounter
                     });
+                    this.chunkCounter++;
                   }
                 };
                 reader.onerror = () => {
@@ -15610,7 +15637,7 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
   };
 
   // rails:/docker/app/app/javascript/controllers/**/*_controller.{js,ts}
-  var modules = [{ name: "application", module: application_controller_exports, filename: "application_controller.js" }, { name: "chats", module: chats_controller_exports, filename: "chats_controller.js" }, { name: "dropzone", module: dropzone_controller_exports, filename: "dropzone_controller.js" }, { name: "example", module: example_controller_exports, filename: "example_controller.js" }, { name: "institution-select", module: institution_select_controller_exports, filename: "institution_select_controller.js" }, { name: "messages", module: messages_controller_exports, filename: "messages_controller.js" }, { name: "recording", module: recording_controller_exports, filename: "recording_controller.ts" }, { name: "transcription", module: transcription_controller_exports, filename: "transcription_controller.js" }];
+  var modules = [{ name: "-messages", module: module0, filename: "_messages_controller.js" }, { name: "application", module: application_controller_exports, filename: "application_controller.js" }, { name: "chats", module: chats_controller_exports, filename: "chats_controller.js" }, { name: "dropzone", module: dropzone_controller_exports, filename: "dropzone_controller.js" }, { name: "example", module: example_controller_exports, filename: "example_controller.js" }, { name: "institution-select", module: institution_select_controller_exports, filename: "institution_select_controller.js" }, { name: "recording", module: recording_controller_exports, filename: "recording_controller.ts" }, { name: "transcription", module: transcription_controller_exports, filename: "transcription_controller.js" }];
   var controller_default = modules;
 
   // controllers/index.js

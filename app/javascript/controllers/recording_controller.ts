@@ -13,6 +13,7 @@ export default class extends ApplicationController {
   declare recordingId: String;
   declare recordingDuration: number;
   declare recordingInterval: number | undefined;
+  declare chunkCounter: number;
 
   initialize() {
     this.isRecording = false;
@@ -33,6 +34,7 @@ export default class extends ApplicationController {
         //* Set options
         // const options = { mimeType: 'audio/ogg' };
         const timestamp = new Date().toISOString();
+        this.chunkCounter = 0;
         
         const audioChunksUploader = new QueueProcessor(
           new Array<Blob>(),
@@ -50,8 +52,10 @@ export default class extends ApplicationController {
                     recordingId: this.recordingId,
                     timestamp,
                     encodingData,
-                    base64String
+                    base64String,
+                    chunkNumber: this.chunkCounter,
                   });
+                  this.chunkCounter++;
                 }
                 
               }

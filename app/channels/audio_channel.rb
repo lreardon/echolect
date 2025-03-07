@@ -41,21 +41,26 @@ class AudioChannel < ApplicationCable::Channel
 		recording_id = params['recordingId']
 		# encoding_data = params['encodingData']
 		audio_data = params['audioData']
-
-		# recording = Recording.find(recording_id)
-		# puts 'RECORDING'
-		# puts recording
-		# puts recording.audio_file
-
 		decoded_data = Base64.decode64(audio_data)
+
+		chunk_number = params['chunkNumber']
+		chunks_path = "#{RECORDINGS_DIR}/lectures/#{lecture_id}/recordings/#{recording_id}/chunks/#{chunk_number}.webm"
+		FileUtils.mkdir_p(chunks_dir)
 
 		recording_path = "#{RECORDINGS_DIR}/lectures/#{lecture_id}/recordings/#{recording_id}/audio.webm"
 		dirname = File.dirname(recording_path)
 		FileUtils.mkdir_p(dirname)
 
-		File.open(recording_path, 'ab') do |file|
-			# file.write(encoding_data) if file.blank?
-			file.write(decoded_data)
+		begin
+			# Write chunk to individual chunk file
+			File.binwrite(chunks_path, decoded_data)
+
+			# Append chunk to the main recording file
+			File.open(recording_path, 'ab') do |file|
+				file.write(decoded_data)
+			end
+		rescue StandardError => e
+			puts "Error writing file: #{e.message}"
 		end
 	end
 
