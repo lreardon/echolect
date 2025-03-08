@@ -14,13 +14,15 @@ module Echolect
 		# Initialize configuration defaults for originally generated Rails version.
 		config.load_defaults 7.0
 
+		config.eager_load_paths << Rails.root.join('app', 'errors')
+		# config.autoload_lib(ignore: %w[assets tasks])
+		#
 		# Configuration for the application, engines, and railties goes here.
 		#
 		# These settings can be overridden in specific environments using the files
 		# in config/environments, which are processed later.
 		#
 		# config.time_zone = "Central Time (US & Canada)"
-		# config.eager_load_paths << Rails.root.join("extras")
 
 		config.action_mailer.perform_deliveries = true
 		config.action_mailer.perform_caching = false
@@ -34,5 +36,8 @@ module Echolect
 		end
 
 		config.active_storage.service = :minio
+
+		config.active_job.queue_adapter = :solid_queue
+		config.solid_queue.connects_to = { database: { writing: :queue } }
 	end
 end

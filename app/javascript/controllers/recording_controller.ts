@@ -143,6 +143,12 @@ export default class extends ApplicationController {
       : "Record";
     }
 
+    // async transcribeRecording() {
+    //   if (this.recordingId == null) {
+    //     alert("No recording found!");
+    //   }
+    // }
+
   // triggerFileInput(event) {
   //   event.preventDefault();
   //   const lectureId = this.uploadRecordingFormTarget.dataset.lectureId;

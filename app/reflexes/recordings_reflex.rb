@@ -27,4 +27,11 @@ class RecordingsReflex < ApplicationReflex
 
 		# morph :none
 	end
+
+	def transcribe
+		lecture_id = element.dataset.lecture_id
+		recording_id = element.dataset.recording_id
+		recording = recording_id.present? ? Recording.find(recording_id) : Lecture.find(lecture_id).recording
+		TranscribeRecordingJob.perform_now(recording)
+	end
 end

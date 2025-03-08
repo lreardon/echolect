@@ -15571,6 +15571,11 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
       }
       button.innerText = button.classList.contains("recording") ? "Stop" : "Record";
     }
+    // async transcribeRecording() {
+    //   if (this.recordingId == null) {
+    //     alert("No recording found!");
+    //   }
+    // }
     // triggerFileInput(event) {
     //   event.preventDefault();
     //   const lectureId = this.uploadRecordingFormTarget.dataset.lectureId;

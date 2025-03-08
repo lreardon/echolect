@@ -19,14 +19,22 @@
         data-recording-target="recordingInput"
         data-lecture-id="<%= lecture.id %>"
         class="hidden"
-        >
+      >
         <button
-          data-action="click->recording#triggerFileInput"
+        data-action="click->recording#triggerFileInput"
           class="bg-yellow-600 hover:bg-yellow-500"
           >
           Upload Recording
         </button>
       <% end %>
+      <button
+        data-reflex="click->Recordings#transcribe"
+        data-lecture-id="<%= lecture.id %>"
+        data-recording-id="<%= lecture.recording.id %>"
+        class="bg-blue-600 hover:bg-blue-500"
+        >
+        Transcribe Recording
+      </button>
       <button
         data-controller="transcription"
         data-action="click->transcription#downloadTranscription"
@@ -38,7 +46,7 @@
     </div>
     <% if lecture.recording? && lecture.recording.audio_file.present? %>
       <div>
-        <%= link_to lecture.recording.audio_file.url, class: "button bg-blue-600 hover:bg-blue-500" do %>
+        <%= link_to lecture.recording.audio_file.url, class: "button bg-purple-600 hover:bg-purple-500" do %>
           <i class="fa fa-download"></i> Download Recording
         <% end %>
       </div>
