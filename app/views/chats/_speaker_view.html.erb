@@ -1,11 +1,11 @@
 <div
-  id="speaker-view"
-  class="w-full grid grid-cols-4 h-full overflow-y-auto gap-4"
->
-  <div class="col-span-3 overflow-y-auto">
+    id="speaker-view"
+    class="flex flex-row gap-4 min-h-0"
+  >
+  <div class="basis-3/4 flex-grow min-h-0 flex">
     <%= render partial: "chats/chat_messages", locals: { chat: chat } %>
   </div>
-  <div class="col-span-1 overflow-y-auto">
+  <div class="basis-1/4 flex-grow min-h-0 flex">
     <%= render partial: "chats/chat_reactions", locals: { chat: chat } %>
   </div>
 </div>

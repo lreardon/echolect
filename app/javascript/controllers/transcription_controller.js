@@ -10,16 +10,16 @@ export default class extends ApplicationController {
     // this.audioChunks = [];
   }
 
-  async downloadTranscription() {
-    const button = this.transcriptionButtonTarget;
-    button.classList.toggle("transcribing");
-    button.setAttribute("disabled", true);
-    button.innerText = "Transcribing";
-    await generateAndDownloadTranscription();
-    button.classList.toggle("transcribing");
-    button.removeAttribute("disabled");
-    button.innerText = "Download Transcription";
-  }
+  // async downloadTranscription() {
+  //   const button = this.transcriptionButtonTarget;
+  //   button.classList.toggle("transcribing");
+  //   button.setAttribute("disabled", true);
+  //   button.innerText = "Transcribing";
+  //   await generateAndDownloadTranscription();
+  //   button.classList.toggle("transcribing");
+  //   button.removeAttribute("disabled");
+  //   button.innerText = "Download Transcription";
+  // }
 
   async generateAndDownloadTranscription() {
     await transcriptionChannel.generateTranscription();

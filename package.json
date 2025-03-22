@@ -9,18 +9,15 @@
 		"@types/rails__actioncable": "^6.1.11",
 		"activestorage": "^5.2.8-1",
 		"autoprefixer": "^10.4.14",
-		"cable_ready": "5.0.5",
 		"dropzone": "^6.0.0-beta.2",
 		"esbuild": "^0.24.2",
 		"esbuild-rails": "^1.0.3",
 		"postcss": "^8.4.24",
 		"stimulus_reflex": "^3.5",
-		"tailwindcss": "^3.3.2"
+		"tailwindcss": "^4.0.0"
 	},
 	"scripts": {
 		"build": "node esbuild.config.mjs",
-		"tailwindcss:watch": "tailwindcss build -o output.css -w",
-		"build:css": "tailwindcss -i ./app/assets/stylesheets/application.tailwind.css -o ./app/assets/builds/application.css --minify",
 		"build:default": "esbuild app/javascript/*.* --bundle --sourcemap --outdir=app/assets/builds --public-path=/assets"
 	},
 	"devDependencies": {

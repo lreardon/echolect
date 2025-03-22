@@ -111,7 +111,8 @@ export default class extends ApplicationController {
         };
         this.mediaRecorder.onstop = () => {
           audioChannel.informRecordingDone({
-            recordingId: this.recordingId
+            lectureId: lectureId,
+            recordingId: this.recordingId,
           });
         };
 

@@ -1,17 +1,15 @@
-<div class="flex flex-col gap-4">
+<div id="lecture-recording-panel" class="flex flex-col gap-4">
   <div class="flex flex-row gap-4">
-    <div class="flex flex-col gap-2">
-      <button
-        data-controller="recording"
-        data-action="click->recording#toggleRecording"
-        data-recording-target="recordingButton"
-        data-lecture-id="<%= lecture.id %>"
-        class="bg-red-600 hover:bg-red-500"
-        >
-        Record
-      </button>
-      <p id="recording-status-display" class="hidden"></p>
-    </div>
+    <button
+      data-controller="recording"
+      data-action="click->recording#toggleRecording"
+      data-recording-target="recordingButton"
+      data-lecture-id="<%= lecture.id %>"
+      class="bg-red-600 hover:bg-red-500"
+      >
+      Record
+    </button>
+    <p id="recording-status-display" class="hidden"></p>
     <%= form_with url: recordings_path, html: {data: {controller: :recording, "lecture-id": lecture.id, "recording-target": "uploadRecordingForm"}} do %>
       <input
         type="file"
@@ -21,38 +19,37 @@
         class="hidden"
       >
         <button
-        data-action="click->recording#triggerFileInput"
+          data-action="click->recording#triggerFileInput"
           class="bg-yellow-600 hover:bg-yellow-500"
           >
           Upload Recording
         </button>
       <% end %>
-      <button
-        data-reflex="click->Recordings#transcribe"
-        data-lecture-id="<%= lecture.id %>"
-        data-recording-id="<%= lecture.recording.id %>"
-        class="bg-blue-600 hover:bg-blue-500"
-        >
-        Transcribe Recording
-      </button>
-      <button
-        data-controller="transcription"
-        data-action="click->transcription#downloadTranscription"
-        data-transcription-target="transcriptionButton"
-        class="bg-green-600 hover:bg-green-500"
-        >
-        Download Transcription
-      </button>
-    </div>
-    <% if lecture.recording? && lecture.recording.audio_file.present? %>
-      <div>
-        <%= link_to lecture.recording.audio_file.url, class: "button bg-purple-600 hover:bg-purple-500" do %>
-          <i class="fa fa-download"></i> Download Recording
+      <div class="flex flex-row gap-4">
+        <% if lecture.recording and not lecture.recording&.transcription %>
+          <button
+            data-reflex="click->Recordings#transcribe"
+            data-lecture-id="<%= lecture.id %>"
+            data-recording-id="<%= lecture.recording.id %>"
+            class="bg-blue-600 hover:bg-blue-500"
+            >
+            Transcribe Recording
+          </button>
         <% end %>
+        <% if lecture.recording&.transcription %>
+          <%= link_to lecture.recording.transcription.url, class: "button bg-green-600 hover:bg-green-500" do %>
+            <i class="fa fa-download"></i> Download Transcription
+          <% end %>
+        <% end %>
+        <% if lecture.recording? && lecture.recording.audio_file %>
+          <%= link_to lecture.recording.audio_file.url, class: "button bg-purple-600 hover:bg-purple-500" do %>
+            <i class="fa fa-download"></i> Download Recording
+          <% end %>
+        <% end %>
+        <%# form_with do |form| %>
+          <%# render "dropzone/dropzone_files_input", form: form, file_input_name: :files, max_size: 50, max_files: 5, attachments: @lecture.recording.audio_file %>
+          <%# end %>
+          <%# <div data-controller="dropzone" class="dropzone dz-clickable"></div> %>
+        </div>
       </div>
-    <% end %>
-    <%# form_with do |form| %>
-      <%# render "dropzone/dropzone_files_input", form: form, file_input_name: :files, max_size: 50, max_files: 5, attachments: @lecture.recording.audio_file %>
-      <%# end %>
-      <%# <div data-controller="dropzone" class="dropzone dz-clickable"></div> %>
     </div>

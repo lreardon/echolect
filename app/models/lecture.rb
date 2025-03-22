@@ -24,7 +24,7 @@ class Lecture < ApplicationRecord
 	end
 
 	def recording?
-		recording.present?
+		!recording.nil?
 	end
 
 	private

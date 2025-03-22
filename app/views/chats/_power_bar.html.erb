@@ -1,23 +1,15 @@
 <div class="flex flex-row justify-between">
   <%= link_to "<- Chats", root_path %> <% if current_user.owns_chat(chat) %>
-  <div class="flex flex-row gap-4">
-    <button
+    <div class="flex flex-row gap-4">
+      <button
       data-controller="recording"
       data-action="click->recording#toggleRecording"
-      data-recording-target="recordingButton"
-      class="bg-red-600 hover:bg-red-500"
-    >
-      Record
-    </button>
-    <button
-      data-controller="transcription"
-      data-action="click->transcription#downloadTranscription"
-      data-transcription-target="transcriptionButton"
-      class="bg-green-600 hover:bg-green-500"
-    >
-      Download Transcription
-    </button>
-  </div>
+        data-recording-target="recordingButton"
+        class="bg-red-600 hover:bg-red-500"
+        >
+        Record
+      </button>
+    </div>
   <% end %>
   <div class="flex flex-row gap-4">
     <%= icon_button "settings" do %> <% end %>

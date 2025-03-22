@@ -3,6 +3,7 @@
 	"files.associations": {
 		".terminals.json": "jsonc",
 		"*.json": "jsonc",
+		"*.css": "tailwindcss",
 	},
 	// CODE ACTIONS ON SAVE
 	"editor.codeActionsOnSave": {

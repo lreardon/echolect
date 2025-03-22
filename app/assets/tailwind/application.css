@@ -1,6 +1,17 @@
-@tailwind base;
-@tailwind components;
+@import "tailwindcss";
+@import "tailwind/preflight";
+
 @tailwind utilities;
+
+@theme {
+  --color-primary: #61aeb8;
+  --color-surface: #1e1e1e;
+  /* --color-secondary: colors.indigo[950]; */
+  --breakpoint-sm: 420px;
+  --breakpoint-md: 640px;
+  --breakpoint-lg: 1000px;
+  --breakpoint-xl: 1440px;
+}
 
 @layer base {
   h1 {
@@ -23,7 +34,8 @@
     @apply cursor-pointer;
   }
 
-  button, .button {
+  button,
+  .button {
     @apply bg-indigo-900 text-white font-bold py-2 px-4 rounded hover:bg-indigo-800 hover:no-underline;
   }
 
@@ -50,18 +62,33 @@
     width: 120px;
     background-color: black;
     color: #fff;
-
     text-align: center;
     border-radius: 6px;
     padding: 5px 0;
-    position: absolute;
-    z-index: 1;
+
+    position: fixed;
+    z-index: 9999;
     bottom: 100%;
     left: 50%;
-    margin-left: -60px;
+    /* margin-left: -60px; */
+
     opacity: 0;
-    transition: opacity 0s;
+    transition: opacity 0.3s;
     pointer-events: none;
+
+    transform: translateZ(0);
+    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.2));
+  }
+
+  .tooltip:after {
+    content: "";
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px 5px 0;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.8) transparent transparent;
   }
 
   .tooltip:hover .tooltiptext {
@@ -86,7 +113,6 @@
   .flash-error {
     @apply text-red-700;
   }
-  
 }
 
 * {

@@ -1,0 +1,5 @@
+flask
+gunicorn
+# flask-cors (this and above contained in flask?)
+whisper-ctranslate2
+pyannote.audio

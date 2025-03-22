@@ -88,11 +88,13 @@ services:
       - WHISPER_LANG=en #optional
     volumes:
       - ./shared/recordings:/app/recordings
-      - whisper-models:/app/models
+      - ./services/whisper/models:/app/models
+      - ./services/whisper:/app
       # - 'whisper-transcriptions:/app/transcriptions'
       # - /path/to/faster-whisper/data:/config
     ports:
       - 10300:10300
+      - 5001:5000
     restart: unless-stopped
 
   minio:

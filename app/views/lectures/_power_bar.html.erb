@@ -1,10 +1,4 @@
-<div class="flex flex-row justify-between">
-  <% if current_user.owns_chat(@lecture.chat) %>
-    <%= render partial: "lectures/recording_panel", locals: { lecture: @lecture } %>
-  <% end %>
-  <!--
-  <div class="flex flex-row gap-4">
-    <%= icon_button "settings" do %> <% end %>
-  </div>
-  -->
-</div>
+<%# <div class="flex flex-row"> %>
+<% if current_user.owns_chat(@lecture.chat) %>
+  <%= render partial: "lectures/recording_panel", locals: { lecture: @lecture } %>
+<% end %>

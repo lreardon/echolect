@@ -5,3 +5,6 @@ import './**/*_channel.{js,ts}';
 
 import "./messages_channel";
 
+import "./user_channel"
+import "./recording_channel"
+import "./lecture_recording_channel"

@@ -5867,7 +5867,7 @@
     },
     async informRecordingDone(opts) {
       const recordingId = opts.recordingId;
-      this.perform("transfer_recording_to_object_storage", {
+      this.perform("transfer_recording_to_object_storage_and_transcribe", {
         recordingId
       });
     },
@@ -5899,6 +5899,41 @@
     }
   });
 
+  // channels/lecture_recording_channel.js
+  function connectToLectureRecordingChannel(lectureId) {
+    consumer_default.subscriptions.create({
+      channel: "LectureRecordingChannel",
+      lecture_id: lectureId
+    }, {
+      connected() {
+        console.log(`Connected to LectureRecordingChannel for lecture ${lectureId}`);
+      },
+      disconnected() {
+      },
+      received(data) {
+        console.log(data);
+        if (data.cableReady) {
+          CableReady.perform(data.operations);
+        }
+        const transcriptionOp = data.operations.find(
+          (op) => op.operation === "dispatchEvent" && op.name === "transcription-complete"
+        );
+        if (transcriptionOp) {
+          this.handleTranscriptionComplete(transcriptionOp.detail);
+        }
+      },
+      handleTranscriptionComplete(detail) {
+        const { recordingId, transcriptionUrl } = detail;
+        const downloadButton = document.createElement("button");
+        downloadButton.className = "bg-green-600 hover:bg-green-500";
+        downloadButton.innerText = "Download Transcription";
+        downloadButton.addEventListener("click", () => {
+          window.open(transcriptionUrl, "_blank");
+        });
+      }
+    });
+  }
+
   // channels/messages_channel.js
   consumer_default.subscriptions.create("MessagesChannel", {
     connected() {
@@ -5909,77 +5944,6 @@
       console.log(data);
     }
   });
-
-  // channels/time_channel.js
-  consumer_default.subscriptions.create("TimeChannel", {
-    connected() {
-      console.log("connected to time channel");
-    },
-    disconnected() {
-    },
-    received(data) {
-      console.log(data);
-    }
-  });
-
-  // channels/transcription_channel.js
-  var transcriptionChannel = consumer_default.subscriptions.create(
-    "TranscriptionChannel",
-    {
-      connected() {
-        console.log("Connected to AudioChannel");
-      },
-      disconnected() {
-        console.log("Disconnected from AudioChannel");
-      },
-      received(data) {
-        console.log("Received data:", data);
-      },
-      async generateTranscription() {
-        await new Promise((resolve) => setTimeout(resolve, 3e3));
-      },
-      async downloadTranscription() {
-        await new Promise((resolve) => setTimeout(resolve, 3e3));
-      }
-      // processAudio(recordingId) {
-      //   this.perform("process", { recordingId: recordingId });
-      // },
-    }
-  );
-  var transcription_channel_default = transcriptionChannel;
-
-  // classes/queue_processor.ts
-  var QueueProcessor = class {
-    queue;
-    processor;
-    isProcessing;
-    constructor(queue, processor) {
-      this.queue = queue;
-      this.processor = processor;
-      this.isProcessing = false;
-    }
-    async processQueue() {
-      if (this.isProcessing) return;
-      this.isProcessing = true;
-      while (this.queue.length > 0) {
-        const itemToProcess = this.queue.at(0);
-        if (itemToProcess === void 0) {
-          throw new Error("No item to process");
-        }
-        const didProcess = await this.processor(itemToProcess);
-        if (didProcess) {
-          this.queue.shift();
-        } else {
-          throw new Error(`Failed to process item: ${itemToProcess}`);
-        }
-      }
-      this.isProcessing = false;
-    }
-    addToQueue(item) {
-      this.queue.push(item);
-      this.processQueue();
-    }
-  };
 
   // ../../node_modules/morphdom/dist/morphdom-esm.js
   var DOCUMENT_FRAGMENT_NODE = 11;
@@ -7707,6 +7671,99 @@
     }
   };
   window.CableReady = global;
+
+  // channels/recording_channel.js
+  consumer_default.subscriptions.create("RecordingChannel", {
+    connected() {
+    },
+    disconnected() {
+    },
+    received(data) {
+      if (data.cableReady) global.perform(data.operations);
+    }
+  });
+
+  // channels/time_channel.js
+  consumer_default.subscriptions.create("TimeChannel", {
+    connected() {
+      console.log("connected to time channel");
+    },
+    disconnected() {
+    },
+    received(data) {
+      console.log(data);
+    }
+  });
+
+  // channels/transcription_channel.js
+  var transcriptionChannel = consumer_default.subscriptions.create(
+    "TranscriptionChannel",
+    {
+      connected() {
+        console.log("Connected to AudioChannel");
+      },
+      disconnected() {
+        console.log("Disconnected from AudioChannel");
+      },
+      received(data) {
+        console.log("Received data:", data);
+      },
+      async generateTranscription() {
+        await new Promise((resolve) => setTimeout(resolve, 3e3));
+      },
+      async downloadTranscription() {
+        await new Promise((resolve) => setTimeout(resolve, 3e3));
+      }
+      // processAudio(recordingId) {
+      //   this.perform("process", { recordingId: recordingId });
+      // },
+    }
+  );
+  var transcription_channel_default = transcriptionChannel;
+
+  // channels/user_channel.ts
+  consumer_default.subscriptions.create("UserChannel", {
+    connected() {
+    },
+    disconnected() {
+    },
+    received(data) {
+      if (data.cableReady) global.perform(data.operations);
+    }
+  });
+
+  // classes/queue_processor.ts
+  var QueueProcessor = class {
+    queue;
+    processor;
+    isProcessing;
+    constructor(queue, processor) {
+      this.queue = queue;
+      this.processor = processor;
+      this.isProcessing = false;
+    }
+    async processQueue() {
+      if (this.isProcessing) return;
+      this.isProcessing = true;
+      while (this.queue.length > 0) {
+        const itemToProcess = this.queue.at(0);
+        if (itemToProcess === void 0) {
+          throw new Error("No item to process");
+        }
+        const didProcess = await this.processor(itemToProcess);
+        if (didProcess) {
+          this.queue.shift();
+        } else {
+          throw new Error(`Failed to process item: ${itemToProcess}`);
+        }
+      }
+      this.isProcessing = false;
+    }
+    addToQueue(item) {
+      this.queue.push(item);
+      this.processQueue();
+    }
+  };
 
   // config/cable_ready.js
   global.initialize({ consumer: consumer_default });
@@ -15442,6 +15499,40 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
     }
   };
 
+  // controllers/lecture_controller.js
+  var lecture_controller_exports = {};
+  __export(lecture_controller_exports, {
+    default: () => lecture_controller_default
+  });
+  var lecture_controller_default = class extends Controller {
+    static values = { id: String };
+    connect() {
+      const lectureId = this.idValue;
+      if (lectureId) {
+        this.channelSubscription = connectToLectureRecordingChannel(lectureId);
+      }
+    }
+    disconnect() {
+      if (this.channelSubscription) {
+        this.channelSubscription.unsubscribe();
+      }
+    }
+  };
+
+  // controllers/reactions_controller.js
+  var reactions_controller_exports = {};
+  __export(reactions_controller_exports, {
+    default: () => reactions_controller_default
+  });
+  var reactions_controller_default = class extends application_controller_default {
+    afterReflex(anchorElement) {
+      console.log("afterReflex");
+    }
+    beforeCreate(element) {
+      console.log("pooo poo");
+    }
+  };
+
   // controllers/recording_controller.ts
   var recording_controller_exports = {};
   __export(recording_controller_exports, {
@@ -15545,6 +15636,7 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
           };
           this.mediaRecorder.onstop = () => {
             audio_channel_default.informRecordingDone({
+              lectureId,
               recordingId: this.recordingId
             });
           };
@@ -15625,16 +15717,16 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
     static targets = ["transcriptionButton"];
     initialize() {
     }
-    async downloadTranscription() {
-      const button = this.transcriptionButtonTarget;
-      button.classList.toggle("transcribing");
-      button.setAttribute("disabled", true);
-      button.innerText = "Transcribing";
-      await generateAndDownloadTranscription();
-      button.classList.toggle("transcribing");
-      button.removeAttribute("disabled");
-      button.innerText = "Download Transcription";
-    }
+    // async downloadTranscription() {
+    //   const button = this.transcriptionButtonTarget;
+    //   button.classList.toggle("transcribing");
+    //   button.setAttribute("disabled", true);
+    //   button.innerText = "Transcribing";
+    //   await generateAndDownloadTranscription();
+    //   button.classList.toggle("transcribing");
+    //   button.removeAttribute("disabled");
+    //   button.innerText = "Download Transcription";
+    // }
     async generateAndDownloadTranscription() {
       await transcription_channel_default.generateTranscription();
       await transcription_channel_default.downloadTranscription();
@@ -15642,7 +15734,7 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
   };
 
   // rails:/docker/app/app/javascript/controllers/**/*_controller.{js,ts}
-  var modules = [{ name: "-messages", module: module0, filename: "_messages_controller.js" }, { name: "application", module: application_controller_exports, filename: "application_controller.js" }, { name: "chats", module: chats_controller_exports, filename: "chats_controller.js" }, { name: "dropzone", module: dropzone_controller_exports, filename: "dropzone_controller.js" }, { name: "example", module: example_controller_exports, filename: "example_controller.js" }, { name: "institution-select", module: institution_select_controller_exports, filename: "institution_select_controller.js" }, { name: "recording", module: recording_controller_exports, filename: "recording_controller.ts" }, { name: "transcription", module: transcription_controller_exports, filename: "transcription_controller.js" }];
+  var modules = [{ name: "-messages", module: module0, filename: "_messages_controller.js" }, { name: "application", module: application_controller_exports, filename: "application_controller.js" }, { name: "chats", module: chats_controller_exports, filename: "chats_controller.js" }, { name: "dropzone", module: dropzone_controller_exports, filename: "dropzone_controller.js" }, { name: "example", module: example_controller_exports, filename: "example_controller.js" }, { name: "institution-select", module: institution_select_controller_exports, filename: "institution_select_controller.js" }, { name: "lecture", module: lecture_controller_exports, filename: "lecture_controller.js" }, { name: "reactions", module: reactions_controller_exports, filename: "reactions_controller.js" }, { name: "recording", module: recording_controller_exports, filename: "recording_controller.ts" }, { name: "transcription", module: transcription_controller_exports, filename: "transcription_controller.js" }];
   var controller_default = modules;
 
   // controllers/index.js
@@ -15681,6 +15773,203 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
   }
   window.addEventListener("offline", () => {
     window.location.reload();
+  });
+
+  // elements/with_tooltip_element.ts
+  var WithTooltipElement = class extends HTMLElement {
+    text = "";
+    _tooltipElement = null;
+    _showTooltipBound;
+    _hideTooltipBound;
+    constructor() {
+      super();
+      this._tooltipElement = null;
+      this._showTooltipBound = this._showTooltip.bind(this);
+      this._hideTooltipBound = this._hideTooltip.bind(this);
+    }
+    connectedCallback() {
+      this.text = this.getAttribute("text") || "";
+      this.addEventListener("mouseenter", this._showTooltipBound);
+      this.addEventListener("mouseleave", this._hideTooltipBound);
+    }
+    disconnectedCallback() {
+      this.removeEventListener("mouseenter", this._showTooltipBound);
+      this.removeEventListener("mouseleave", this._hideTooltipBound);
+      this._hideTooltip();
+    }
+    _showTooltip() {
+      this._hideTooltip();
+      const rect = this.getBoundingClientRect();
+      this._tooltipElement = document.createElement("div");
+      this._tooltipElement.className = "tooltip";
+      const contentElement = this.querySelector("tooltip-content");
+      if (contentElement) {
+        this._tooltipElement.innerHTML = contentElement.innerHTML;
+      } else {
+        this._tooltipElement.textContent = this.text;
+      }
+      const tooltipTop = rect.top - 8;
+      const tooltipLeft = rect.left + rect.width / 2;
+      Object.assign(this._tooltipElement.style, {
+        position: "fixed",
+        top: `${tooltipTop}px`,
+        left: `${tooltipLeft}px`,
+        transform: "translate(-50%, -100%)",
+        // Center horizontally and position above
+        zIndex: "9999",
+        backgroundColor: "rgba(0, 0, 0, 0.8)",
+        color: "white",
+        padding: "5px 8px",
+        borderRadius: "4px",
+        fontSize: "12px",
+        pointerEvents: "none",
+        // Let mouse events pass through
+        opacity: "0",
+        transition: "opacity 0.2s"
+      });
+      const arrow = document.createElement("div");
+      Object.assign(arrow.style, {
+        position: "absolute",
+        bottom: "-5px",
+        left: "50%",
+        marginLeft: "-5px",
+        borderWidth: "5px 5px 0",
+        borderStyle: "solid",
+        borderColor: "rgba(0, 0, 0, 0.8) transparent transparent"
+      });
+      this._tooltipElement.appendChild(arrow);
+      document.body.appendChild(this._tooltipElement);
+      this._adjustTooltipPosition();
+      setTimeout(() => {
+        if (this._tooltipElement) {
+          this._tooltipElement.style.opacity = "1";
+        }
+      }, 10);
+    }
+    _adjustTooltipPosition() {
+      if (!this._tooltipElement) return;
+      const tooltipRect = this._tooltipElement.getBoundingClientRect();
+      if (tooltipRect.top < 0) {
+        const elementRect = this.getBoundingClientRect();
+        this._tooltipElement.style.top = `${elementRect.bottom + 8}px`;
+        this._tooltipElement.style.transform = "translate(-50%, 0)";
+        const arrow = this._tooltipElement.firstChild;
+        if (arrow) {
+          Object.assign(arrow.style, {
+            bottom: "auto",
+            top: "-5px",
+            borderWidth: "0 5px 5px",
+            borderColor: "transparent transparent rgba(0, 0, 0, 0.8)"
+          });
+        }
+      }
+      if (tooltipRect.left < 0) {
+        this._tooltipElement.style.left = "8px";
+        this._tooltipElement.style.transform = "translate(0, -100%)";
+      } else if (tooltipRect.right > window.innerWidth) {
+        this._tooltipElement.style.left = "auto";
+        this._tooltipElement.style.right = "8px";
+        this._tooltipElement.style.transform = "translate(0, -100%)";
+      }
+    }
+    _hideTooltip() {
+      if (this._tooltipElement) {
+        this._tooltipElement.remove();
+        this._tooltipElement = null;
+      }
+    }
+    // Support dynamic updates to the text attribute
+    static get observedAttributes() {
+      return ["text"];
+    }
+    attributeChangedCallback(name4, oldValue, newValue) {
+      if (name4 === "text") {
+        this.text = newValue;
+        if (this._tooltipElement) {
+          this._tooltipElement.textContent = newValue;
+        }
+      }
+    }
+  };
+  var TooltipContentElement = class extends HTMLElement {
+    constructor() {
+      super();
+      this.style.display = "none";
+    }
+    connectedCallback() {
+      this.style.display = "none";
+    }
+  };
+  customElements.define("tooltip-content", TooltipContentElement);
+  customElements.define("with-tooltip", WithTooltipElement);
+
+  // application.js
+  document.addEventListener("cable-ready:after-append", function() {
+    console.log("cable-ready:after-append");
+    customElements.upgrade(document.body);
+  });
+  document.addEventListener("DOMContentLoaded", () => {
+    console.log("Setting up custom element observer");
+    const customElementStyles = {
+      "tooltip-content": { display: "none" }
+      // Add more custom elements here as needed:
+      // 'my-dropdown': { display: 'flex', flexDirection: 'column' },
+      // 'custom-modal': { position: 'fixed', zIndex: '100' }
+    };
+    function applyStylesToElement(element) {
+      const tagName = element.tagName.toLowerCase();
+      const styles = customElementStyles[tagName];
+      if (styles) {
+        Object.assign(element.style, styles);
+        return true;
+      }
+      return false;
+    }
+    function processElement(element) {
+      let stylesApplied = false;
+      if (element.nodeType === Node.ELEMENT_NODE) {
+        const tagName = element.tagName.toLowerCase();
+        if (customElementStyles[tagName]) {
+          applyStylesToElement(element);
+          stylesApplied = true;
+        }
+        Object.keys(customElementStyles).forEach((tag) => {
+          const children = element.querySelectorAll(tag);
+          if (children.length > 0) {
+            children.forEach((child) => {
+              applyStylesToElement(child);
+              stylesApplied = true;
+            });
+          }
+        });
+      }
+      return stylesApplied;
+    }
+    const observer = new MutationObserver(
+      (mutations) => {
+        let stylesApplied = false;
+        mutations.forEach(
+          (mutation) => {
+            if (mutation.type === "childList") {
+              mutation.target.childNodes.forEach(
+                (node) => {
+                  if (processElement(node)) {
+                    stylesApplied = true;
+                  }
+                }
+              );
+            }
+          }
+        );
+        if (stylesApplied) {
+          console.log("Applied styles to custom elements after DOM change");
+        }
+      }
+    );
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
   });
 })();
 /*! Bundled license information:

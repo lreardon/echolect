@@ -56,11 +56,19 @@ const audioChannel = consumer.subscriptions.create("AudioChannel", {
 
   async informRecordingDone(opts: {
     recordingId: String,
+    lectureId: String,
   }) {
     const recordingId = opts.recordingId;
-    this.perform('transfer_recording_to_object_storage', {
+    this.perform('transfer_recording_to_object_storage_and_transcribe', {
       recordingId: recordingId,
     });
+
+    // connectToLectureRecordingChannel(opts.lectureId);
+    // console.log('connected');
+    // await this.perform('schedule_recording_transcription', {
+    //   recordingId: recordingId,
+    // });
+    // console.log('transcribe scheduled');
   },
 
 	processAudio(recordingId: String) {

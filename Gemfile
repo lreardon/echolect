@@ -110,7 +110,7 @@ gem 'stimulus_reflex', '3.5.3'
 
 gem 'redis-session-store', '~> 0.11.5'
 
-gem 'tailwindcss-rails', '~> 2.6'
+gem 'tailwindcss-rails', '~> 4.0.0'
 
 # gem 'erb_lint'
 gem 'htmlbeautifier'
@@ -122,3 +122,5 @@ gem 'font-awesome-sass'
 gem 'sassc-rails'
 
 gem 'solid_queue'
+
+gem 'cable_ready', '~> 5.0'

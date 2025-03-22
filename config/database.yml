@@ -14,7 +14,14 @@ default: &default
   password: <%= ENV['POSTGRES_PASSWORD'] %>
 
 development:
-  <<: *default
+  primary:
+    <<: *default
+  queue:
+    <<: *default
+    database: <%= ENV['POSTGRES_QUEUE_DB'] %>
+    username: <%= ENV['POSTGRES_USER'] %>
+    password: <%= ENV['POSTGRES_PASSWORD'] %>
+    migrations_paths: db/queue_migrate
   # database: echolect/development
 
 # Warning: The database defined as "test" will be erased and
@@ -29,3 +36,8 @@ production:
   database: prod
   username: proddy
   password: proddy_password
+
+queue:
+  <<: *default
+  database: storage/production_queue.sqlite3
+  migrations_paths: db/queue_migrate
