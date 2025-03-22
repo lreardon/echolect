@@ -1,37 +1,14 @@
 "use strict";
 (() => {
-  var __create = Object.create;
   var __defProp = Object.defineProperty;
-  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
   var __getOwnPropNames = Object.getOwnPropertyNames;
-  var __getProtoOf = Object.getPrototypeOf;
-  var __hasOwnProp = Object.prototype.hasOwnProperty;
   var __esm = (fn, res) => function __init() {
     return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
-  };
-  var __commonJS = (cb, mod) => function __require() {
-    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
   };
   var __export = (target, all) => {
     for (var name4 in all)
       __defProp(target, name4, { get: all[name4], enumerable: true });
   };
-  var __copyProps = (to, from, except, desc) => {
-    if (from && typeof from === "object" || typeof from === "function") {
-      for (let key of __getOwnPropNames(from))
-        if (!__hasOwnProp.call(to, key) && key !== except)
-          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-    }
-    return to;
-  };
-  var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-    // If the importer is in node compatibility mode or this is not an ESM
-    // file that has been converted to a CommonJS file using a Babel-
-    // compatible transform (i.e. "__esModule" has not been set), then set
-    // "default" to the CommonJS "module.exports" for node compatibility.
-    isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
-    mod
-  ));
 
   // ../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/adapters.js
   var adapters_default;
@@ -599,13 +576,6 @@
       init_subscription_guarantor();
       init_adapters();
       init_logger();
-    }
-  });
-
-  // controllers/_messages_controller.js
-  var require_messages_controller = __commonJS({
-    "controllers/_messages_controller.js"() {
-      "use strict";
     }
   });
 
@@ -5889,15 +5859,22 @@
   var audio_channel_default = audioChannel;
 
   // channels/chat_channel.js
-  consumer_default.subscriptions.create("ChatChannel", {
-    connected() {
-    },
-    disconnected() {
-    },
-    received(data) {
-      console.log(data);
-    }
-  });
+  function connectToChatChannel(chatId) {
+    consumer_default.subscriptions.create({
+      channel: "ChatChannel",
+      chat_id: chatId
+    }, {
+      connected() {
+        console.log(`Connecting to chat Channel for chat ${chatId}`);
+      },
+      disconnected() {
+      },
+      received(data) {
+        console.warn(data);
+        if (data.cableReady) CableReady.perform(data.operations);
+      }
+    });
+  }
 
   // channels/lecture_recording_channel.js
   function connectToLectureRecordingChannel(lectureId) {
@@ -5911,7 +5888,6 @@
       disconnected() {
       },
       received(data) {
-        console.log(data);
         if (data.cableReady) {
           CableReady.perform(data.operations);
         }
@@ -13215,8 +13191,25 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
   global3.initialize(application, { controller: application_controller_default, isolate: true, debug: true });
   global3.debug = true;
 
-  // rails:/docker/app/app/javascript/controllers/**/*_controller.{js,ts}
-  var module0 = __toESM(require_messages_controller());
+  // controllers/chat_controller.js
+  var chat_controller_exports = {};
+  __export(chat_controller_exports, {
+    default: () => chat_controller_default
+  });
+  var chat_controller_default = class extends Controller {
+    static values = { id: String };
+    connect() {
+      const chatId = this.idValue;
+      if (chatId) {
+        this.channelSubscription = connectToChatChannel(chatId);
+      }
+    }
+    disconnect() {
+      if (this.channelSubscription) {
+        this.channelSubscription.unsubscribe();
+      }
+    }
+  };
 
   // controllers/chats_controller.js
   var chats_controller_exports = {};
@@ -15519,6 +15512,23 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
     }
   };
 
+  // controllers/messages_controller.js
+  var messages_controller_exports = {};
+  __export(messages_controller_exports, {
+    default: () => messages_controller_default
+  });
+  var messages_controller_default = class extends application_controller_default {
+    createSuccess(element) {
+      console.log("SUCCESS :0");
+      const textarea = element.querySelector('textarea[name="message[body]"]');
+      if (textarea) {
+        console.log(textarea.value);
+        textarea.value = "";
+        console.log(textarea.value);
+      }
+    }
+  };
+
   // controllers/reactions_controller.js
   var reactions_controller_exports = {};
   __export(reactions_controller_exports, {
@@ -15734,7 +15744,7 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
   };
 
   // rails:/docker/app/app/javascript/controllers/**/*_controller.{js,ts}
-  var modules = [{ name: "-messages", module: module0, filename: "_messages_controller.js" }, { name: "application", module: application_controller_exports, filename: "application_controller.js" }, { name: "chats", module: chats_controller_exports, filename: "chats_controller.js" }, { name: "dropzone", module: dropzone_controller_exports, filename: "dropzone_controller.js" }, { name: "example", module: example_controller_exports, filename: "example_controller.js" }, { name: "institution-select", module: institution_select_controller_exports, filename: "institution_select_controller.js" }, { name: "lecture", module: lecture_controller_exports, filename: "lecture_controller.js" }, { name: "reactions", module: reactions_controller_exports, filename: "reactions_controller.js" }, { name: "recording", module: recording_controller_exports, filename: "recording_controller.ts" }, { name: "transcription", module: transcription_controller_exports, filename: "transcription_controller.js" }];
+  var modules = [{ name: "application", module: application_controller_exports, filename: "application_controller.js" }, { name: "chat", module: chat_controller_exports, filename: "chat_controller.js" }, { name: "chats", module: chats_controller_exports, filename: "chats_controller.js" }, { name: "dropzone", module: dropzone_controller_exports, filename: "dropzone_controller.js" }, { name: "example", module: example_controller_exports, filename: "example_controller.js" }, { name: "institution-select", module: institution_select_controller_exports, filename: "institution_select_controller.js" }, { name: "lecture", module: lecture_controller_exports, filename: "lecture_controller.js" }, { name: "messages", module: messages_controller_exports, filename: "messages_controller.js" }, { name: "reactions", module: reactions_controller_exports, filename: "reactions_controller.js" }, { name: "recording", module: recording_controller_exports, filename: "recording_controller.ts" }, { name: "transcription", module: transcription_controller_exports, filename: "transcription_controller.js" }];
   var controller_default = modules;
 
   // controllers/index.js
@@ -15894,7 +15904,8 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
   var TooltipContentElement = class extends HTMLElement {
     constructor() {
       super();
-      this.style.display = "none";
+      this.attachShadow({ mode: "open" });
+      this.shadowRoot;
     }
     connectedCallback() {
       this.style.display = "none";
@@ -15913,10 +15924,11 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
     const customElementStyles = {
       "tooltip-content": { display: "none" }
       // Add more custom elements here as needed:
+      // TODO: Abstract this
       // 'my-dropdown': { display: 'flex', flexDirection: 'column' },
       // 'custom-modal': { position: 'fixed', zIndex: '100' }
     };
-    function applyStylesToElement(element) {
+    function applyStyles(element) {
       const tagName = element.tagName.toLowerCase();
       const styles = customElementStyles[tagName];
       if (styles) {
@@ -15930,14 +15942,14 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
       if (element.nodeType === Node.ELEMENT_NODE) {
         const tagName = element.tagName.toLowerCase();
         if (customElementStyles[tagName]) {
-          applyStylesToElement(element);
+          applyStyles(element);
           stylesApplied = true;
         }
         Object.keys(customElementStyles).forEach((tag) => {
           const children = element.querySelectorAll(tag);
           if (children.length > 0) {
             children.forEach((child) => {
-              applyStylesToElement(child);
+              applyStyles(child);
               stylesApplied = true;
             });
           }
@@ -15947,6 +15959,9 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
     }
     const observer = new MutationObserver(
       (mutations) => {
+        if (mutations.length > 0) {
+          processElement(document.body);
+        }
         let stylesApplied = false;
         mutations.forEach(
           (mutation) => {
@@ -15954,6 +15969,7 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
               mutation.target.childNodes.forEach(
                 (node) => {
                   if (processElement(node)) {
+                    console.log("PROCESSED NODE");
                     stylesApplied = true;
                   }
                 }
@@ -15966,10 +15982,13 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
         }
       }
     );
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
+    observer.observe(
+      document.body,
+      {
+        childList: true,
+        subtree: true
+      }
+    );
   });
 })();
 /*! Bundled license information:

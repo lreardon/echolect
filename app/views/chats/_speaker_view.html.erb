@@ -1,11 +1,30 @@
 <div
     id="speaker-view"
-    class="flex flex-row gap-4 min-h-0"
+    class="flex flex-row gap-4 min-h-0 w-full"
+    data-controller="chat"
+    data-chat-id-value="<%= chat.id %>"
   >
   <div class="basis-3/4 flex-grow min-h-0 flex">
-    <%= render partial: "chats/chat_messages", locals: { chat: chat } %>
+    <div class="flex-grow min-h-0 flex flex-col">
+      <h2>Messages</h2>
+      <div
+        id="chat-<%=chat.id%>-messages"
+        class="flex-grow min-h-0 flex flex-col-reverse overflow-y-scroll"
+      >
+        <%= render partial: "chats/chat_messages", locals: { messages: chat.messages } %>
+      </div>
+    </div>
   </div>
+  <div class="vertical-divider"></div>
   <div class="basis-1/4 flex-grow min-h-0 flex">
-    <%= render partial: "chats/chat_reactions", locals: { chat: chat } %>
+    <div class="flex-grow min-h-0 flex flex-col">
+      <h2>Reactions</h2>
+      <div
+        id="chat-<%=chat.id%>-reactions"
+        class="flex-grow min-h-0 flex flex-row-reverse flex-wrap-reverse items-end justify-end overflow-y-scroll"
+      >
+        <%= render partial: "chats/chat_reactions", locals: { reactions: chat.reactions } %>
+      </div>
+    </div>
   </div>
 </div>

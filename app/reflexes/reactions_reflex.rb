@@ -5,10 +5,15 @@ class ReactionsReflex < ApplicationReflex
 		reaction = element.dataset.reaction
 		chat_id = element.dataset.chat_id
 
-		reaction = current_user.reactions.create(emoji: reaction, chat_id: element.dataset.chat_id)
+		current_user.reactions.create(emoji: reaction, chat_id: element.dataset.chat_id)
 
-		cable_ready["chat-#{chat_id}-reactions"]
-			.append("#chat-#{chat_id}-reactions", html: render(partial: 'chats/reaction', locals: { reaction: }))
+		reactions = Chat.find(chat_id).reactions
+
+		cable_ready["chat:#{chat_id}"]
+			.inner_html(
+				"#chat-#{chat_id}-reactions",
+				html: render(partial: 'chats/chat_reactions',	locals: { reactions: reactions })
+			)
 			.broadcast
 	end
 end

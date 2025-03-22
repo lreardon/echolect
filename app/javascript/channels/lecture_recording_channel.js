@@ -15,7 +15,6 @@ export default function connectToLectureRecordingChannel(lectureId) {
     },
   
     received(data) {
-      console.log(data)
       if (data.cableReady) {
         CableReady.perform(data.operations)
       }

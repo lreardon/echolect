@@ -1,11 +1,3 @@
-<div class="flex-grow min-h-0 flex flex-col">
-  <h2>Reactions</h2>
-  <div
-      id="chat-<%=chat.id%>-reactions"
-      class="flex-grow min-h-0 flex flex-wrap-reverse overflow-y-scroll overflow-x-visible bg-red-400"
-    >
-    <% chat.reactions.order(created_at: :asc).each do |reaction| %>
-      <%= render partial: "chats/reaction", locals: { reaction: reaction } %>
-    <% end %>
-  </div>
-</div>
+<% reactions.reverse.each do |reaction| %>
+  <%= render partial: "chats/reaction", locals: { reaction: reaction } %>
+<% end %>

@@ -20,12 +20,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const customElementStyles = {
         'tooltip-content': { display: 'none' },
         // Add more custom elements here as needed:
+        // TODO: Abstract this
         // 'my-dropdown': { display: 'flex', flexDirection: 'column' },
         // 'custom-modal': { position: 'fixed', zIndex: '100' }
     };
 
     // Function to apply styles to a specific element
-    function applyStylesToElement(element) {
+    function applyStyles(element) {
         const tagName = element.tagName.toLowerCase();
         const styles = customElementStyles[tagName];
         
@@ -43,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (element.nodeType === Node.ELEMENT_NODE) {
         const tagName = element.tagName.toLowerCase();
         if (customElementStyles[tagName]) {
-            applyStylesToElement(element);
+            applyStyles(element);
             stylesApplied = true;
         }
         
@@ -52,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const children = element.querySelectorAll(tag);
             if (children.length > 0) {
             children.forEach(child => {
-                applyStylesToElement(child);
+                applyStyles(child);
                 stylesApplied = true;
             });
             }
@@ -63,6 +64,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     const observer = new MutationObserver((mutations) => {
+        if (mutations.length > 0) {
+            processElement(document.body);
+        }
         let stylesApplied = false;
         mutations.forEach(
             mutation => {
@@ -70,6 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     mutation.target.childNodes.forEach(
                         node => {
                             if (processElement(node)) {
+                                console.log("PROCESSED NODE")
                                 stylesApplied = true;
                             }
                         }
@@ -84,8 +89,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     );
     
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
+    observer.observe(
+        document.body, {
+            childList: true,
+            subtree: true
+        }
+    );
 });

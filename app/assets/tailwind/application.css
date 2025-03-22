@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "tailwind/preflight";
 
 @tailwind utilities;
 
@@ -112,6 +111,14 @@
 
   .flash-error {
     @apply text-red-700;
+  }
+
+  .vertical-divider {
+    display: inline-block;
+    width: 1px;
+    background-color: #e0e0e0;
+    height: 100%;
+    margin: 0 10px;
   }
 }
 

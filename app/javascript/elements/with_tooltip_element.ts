@@ -157,7 +157,8 @@ class WithTooltipElement extends HTMLElement {
 class TooltipContentElement extends HTMLElement {
   constructor() {
     super();
-    this.style.display = 'none';
+    this.attachShadow({ mode: 'open' });
+    this.shadowRoot;
   }
   
   connectedCallback(): void {

@@ -1,5 +1,5 @@
 <% chat = @lecture.chat %>
-<div class="flex flex-col gap-4 h-full">
+<div class="flex flex-col gap-4 h-full p-2">
   <div class="flex-shrink-0">
     <%= link_to @lecture.course_offering.name, course_offering_path(@lecture.course_offering) %>
     <h1>
@@ -16,11 +16,12 @@
     <%= render partial: "lectures/power_bar" %>
   </div>
   <div class="flex flex-col flex-grow min-h-0">
-    <div class="flex flex-grow min-h-0">
-      <% if current_user == chat.user %>
+    <% if current_user == chat.user %>
+      <div class="flex flex-grow min-h-0 p-2">
         <%= render partial: "chats/speaker_view", locals: { chat: chat } %>
-      <% end %>
-    </div>
+      </div>
+      <hr class="p-2">
+    <% end %>
     <div class="flex-shrink-0">
       <%= render partial: "chats/learner_view", locals: { chat: chat }  %>
     </div>

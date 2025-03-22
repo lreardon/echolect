@@ -1,4 +1,9 @@
-<div id="lecture-recording-panel" class="flex flex-col gap-4">
+<div
+  id="lecture-recording-panel"
+  class="flex flex-col gap-4"
+  data-controller="lecture"
+  data-lecture-id-value="<%= lecture.id %>"
+>
   <div class="flex flex-row gap-4">
     <button
       data-controller="recording"
