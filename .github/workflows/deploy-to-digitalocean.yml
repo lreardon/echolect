@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up .env
+      - name: Set up Environment (.env)
         working-directory: .
         run: |
           cp .env.template .env
@@ -21,7 +21,7 @@ jobs:
           sed -i 's/POSTGRES_DB=/POSTGRES_DB=prod/' .env
           sed -i 's/POSTGRES_USER=/POSTGRES_USER=proddy/' .env
           sed -i 's/POSTGRES_PASSWORD=/POSTGRES_PASSWORD=proddy_password/' .env
-      - name: rsync deploy
+      - name: Rsync Deploy
         uses: burnett01/rsync-deployments@7.0.1
         with:
           switches: -avzr --delete
@@ -30,7 +30,16 @@ jobs:
           remote_host: ${{ secrets.SSH_HOST }}
           remote_user: ${{ secrets.SSH_USERNAME }}
           remote_key: ${{ secrets.SSH_KEY }}
-      - name: Run migrations
+      - name: Bundle Install
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ~/server
+            docker exec webapp bundle install
+      - name: Run Migrations
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
