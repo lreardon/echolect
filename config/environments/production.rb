@@ -63,7 +63,7 @@ Rails.application.configure do
 
 	# Use a real queuing backend for Active Job (and separate queues per environment).
 	config.active_job.queue_adapter = :solid_queue
-  config.solid_queue.connects_to = { database: { writing: :queue } }
+	config.solid_queue.connects_to = { database: { writing: :queue } }
 	# config.solid_queue.connects_to = { database: { writing: :queue } }
 	# config.active_job.queue_name_prefix = "echolect_production"
 
@@ -99,6 +99,7 @@ Rails.application.configure do
 
 	# Prepend all log lines with the following tags.
 	config.log_tags = [:request_id]
+
 	# Use default logging formatter so that PID and timestamp are not suppressed.
 	config.log_formatter = Logger::Formatter.new
 
@@ -106,9 +107,18 @@ Rails.application.configure do
 	# require "syslog/logger"
 	# config.logger = ActiveSupport::TaggedLogging.new(Syslog::Logger.new "app-name")
 
-	logger = ActiveSupport::Logger.new($stdout)
-	logger.formatter = config.log_formatter
-	config.logger    = ActiveSupport::TaggedLogging.new(logger)
+	# logger = ActiveSupport::Logger.new($stdout)
+	# logger.formatter = config.log_formatter
+	# config.logger    = ActiveSupport::TaggedLogging.new(logger)
+	# config.log_tags = [:request_id]
+
+	config.logger = ActiveSupport::Logger.new(
+		Rails.root.join('log', 'production.log'),
+		10,                # Number of log files to keep
+		50.megabytes       # Maximum size of each log file
+	)
+	config.logger.formatter = config.log_formatter
+	config.logger = ActiveSupport::TaggedLogging.new(config.logger)
 	config.log_tags = [:request_id]
 
 	# Do not dump schema after migrations.

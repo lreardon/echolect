@@ -43,6 +43,29 @@ services:
       - public:/docker/app/public
     command: "bundle exec rails s -p 3000 -b '0.0.0.0'"
     # command: "foreman start -f Procfile"
+  whisper:
+    container_name: whisper
+    build:
+      context: services/whisper
+      dockerfile: Dockerfile
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - WHISPER_MODEL=large-v3
+      - WHISPER_BEAM=1 #optional
+      - WHISPER_LANG=en #optional
+    volumes:
+      - ./shared/recordings:/app/recordings
+      - ./services/whisper/models:/app/models
+      - ./services/whisper:/app
+      # - 'whisper-transcriptions:/app/transcriptions'
+      # - /path/to/faster-whisper/data:/config
+    ports:
+      - 10300:10300
+      - 5001:5000
+    restart: unless-stopped
+
   nginx:
     container_name: nginx
     image: nginx:latest

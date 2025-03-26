@@ -13,6 +13,8 @@ gem 'thor'
 
 gem 'ostruct'
 
+gem 'lograge'
+
 # gem 'aws-sdk-s3', require: false
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
