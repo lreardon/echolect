@@ -9,11 +9,11 @@
 // Minify is enabled when "RAILS_ENV=production"
 // Sourcemaps are enabled in non-production environments
 
-import * as esbuild from "esbuild"
-import path from "path"
-import rails from "esbuild-rails"
 import chokidar from "chokidar"
+import * as esbuild from "esbuild"
+import rails from "esbuild-rails"
 import http from "http"
+import path from "path"
 import { setTimeout } from "timers/promises"
 
 const clients = []
@@ -48,7 +48,7 @@ async function buildAndReload() {
     }
   })
 
-  // Reload uses an HTTP server as an even stream to reload the browser
+  // Reload uses an HTTP server as an event stream to reload the browser
   http.createServer((req, res) => {
     return clients.push(
       res.writeHead(200, {

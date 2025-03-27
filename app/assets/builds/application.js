@@ -6,25 +6,25 @@
     return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
   };
   var __export = (target, all) => {
-    for (var name4 in all)
-      __defProp(target, name4, { get: all[name4], enumerable: true });
+    for (var name3 in all)
+      __defProp(target, name3, { get: all[name3], enumerable: true });
   };
 
-  // ../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/adapters.js
+  // ../../node_modules/@rails/actioncable/src/adapters.js
   var adapters_default;
   var init_adapters = __esm({
-    "../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/adapters.js"() {
+    "../../node_modules/@rails/actioncable/src/adapters.js"() {
       adapters_default = {
-        logger: self.console,
-        WebSocket: self.WebSocket
+        logger: typeof console !== "undefined" ? console : void 0,
+        WebSocket: typeof WebSocket !== "undefined" ? WebSocket : void 0
       };
     }
   });
 
-  // ../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/logger.js
+  // ../../node_modules/@rails/actioncable/src/logger.js
   var logger_default;
   var init_logger = __esm({
-    "../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/logger.js"() {
+    "../../node_modules/@rails/actioncable/src/logger.js"() {
       init_adapters();
       logger_default = {
         log(...messages) {
@@ -37,10 +37,10 @@
     }
   });
 
-  // ../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/connection_monitor.js
+  // ../../node_modules/@rails/actioncable/src/connection_monitor.js
   var now, secondsSince, ConnectionMonitor, connection_monitor_default;
   var init_connection_monitor = __esm({
-    "../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/connection_monitor.js"() {
+    "../../node_modules/@rails/actioncable/src/connection_monitor.js"() {
       init_logger();
       now = () => (/* @__PURE__ */ new Date()).getTime();
       secondsSince = (time) => (now() - time) / 1e3;
@@ -70,12 +70,11 @@
         isRunning() {
           return this.startedAt && !this.stoppedAt;
         }
-        recordPing() {
+        recordMessage() {
           this.pingedAt = now();
         }
         recordConnect() {
           this.reconnectAttempts = 0;
-          this.recordPing();
           delete this.disconnectedAt;
           logger_default.log("ConnectionMonitor recorded connect");
         }
@@ -148,10 +147,10 @@
     }
   });
 
-  // ../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/internal.js
+  // ../../node_modules/@rails/actioncable/src/internal.js
   var internal_default;
   var init_internal = __esm({
-    "../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/internal.js"() {
+    "../../node_modules/@rails/actioncable/src/internal.js"() {
       internal_default = {
         "message_types": {
           "welcome": "welcome",
@@ -163,7 +162,8 @@
         "disconnect_reasons": {
           "unauthorized": "unauthorized",
           "invalid_request": "invalid_request",
-          "server_restart": "server_restart"
+          "server_restart": "server_restart",
+          "remote": "remote"
         },
         "default_mount_path": "/cable",
         "protocols": [
@@ -174,10 +174,10 @@
     }
   });
 
-  // ../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/connection.js
+  // ../../node_modules/@rails/actioncable/src/connection.js
   var message_types, protocols, supportedProtocols, indexOf, Connection, connection_default;
   var init_connection = __esm({
-    "../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/connection.js"() {
+    "../../node_modules/@rails/actioncable/src/connection.js"() {
       init_adapters();
       init_connection_monitor();
       init_internal();
@@ -186,9 +186,9 @@
       supportedProtocols = protocols.slice(0, protocols.length - 1);
       indexOf = [].indexOf;
       Connection = class {
-        constructor(consumer5) {
+        constructor(consumer4) {
           this.open = this.open.bind(this);
-          this.consumer = consumer5;
+          this.consumer = consumer4;
           this.subscriptions = this.consumer.subscriptions;
           this.monitor = new connection_monitor_default(this);
           this.disconnected = true;
@@ -206,11 +206,12 @@
             logger_default.log(`Attempted to open WebSocket, but existing socket is ${this.getState()}`);
             return false;
           } else {
-            logger_default.log(`Opening WebSocket, current state is ${this.getState()}, subprotocols: ${protocols}`);
+            const socketProtocols = [...protocols, ...this.consumer.subprotocols || []];
+            logger_default.log(`Opening WebSocket, current state is ${this.getState()}, subprotocols: ${socketProtocols}`);
             if (this.webSocket) {
               this.uninstallEventHandlers();
             }
-            this.webSocket = new adapters_default.WebSocket(this.consumer.url, protocols);
+            this.webSocket = new adapters_default.WebSocket(this.consumer.url, socketProtocols);
             this.installEventHandlers();
             this.monitor.start();
             return true;
@@ -250,6 +251,9 @@
         isActive() {
           return this.isState("open", "connecting");
         }
+        triedToReconnect() {
+          return this.monitor.reconnectAttempts > 0;
+        }
         // Private
         isProtocolSupported() {
           return indexOf.call(supportedProtocols, this.getProtocol()) >= 0;
@@ -287,18 +291,27 @@
             return;
           }
           const { identifier, message, reason, reconnect, type } = JSON.parse(event.data);
+          this.monitor.recordMessage();
           switch (type) {
             case message_types.welcome:
+              if (this.triedToReconnect()) {
+                this.reconnectAttempted = true;
+              }
               this.monitor.recordConnect();
               return this.subscriptions.reload();
             case message_types.disconnect:
               logger_default.log(`Disconnecting. Reason: ${reason}`);
               return this.close({ allowReconnect: reconnect });
             case message_types.ping:
-              return this.monitor.recordPing();
+              return null;
             case message_types.confirmation:
               this.subscriptions.confirmSubscription(identifier);
-              return this.subscriptions.notify(identifier, "connected");
+              if (this.reconnectAttempted) {
+                this.reconnectAttempted = false;
+                return this.subscriptions.notify(identifier, "connected", { reconnected: true });
+              } else {
+                return this.subscriptions.notify(identifier, "connected", { reconnected: false });
+              }
             case message_types.rejection:
               return this.subscriptions.reject(identifier);
             default:
@@ -330,10 +343,10 @@
     }
   });
 
-  // ../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/subscription.js
+  // ../../node_modules/@rails/actioncable/src/subscription.js
   var extend, Subscription;
   var init_subscription = __esm({
-    "../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/subscription.js"() {
+    "../../node_modules/@rails/actioncable/src/subscription.js"() {
       extend = function(object, properties) {
         if (properties != null) {
           for (let key in properties) {
@@ -344,8 +357,8 @@
         return object;
       };
       Subscription = class {
-        constructor(consumer5, params2 = {}, mixin) {
-          this.consumer = consumer5;
+        constructor(consumer4, params2 = {}, mixin) {
+          this.consumer = consumer4;
           this.identifier = JSON.stringify(params2);
           extend(this, mixin);
         }
@@ -364,10 +377,10 @@
     }
   });
 
-  // ../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/subscription_guarantor.js
+  // ../../node_modules/@rails/actioncable/src/subscription_guarantor.js
   var SubscriptionGuarantor, subscription_guarantor_default;
   var init_subscription_guarantor = __esm({
-    "../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/subscription_guarantor.js"() {
+    "../../node_modules/@rails/actioncable/src/subscription_guarantor.js"() {
       init_logger();
       SubscriptionGuarantor = class {
         constructor(subscriptions) {
@@ -412,16 +425,16 @@
     }
   });
 
-  // ../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/subscriptions.js
+  // ../../node_modules/@rails/actioncable/src/subscriptions.js
   var Subscriptions;
   var init_subscriptions = __esm({
-    "../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/subscriptions.js"() {
+    "../../node_modules/@rails/actioncable/src/subscriptions.js"() {
       init_subscription();
       init_subscription_guarantor();
       init_logger();
       Subscriptions = class {
-        constructor(consumer5) {
-          this.consumer = consumer5;
+        constructor(consumer4) {
+          this.consumer = consumer4;
           this.guarantor = new subscription_guarantor_default(this);
           this.subscriptions = [];
         }
@@ -493,7 +506,7 @@
     }
   });
 
-  // ../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/consumer.js
+  // ../../node_modules/@rails/actioncable/src/consumer.js
   function createWebSocketURL(url) {
     if (typeof url === "function") {
       url = url();
@@ -510,7 +523,7 @@
   }
   var Consumer;
   var init_consumer = __esm({
-    "../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/consumer.js"() {
+    "../../node_modules/@rails/actioncable/src/consumer.js"() {
       init_connection();
       init_subscriptions();
       Consumer = class {
@@ -518,6 +531,7 @@
           this._url = url;
           this.subscriptions = new Subscriptions(this);
           this.connection = new connection_default(this);
+          this.subprotocols = [];
         }
         get url() {
           return createWebSocketURL(this._url);
@@ -536,11 +550,14 @@
             return this.connection.open();
           }
         }
+        addSubProtocol(subprotocol) {
+          this.subprotocols = [...this.subprotocols, subprotocol];
+        }
       };
     }
   });
 
-  // ../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/index.js
+  // ../../node_modules/@rails/actioncable/src/index.js
   var src_exports = {};
   __export(src_exports, {
     Connection: () => connection_default,
@@ -559,14 +576,14 @@
   function createConsumer(url = getConfig("url") || internal_default.default_mount_path) {
     return new Consumer(url);
   }
-  function getConfig(name4) {
-    const element = document.head.querySelector(`meta[name='action-cable-${name4}']`);
+  function getConfig(name3) {
+    const element = document.head.querySelector(`meta[name='action-cable-${name3}']`);
     if (element) {
       return element.getAttribute("content");
     }
   }
   var init_src = __esm({
-    "../../node_modules/@hotwired/turbo-rails/node_modules/@rails/actioncable/src/index.js"() {
+    "../../node_modules/@rails/actioncable/src/index.js"() {
       init_connection();
       init_connection_monitor();
       init_consumer();
@@ -615,8 +632,8 @@
       submitter.type == "submit" || raise(TypeError, "The specified element is not a submit button");
       submitter.form == form || raise(DOMException, "The specified element is not owned by this form element", "NotFoundError");
     }
-    function raise(errorConstructor, message, name4) {
-      throw new errorConstructor("Failed to execute 'requestSubmit' on 'HTMLFormElement': " + message + ".", name4);
+    function raise(errorConstructor, message, name3) {
+      throw new errorConstructor("Failed to execute 'requestSubmit' on 'HTMLFormElement': " + message + ".", name3);
     }
   })(HTMLFormElement.prototype);
   var submittersByForm = /* @__PURE__ */ new WeakMap();
@@ -672,12 +689,12 @@
     reload() {
       return this.delegate.sourceURLReloaded();
     }
-    attributeChangedCallback(name4) {
-      if (name4 == "loading") {
+    attributeChangedCallback(name3) {
+      if (name3 == "loading") {
         this.delegate.loadingStyleChanged();
-      } else if (name4 == "complete") {
+      } else if (name3 == "complete") {
         this.delegate.completeChanged();
-      } else if (name4 == "src") {
+      } else if (name3 == "src") {
         this.delegate.sourceURLChanged();
       } else {
         this.delegate.disabledChanged();
@@ -793,8 +810,8 @@
     return value.endsWith("/") ? value : value + "/";
   }
   var FetchResponse = class {
-    constructor(response3) {
-      this.response = response3;
+    constructor(response2) {
+      this.response = response2;
     }
     get succeeded() {
       return this.response.ok;
@@ -833,8 +850,8 @@
         return Promise.resolve(void 0);
       }
     }
-    header(name4) {
-      return this.response.headers.get(name4);
+    header(name3) {
+      return this.response.headers.get(name3);
     }
   };
   function activateScriptElement(element) {
@@ -853,14 +870,14 @@
     }
   }
   function copyElementAttributes(destinationElement, sourceElement) {
-    for (const { name: name4, value } of sourceElement.attributes) {
-      destinationElement.setAttribute(name4, value);
+    for (const { name: name3, value } of sourceElement.attributes) {
+      destinationElement.setAttribute(name3, value);
     }
   }
   function createDocumentFragment(html) {
-    const template3 = document.createElement("template");
-    template3.innerHTML = html;
-    return template3.content;
+    const template2 = document.createElement("template");
+    template2.innerHTML = html;
+    return template2.content;
   }
   function dispatch(eventName, { target, cancelable, detail } = {}) {
     const event = new CustomEvent(eventName, {
@@ -967,18 +984,18 @@
     const action = getAttribute("data-turbo-action", ...elements);
     return isAction(action) ? action : null;
   }
-  function getMetaElement(name4) {
-    return document.querySelector(`meta[name="${name4}"]`);
+  function getMetaElement(name3) {
+    return document.querySelector(`meta[name="${name3}"]`);
   }
-  function getMetaContent(name4) {
-    const element = getMetaElement(name4);
+  function getMetaContent(name3) {
+    const element = getMetaElement(name3);
     return element && element.content;
   }
-  function setMetaContent(name4, content) {
-    let element = getMetaElement(name4);
+  function setMetaContent(name3, content) {
+    let element = getMetaElement(name3);
     if (!element) {
       element = document.createElement("meta");
-      element.setAttribute("name", name4);
+      element.setAttribute("name", name3);
       document.head.appendChild(element);
     }
     element.setAttribute("content", content);
@@ -1042,8 +1059,8 @@
       await this.allowRequestToBeIntercepted(fetchOptions);
       try {
         this.delegate.requestStarted(this);
-        const response3 = await fetch(this.url.href, fetchOptions);
-        return await this.receive(response3);
+        const response2 = await fetch(this.url.href, fetchOptions);
+        return await this.receive(response2);
       } catch (error3) {
         if (error3.name !== "AbortError") {
           if (this.willDelegateErrorHandling(error3)) {
@@ -1055,8 +1072,8 @@
         this.delegate.requestFinished(this);
       }
     }
-    async receive(response3) {
-      const fetchResponse = new FetchResponse(response3);
+    async receive(response2) {
+      const fetchResponse = new FetchResponse(response2);
       const event = dispatch("turbo:before-fetch-response", {
         cancelable: true,
         detail: { fetchResponse },
@@ -1240,8 +1257,8 @@
       return this.fetchRequest.isSafe;
     }
     get stringFormData() {
-      return [...this.formData].reduce((entries, [name4, value]) => {
-        return entries.concat(typeof value == "string" ? [[name4, value]] : []);
+      return [...this.formData].reduce((entries, [name3, value]) => {
+        return entries.concat(typeof value == "string" ? [[name3, value]] : []);
       }, []);
     }
     async start() {
@@ -1266,15 +1283,15 @@
         return true;
       }
     }
-    prepareRequest(request4) {
-      if (!request4.isSafe) {
+    prepareRequest(request3) {
+      if (!request3.isSafe) {
         const token = getCookieValue(getMetaContent("csrf-param")) || getMetaContent("csrf-token");
         if (token) {
-          request4.headers["X-CSRF-Token"] = token;
+          request3.headers["X-CSRF-Token"] = token;
         }
       }
-      if (this.requestAcceptsTurboStreamResponse(request4)) {
-        request4.acceptResponseType(StreamMessage.contentType);
+      if (this.requestAcceptsTurboStreamResponse(request3)) {
+        request3.acceptResponseType(StreamMessage.contentType);
       }
     }
     requestStarted(_request) {
@@ -1288,26 +1305,26 @@
       });
       this.delegate.formSubmissionStarted(this);
     }
-    requestPreventedHandlingResponse(request4, response3) {
-      this.result = { success: response3.succeeded, fetchResponse: response3 };
+    requestPreventedHandlingResponse(request3, response2) {
+      this.result = { success: response2.succeeded, fetchResponse: response2 };
     }
-    requestSucceededWithResponse(request4, response3) {
-      if (response3.clientError || response3.serverError) {
-        this.delegate.formSubmissionFailedWithResponse(this, response3);
-      } else if (this.requestMustRedirect(request4) && responseSucceededWithoutRedirect(response3)) {
+    requestSucceededWithResponse(request3, response2) {
+      if (response2.clientError || response2.serverError) {
+        this.delegate.formSubmissionFailedWithResponse(this, response2);
+      } else if (this.requestMustRedirect(request3) && responseSucceededWithoutRedirect(response2)) {
         const error3 = new Error("Form responses must redirect to another location");
         this.delegate.formSubmissionErrored(this, error3);
       } else {
         this.state = FormSubmissionState.receiving;
-        this.result = { success: true, fetchResponse: response3 };
-        this.delegate.formSubmissionSucceededWithResponse(this, response3);
+        this.result = { success: true, fetchResponse: response2 };
+        this.delegate.formSubmissionSucceededWithResponse(this, response2);
       }
     }
-    requestFailedWithResponse(request4, response3) {
-      this.result = { success: false, fetchResponse: response3 };
-      this.delegate.formSubmissionFailedWithResponse(this, response3);
+    requestFailedWithResponse(request3, response2) {
+      this.result = { success: false, fetchResponse: response2 };
+      this.delegate.formSubmissionFailedWithResponse(this, response2);
     }
-    requestErrored(request4, error3) {
+    requestErrored(request3, error3) {
       this.result = { success: false, error: error3 };
       this.delegate.formSubmissionErrored(this, error3);
     }
@@ -1344,11 +1361,11 @@
         input.value = this.originalSubmitText;
       }
     }
-    requestMustRedirect(request4) {
-      return !request4.isSafe && this.mustRedirect;
+    requestMustRedirect(request3) {
+      return !request3.isSafe && this.mustRedirect;
     }
-    requestAcceptsTurboStreamResponse(request4) {
-      return !request4.isSafe || hasAttribute("data-turbo-stream", this.submitter, this.formElement);
+    requestAcceptsTurboStreamResponse(request3) {
+      return !request3.isSafe || hasAttribute("data-turbo-stream", this.submitter, this.formElement);
     }
     get submitsWith() {
       var _a;
@@ -1357,10 +1374,10 @@
   };
   function buildFormData(formElement, submitter) {
     const formData = new FormData(formElement);
-    const name4 = submitter === null || submitter === void 0 ? void 0 : submitter.getAttribute("name");
+    const name3 = submitter === null || submitter === void 0 ? void 0 : submitter.getAttribute("name");
     const value = submitter === null || submitter === void 0 ? void 0 : submitter.getAttribute("value");
-    if (name4) {
-      formData.append(name4, value || "");
+    if (name3) {
+      formData.append(name3, value || "");
     }
     return formData;
   }
@@ -1374,15 +1391,15 @@
       }
     }
   }
-  function responseSucceededWithoutRedirect(response3) {
-    return response3.statusCode == 200 && !response3.redirected;
+  function responseSucceededWithoutRedirect(response2) {
+    return response2.statusCode == 200 && !response2.redirected;
   }
   function mergeFormDataEntries(url, entries) {
     const searchParams = new URLSearchParams();
-    for (const [name4, value] of entries) {
+    for (const [name3, value] of entries) {
       if (value instanceof File)
         continue;
-      searchParams.append(name4, value);
+      searchParams.append(name3, value);
     }
     url.search = searchParams.toString();
     return url;
@@ -1701,8 +1718,8 @@
     followedLinkToLocation(link, location2) {
       const form = document.createElement("form");
       const type = "hidden";
-      for (const [name4, value] of location2.searchParams) {
-        form.append(Object.assign(document.createElement("input"), { type, name: name4, value }));
+      for (const [name3, value] of location2.searchParams) {
+        form.append(Object.assign(document.createElement("input"), { type, name: name3, value }));
       }
       const action = Object.assign(location2, { search: "" });
       form.setAttribute("data-turbo", "true");
@@ -2054,14 +2071,14 @@
         }
       }, []);
     }
-    getMetaValue(name4) {
-      const element = this.findMetaElementByName(name4);
+    getMetaValue(name3) {
+      const element = this.findMetaElementByName(name3);
       return element ? element.getAttribute("content") : null;
     }
-    findMetaElementByName(name4) {
+    findMetaElementByName(name3) {
       return Object.keys(this.detailsByOuterHTML).reduce((result, outerHTML) => {
         const { elements: [element] } = this.detailsByOuterHTML[outerHTML];
-        return elementIsMetaElementWithName(element, name4) ? element : result;
+        return elementIsMetaElementWithName(element, name3) ? element : result;
       }, void 0);
     }
   };
@@ -2087,9 +2104,9 @@
     const tagName = element.localName;
     return tagName == "style" || tagName == "link" && element.getAttribute("rel") == "stylesheet";
   }
-  function elementIsMetaElementWithName(element, name4) {
+  function elementIsMetaElementWithName(element, name3) {
     const tagName = element.localName;
-    return tagName == "meta" && element.getAttribute("name") == name4;
+    return tagName == "meta" && element.getAttribute("name") == name3;
   }
   function elementWithoutNonce(element) {
     if (element.hasAttribute("nonce")) {
@@ -2147,8 +2164,8 @@
     get isVisitable() {
       return this.getSetting("visit-control") != "reload";
     }
-    getSetting(name4) {
-      return this.headSnapshot.getMetaValue(`turbo-${name4}`);
+    getSetting(name3) {
+      return this.headSnapshot.getMetaValue(`turbo-${name3}`);
     }
   };
   var TimingMetric;
@@ -2196,13 +2213,13 @@
       this.delegate = delegate;
       this.location = location2;
       this.restorationIdentifier = restorationIdentifier || uuid();
-      const { action, historyChanged, referrer, snapshot, snapshotHTML, response: response3, visitCachedSnapshot, willRender, updateHistory, shouldCacheSnapshot, acceptsStreamResponse } = Object.assign(Object.assign({}, defaultOptions), options);
+      const { action, historyChanged, referrer, snapshot, snapshotHTML, response: response2, visitCachedSnapshot, willRender, updateHistory, shouldCacheSnapshot, acceptsStreamResponse } = Object.assign(Object.assign({}, defaultOptions), options);
       this.action = action;
       this.historyChanged = historyChanged;
       this.referrer = referrer;
       this.snapshot = snapshot;
       this.snapshotHTML = snapshotHTML;
-      this.response = response3;
+      this.response = response2;
       this.isSamePage = this.delegate.locationWithActionIsSamePage(this.location, this.action);
       this.visitCachedSnapshot = visitCachedSnapshot;
       this.willRender = willRender;
@@ -2288,10 +2305,10 @@
       this.recordTimingMetric(TimingMetric.requestStart);
       this.adapter.visitRequestStarted(this);
     }
-    recordResponse(response3 = this.response) {
-      this.response = response3;
-      if (response3) {
-        const { statusCode } = response3;
+    recordResponse(response2 = this.response) {
+      this.response = response2;
+      if (response2) {
+        const { statusCode } = response2;
         if (isSuccessful(statusCode)) {
           this.adapter.visitRequestCompleted(this);
         } else {
@@ -2383,9 +2400,9 @@
         });
       }
     }
-    prepareRequest(request4) {
+    prepareRequest(request3) {
       if (this.acceptsStreamResponse) {
-        request4.acceptResponseType(StreamMessage.contentType);
+        request3.acceptResponseType(StreamMessage.contentType);
       }
     }
     requestStarted() {
@@ -2393,22 +2410,22 @@
     }
     requestPreventedHandlingResponse(_request, _response) {
     }
-    async requestSucceededWithResponse(request4, response3) {
-      const responseHTML = await response3.responseHTML;
-      const { redirected, statusCode } = response3;
+    async requestSucceededWithResponse(request3, response2) {
+      const responseHTML = await response2.responseHTML;
+      const { redirected, statusCode } = response2;
       if (responseHTML == void 0) {
         this.recordResponse({
           statusCode: SystemStatusCode.contentTypeMismatch,
           redirected
         });
       } else {
-        this.redirectedToLocation = response3.redirected ? response3.location : void 0;
+        this.redirectedToLocation = response2.redirected ? response2.location : void 0;
         this.recordResponse({ statusCode, responseHTML, redirected });
       }
     }
-    async requestFailedWithResponse(request4, response3) {
-      const responseHTML = await response3.responseHTML;
-      const { redirected, statusCode } = response3;
+    async requestFailedWithResponse(request3, response2) {
+      const responseHTML = await response2.responseHTML;
+      const { redirected, statusCode } = response2;
       if (responseHTML == void 0) {
         this.recordResponse({
           statusCode: SystemStatusCode.contentTypeMismatch,
@@ -2995,10 +3012,10 @@
       this.sources = /* @__PURE__ */ new Set();
       this.started = false;
       this.inspectFetchResponse = (event) => {
-        const response3 = fetchResponseFromEvent(event);
-        if (response3 && fetchResponseIsStream(response3)) {
+        const response2 = fetchResponseFromEvent(event);
+        if (response2 && fetchResponseIsStream(response2)) {
           event.preventDefault();
-          this.receiveMessageResponse(response3);
+          this.receiveMessageResponse(response2);
         }
       };
       this.receiveMessageEvent = (event) => {
@@ -3035,8 +3052,8 @@
     streamSourceIsConnected(source) {
       return this.sources.has(source);
     }
-    async receiveMessageResponse(response3) {
-      const html = await response3.responseHTML;
+    async receiveMessageResponse(response2) {
+      const html = await response2.responseHTML;
       if (html) {
         this.receiveMessageHTML(html);
       }
@@ -3052,9 +3069,9 @@
       return fetchResponse;
     }
   }
-  function fetchResponseIsStream(response3) {
+  function fetchResponseIsStream(response2) {
     var _a;
-    const contentType = (_a = response3.contentType) !== null && _a !== void 0 ? _a : "";
+    const contentType = (_a = response2.contentType) !== null && _a !== void 0 ? _a : "";
     return contentType.startsWith(StreamMessage.contentType);
   }
   var ErrorRenderer = class extends Renderer {
@@ -3343,8 +3360,8 @@
         return;
       }
       try {
-        const response3 = await fetch(location2.toString(), { headers: { "VND.PREFETCH": "true", Accept: "text/html" } });
-        const responseText = await response3.text();
+        const response2 = await fetch(location2.toString(), { headers: { "VND.PREFETCH": "true", Accept: "text/html" } });
+        const responseText = await response2.text();
         const snapshot = PageSnapshot.fromHTMLString(responseText);
         this.snapshotCache.put(location2, snapshot);
       } catch (_) {
@@ -3902,11 +3919,11 @@
       this.prepareRequest(fetchRequest);
       this.formSubmission.start();
     }
-    prepareRequest(request4) {
+    prepareRequest(request3) {
       var _a;
-      request4.headers["Turbo-Frame"] = this.id;
+      request3.headers["Turbo-Frame"] = this.id;
       if ((_a = this.currentNavigationElement) === null || _a === void 0 ? void 0 : _a.hasAttribute("data-turbo-stream")) {
-        request4.acceptResponseType(StreamMessage.contentType);
+        request3.acceptResponseType(StreamMessage.contentType);
       }
     }
     requestStarted(_request) {
@@ -3915,15 +3932,15 @@
     requestPreventedHandlingResponse(_request, _response) {
       this.resolveVisitPromise();
     }
-    async requestSucceededWithResponse(request4, response3) {
-      await this.loadResponse(response3);
+    async requestSucceededWithResponse(request3, response2) {
+      await this.loadResponse(response2);
       this.resolveVisitPromise();
     }
-    async requestFailedWithResponse(request4, response3) {
-      await this.loadResponse(response3);
+    async requestFailedWithResponse(request3, response2) {
+      await this.loadResponse(response2);
       this.resolveVisitPromise();
     }
-    requestErrored(request4, error3) {
+    requestErrored(request3, error3) {
       console.error(error3);
       this.resolveVisitPromise();
     }
@@ -3933,10 +3950,10 @@
     formSubmissionStarted({ formElement }) {
       markAsBusy(formElement, this.findFrameElement(formElement));
     }
-    formSubmissionSucceededWithResponse(formSubmission, response3) {
+    formSubmissionSucceededWithResponse(formSubmission, response2) {
       const frame = this.findFrameElement(formSubmission.formElement, formSubmission.submitter);
       frame.delegate.proposeVisitIfNavigatedWithAction(frame, formSubmission.formElement, formSubmission.submitter);
-      frame.delegate.loadResponse(response3);
+      frame.delegate.loadResponse(response2);
       if (!formSubmission.isSafe) {
         session.clearCache();
       }
@@ -3992,9 +4009,9 @@
     }
     async visit(url) {
       var _a;
-      const request4 = new FetchRequest(this, FetchMethod.get, url, new URLSearchParams(), this.element);
+      const request3 = new FetchRequest(this, FetchMethod.get, url, new URLSearchParams(), this.element);
       (_a = this.currentFetchRequest) === null || _a === void 0 ? void 0 : _a.cancel();
-      this.currentFetchRequest = request4;
+      this.currentFetchRequest = request3;
       return new Promise((resolve) => {
         this.resolveVisitPromise = () => {
           this.resolveVisitPromise = () => {
@@ -4002,7 +4019,7 @@
           this.currentFetchRequest = null;
           resolve();
         };
-        request4.perform();
+        request3.perform();
       });
     }
     navigateFrame(element, url, submitter) {
@@ -4021,9 +4038,9 @@
           if (frame.src) {
             const { statusCode, redirected } = fetchResponse;
             const responseHTML = frame.ownerDocument.documentElement.outerHTML;
-            const response3 = { statusCode, redirected, responseHTML };
+            const response2 = { statusCode, redirected, responseHTML };
             const options = {
-              response: response3,
+              response: response2,
               visitCachedSnapshot,
               willRender: false,
               updateHistory: false,
@@ -4049,7 +4066,7 @@
     }
     willHandleFrameMissingFromResponse(fetchResponse) {
       this.element.setAttribute("complete", "");
-      const response3 = fetchResponse.response;
+      const response2 = fetchResponse.response;
       const visit2 = async (url, options = {}) => {
         if (url instanceof Response) {
           this.visitResponse(url);
@@ -4059,7 +4076,7 @@
       };
       const event = dispatch("turbo:frame-missing", {
         target: this.element,
-        detail: { response: response3, visit: visit2 },
+        detail: { response: response2, visit: visit2 },
         cancelable: true
       });
       return !event.defaultPrevented;
@@ -4072,8 +4089,8 @@
       const message = `The response (${fetchResponse.statusCode}) did not contain the expected <turbo-frame id="${this.element.id}"> and will be ignored. To perform a full page visit instead, set turbo-visit-control to reload.`;
       throw new TurboFrameMissingError(message);
     }
-    async visitResponse(response3) {
-      const wrapped = new FetchResponse(response3);
+    async visitResponse(response2) {
+      const wrapped = new FetchResponse(response2);
       const responseHTML = await wrapped.responseHTML;
       const { location: location2, redirected, statusCode } = wrapped;
       return session.visit(location2, { response: { redirected, statusCode, responseHTML } });
@@ -4271,9 +4288,9 @@
     }
     get templateElement() {
       if (this.firstElementChild === null) {
-        const template3 = this.ownerDocument.createElement("template");
-        this.appendChild(template3);
-        return template3;
+        const template2 = this.ownerDocument.createElement("template");
+        this.appendChild(template2);
+        return template2;
       } else if (this.firstElementChild instanceof HTMLTemplateElement) {
         return this.firstElementChild;
       }
@@ -4384,8 +4401,8 @@
     return consumer = newConsumer;
   }
   async function createConsumer2() {
-    const { createConsumer: createConsumer5 } = await Promise.resolve().then(() => (init_src(), src_exports));
-    return createConsumer5();
+    const { createConsumer: createConsumer4 } = await Promise.resolve().then(() => (init_src(), src_exports));
+    return createConsumer4();
   }
   async function subscribeTo(channel, mixin) {
     const { subscriptions } = await getConsumer();
@@ -4492,10 +4509,10 @@
   var sparkMd5 = {
     exports: {}
   };
-  (function(module4, exports) {
+  (function(module3, exports) {
     (function(factory) {
       {
-        module4.exports = factory();
+        module3.exports = factory();
       }
     })(function(undefined$1) {
       var hex_chr = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"];
@@ -4944,8 +4961,8 @@
       }
     }
   };
-  function getMetaValue(name4) {
-    const element = findElement(document.head, `meta[name="${name4}"]`);
+  function getMetaValue(name3) {
+    const element = findElement(document.head, `meta[name="${name3}"]`);
     if (element) {
       return element.getAttribute("content");
     }
@@ -5017,11 +5034,11 @@
       return this.xhr.status;
     }
     get response() {
-      const { responseType, response: response3 } = this.xhr;
+      const { responseType, response: response2 } = this.xhr;
       if (responseType == "json") {
-        return response3;
+        return response2;
       } else {
-        return JSON.parse(response3);
+        return JSON.parse(response2);
       }
     }
     create(callback) {
@@ -5032,10 +5049,10 @@
     }
     requestDidLoad(event) {
       if (this.status >= 200 && this.status < 300) {
-        const { response: response3 } = this;
-        const { direct_upload } = response3;
-        delete response3.direct_upload;
-        this.attributes = response3;
+        const { response: response2 } = this;
+        const { direct_upload } = response2;
+        delete response2.direct_upload;
+        this.attributes = response2;
         this.directUploadData = direct_upload;
         this.callback(null, this.toJSON());
       } else {
@@ -5072,9 +5089,9 @@
       this.xhr.send(this.file.slice());
     }
     requestDidLoad(event) {
-      const { status, response: response3 } = this.xhr;
+      const { status, response: response2 } = this.xhr;
       if (status >= 200 && status < 300) {
-        this.callback(null, response3);
+        this.callback(null, response2);
       } else {
         this.requestDidError(event);
       }
@@ -5158,10 +5175,10 @@
     get url() {
       return this.input.getAttribute("data-direct-upload-url");
     }
-    dispatch(name4, detail = {}) {
+    dispatch(name3, detail = {}) {
       detail.file = this.file;
       detail.id = this.directUpload.id;
-      return dispatchEvent2(this.input, `direct-upload:${name4}`, {
+      return dispatchEvent2(this.input, `direct-upload:${name3}`, {
         detail
       });
     }
@@ -5222,8 +5239,8 @@
       });
       return controllers;
     }
-    dispatch(name4, detail = {}) {
-      return dispatchEvent2(this.form, `direct-uploads:${name4}`, {
+    dispatch(name3, detail = {}) {
+      return dispatchEvent2(this.form, `direct-uploads:${name3}`, {
         detail
       });
     }
@@ -5347,12 +5364,11 @@
     isRunning() {
       return this.startedAt && !this.stoppedAt;
     }
-    recordPing() {
+    recordMessage() {
       this.pingedAt = now2();
     }
     recordConnect() {
       this.reconnectAttempts = 0;
-      this.recordPing();
       delete this.disconnectedAt;
       logger.log("ConnectionMonitor recorded connect");
     }
@@ -5435,9 +5451,9 @@
   var supportedProtocols2 = protocols2.slice(0, protocols2.length - 1);
   var indexOf2 = [].indexOf;
   var Connection2 = class {
-    constructor(consumer5) {
+    constructor(consumer4) {
       this.open = this.open.bind(this);
-      this.consumer = consumer5;
+      this.consumer = consumer4;
       this.subscriptions = this.consumer.subscriptions;
       this.monitor = new ConnectionMonitor2(this);
       this.disconnected = true;
@@ -5541,6 +5557,7 @@
         return;
       }
       const { identifier, message, reason, reconnect, type } = JSON.parse(event.data);
+      this.monitor.recordMessage();
       switch (type) {
         case message_types2.welcome:
           if (this.triedToReconnect()) {
@@ -5554,7 +5571,7 @@
             allowReconnect: reconnect
           });
         case message_types2.ping:
-          return this.monitor.recordPing();
+          return null;
         case message_types2.confirmation:
           this.subscriptions.confirmSubscription(identifier);
           if (this.reconnectAttempted) {
@@ -5608,8 +5625,8 @@
     return object;
   };
   var Subscription2 = class {
-    constructor(consumer5, params2 = {}, mixin) {
-      this.consumer = consumer5;
+    constructor(consumer4, params2 = {}, mixin) {
+      this.consumer = consumer4;
       this.identifier = JSON.stringify(params2);
       extend2(this, mixin);
     }
@@ -5665,8 +5682,8 @@
     }
   };
   var Subscriptions2 = class {
-    constructor(consumer5) {
-      this.consumer = consumer5;
+    constructor(consumer4) {
+      this.consumer = consumer4;
       this.guarantor = new SubscriptionGuarantor2(this);
       this.subscriptions = [];
     }
@@ -5786,8 +5803,8 @@
   function createConsumer3(url = getConfig2("url") || INTERNAL.default_mount_path) {
     return new Consumer2(url);
   }
-  function getConfig2(name4) {
-    const element = document.head.querySelector(`meta[name='action-cable-${name4}']`);
+  function getConfig2(name3) {
+    const element = document.head.querySelector(`meta[name='action-cable-${name3}']`);
     if (element) {
       return element.getAttribute("content");
     }
@@ -5977,9 +5994,9 @@
   var HAS_TEMPLATE_SUPPORT = !!doc && "content" in doc.createElement("template");
   var HAS_RANGE_SUPPORT = !!doc && doc.createRange && "createContextualFragment" in doc.createRange();
   function createFragmentFromTemplate(str) {
-    var template3 = doc.createElement("template");
-    template3.innerHTML = str;
-    return template3.content.childNodes[0];
+    var template2 = doc.createElement("template");
+    template2.innerHTML = str;
+    return template2.content.childNodes[0];
   }
   function createFragmentFromRange(str) {
     if (!range) {
@@ -6020,8 +6037,8 @@
       return false;
     }
   }
-  function createElementNS(name4, namespaceURI) {
-    return !namespaceURI || namespaceURI === NS_XHTML ? doc.createElement(name4) : doc.createElementNS(namespaceURI, name4);
+  function createElementNS(name3, namespaceURI) {
+    return !namespaceURI || namespaceURI === NS_XHTML ? doc.createElement(name3) : doc.createElementNS(namespaceURI, name3);
   }
   function moveChildren(fromEl, toEl) {
     var curChild = fromEl.firstChild;
@@ -6032,13 +6049,13 @@
     }
     return toEl;
   }
-  function syncBooleanAttrProp(fromEl, toEl, name4) {
-    if (fromEl[name4] !== toEl[name4]) {
-      fromEl[name4] = toEl[name4];
-      if (fromEl[name4]) {
-        fromEl.setAttribute(name4, "");
+  function syncBooleanAttrProp(fromEl, toEl, name3) {
+    if (fromEl[name3] !== toEl[name3]) {
+      fromEl[name3] = toEl[name3];
+      if (fromEl[name3]) {
+        fromEl.setAttribute(name3, "");
       } else {
-        fromEl.removeAttribute(name4);
+        fromEl.removeAttribute(name3);
       }
     }
   }
@@ -6415,7 +6432,7 @@
 
   // ../../node_modules/cable_ready/dist/cable_ready.js
   var name = "cable_ready";
-  var version = "5.0.5";
+  var version = "5.0.6";
   var description = "CableReady helps you create great real-time user experiences by making it simple to trigger client-side DOM changes from server-side Ruby.";
   var keywords = ["ruby", "rails", "websockets", "actioncable", "cable", "ssr", "stimulus_reflex", "client-side", "dom"];
   var homepage = "https://cableready.stimulusreflex.com";
@@ -6444,19 +6461,19 @@
     morphdom: "2.6.1"
   };
   var devDependencies = {
-    "@open-wc/testing": "^3.1.7",
-    "@rollup/plugin-json": "^6.0.0",
-    "@rollup/plugin-node-resolve": "^15.0.1",
-    "@rollup/plugin-terser": "^0.4.0",
-    "@web/dev-server-esbuild": "^0.3.3",
-    "@web/dev-server-rollup": "^0.3.21",
-    "@web/test-runner": "^0.15.1",
+    "@open-wc/testing": "^4.0.0",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^15.3.0",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@web/dev-server-esbuild": "^1.0.3",
+    "@web/dev-server-rollup": "^0.6.4",
+    "@web/test-runner": "^0.19.0",
     "prettier-standard": "^16.4.1",
-    rollup: "^3.19.1",
-    sinon: "^15.0.2",
-    vite: "^4.1.4",
-    vitepress: "^1.0.0-beta.1",
-    "vitepress-plugin-search": "^1.0.4-alpha.19"
+    rollup: "^4.25.0",
+    sinon: "^19.0.2",
+    vite: "^5.4.10",
+    vitepress: "^1.5.0",
+    "vitepress-plugin-search": "^1.0.4-alpha.22"
   };
   var packageInfo = {
     name,
@@ -6525,15 +6542,15 @@
     const focusElement = element || ActiveElement.element;
     if (focusElement && focusElement.focus) focusElement.focus();
   };
-  var dispatch2 = (element, name4, detail = {}) => {
+  var dispatch2 = (element, name3, detail = {}) => {
     const init = {
       bubbles: true,
       cancelable: true,
       detail
     };
-    const event = new CustomEvent(name4, init);
+    const event = new CustomEvent(name3, init);
     element.dispatchEvent(event);
-    if (window.jQuery) window.jQuery(element).trigger(name4, detail);
+    if (window.jQuery) window.jQuery(element).trigger(name3, detail);
   };
   var xpathToElement = (xpath) => document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
   var xpathToElementArray = (xpath, reverse = false) => {
@@ -6577,9 +6594,9 @@
       timer = setTimeout(callback, delay);
     };
   }
-  function handleErrors(response3) {
-    if (!response3.ok) throw Error(response3.statusText);
-    return response3;
+  function handleErrors(response2) {
+    if (!response2.ok) throw Error(response2.statusText);
+    return response2;
   }
   function safeScalar(val) {
     if (val !== void 0 && !["string", "number", "boolean"].includes(typeof val)) console.warn(`Operation expects a string, number or boolean, but got ${val} (${typeof val})`);
@@ -6606,15 +6623,15 @@
   }
   async function graciouslyFetch(url, additionalHeaders) {
     try {
-      const response3 = await fetch(url, {
+      const response2 = await fetch(url, {
         headers: {
           "X-REQUESTED-WITH": "XmlHttpRequest",
           ...additionalHeaders
         }
       });
-      if (response3 == void 0) return;
-      handleErrors(response3);
-      return response3;
+      if (response2 == void 0) return;
+      handleErrors(response2);
+      return response2;
     } catch (e) {
       console.error(`Could not fetch ${url}`);
     }
@@ -6826,8 +6843,8 @@
       processElements(operation, (element) => {
         before(element, operation);
         operate(operation, () => {
-          const { name: name4 } = operation;
-          element.classList.add(...getClassNames([safeStringOrArray(name4)]));
+          const { name: name3 } = operation;
+          element.classList.add(...getClassNames([safeStringOrArray(name3)]));
         });
         after(element, operation);
       });
@@ -6836,8 +6853,8 @@
       processElements(operation, (element) => {
         before(element, operation);
         operate(operation, () => {
-          const { name: name4 } = operation;
-          element.removeAttribute(safeString(name4));
+          const { name: name3 } = operation;
+          element.removeAttribute(safeString(name3));
         });
         after(element, operation);
       });
@@ -6846,8 +6863,8 @@
       processElements(operation, (element) => {
         before(element, operation);
         operate(operation, () => {
-          const { name: name4 } = operation;
-          element.classList.remove(...getClassNames([safeStringOrArray(name4)]));
+          const { name: name3 } = operation;
+          element.classList.remove(...getClassNames([safeStringOrArray(name3)]));
           if (element.classList.length === 0) element.removeAttribute("class");
         });
         after(element, operation);
@@ -6857,8 +6874,8 @@
       processElements(operation, (element) => {
         before(element, operation);
         operate(operation, () => {
-          const { name: name4, value } = operation;
-          element.setAttribute(safeString(name4), safeScalar(value));
+          const { name: name3, value } = operation;
+          element.setAttribute(safeString(name3), safeScalar(value));
         });
         after(element, operation);
       });
@@ -6867,8 +6884,8 @@
       processElements(operation, (element) => {
         before(element, operation);
         operate(operation, () => {
-          const { name: name4, value } = operation;
-          element.dataset[safeString(name4)] = safeScalar(value);
+          const { name: name3, value } = operation;
+          element.dataset[safeString(name3)] = safeScalar(value);
         });
         after(element, operation);
       });
@@ -6877,8 +6894,8 @@
       processElements(operation, (element) => {
         before(element, operation);
         operate(operation, () => {
-          const { name: name4, value } = operation;
-          if (name4 in element) element[safeString(name4)] = safeScalar(value);
+          const { name: name3, value } = operation;
+          if (name3 in element) element[safeString(name3)] = safeScalar(value);
         });
         after(element, operation);
       });
@@ -6887,8 +6904,8 @@
       processElements(operation, (element) => {
         before(element, operation);
         operate(operation, () => {
-          const { name: name4, value } = operation;
-          element.style[safeString(name4)] = safeScalar(value);
+          const { name: name3, value } = operation;
+          element.style[safeString(name3)] = safeScalar(value);
         });
         after(element, operation);
       });
@@ -6898,7 +6915,7 @@
         before(element, operation);
         operate(operation, () => {
           const { styles } = operation;
-          for (let [name4, value] of Object.entries(styles)) element.style[safeString(name4)] = safeScalar(value);
+          for (let [name3, value] of Object.entries(styles)) element.style[safeString(name3)] = safeScalar(value);
         });
         after(element, operation);
       });
@@ -6918,8 +6935,8 @@
       processElements(operation, (element) => {
         before(element, operation);
         operate(operation, () => {
-          const { name: name4, detail } = operation;
-          dispatch2(element, safeString(name4), safeObject(detail));
+          const { name: name3, detail } = operation;
+          dispatch2(element, safeString(name3), safeObject(detail));
         });
         after(element, operation);
       });
@@ -6927,11 +6944,11 @@
     setMeta: (operation) => {
       before(document, operation);
       operate(operation, () => {
-        const { name: name4, content } = operation;
-        let meta = document.head.querySelector(`meta[name='${name4}']`);
+        const { name: name3, content } = operation;
+        let meta = document.head.querySelector(`meta[name='${name3}']`);
         if (!meta) {
           meta = document.createElement("meta");
-          meta.name = safeString(name4);
+          meta.name = safeString(name3);
           document.head.appendChild(meta);
         }
         meta.content = safeScalar(content);
@@ -7082,15 +7099,15 @@
     morph: (operation) => {
       processElements(operation, (element) => {
         const { html } = operation;
-        const template3 = document.createElement("template");
-        template3.innerHTML = String(safeScalar(html)).trim();
-        operation.content = template3.content;
+        const template2 = document.createElement("template");
+        template2.innerHTML = String(safeScalar(html)).trim();
+        operation.content = template2.content;
         const parent = element.parentElement;
         const idx = parent && Array.from(parent.children).indexOf(element);
         before(element, operation);
         operate(operation, () => {
           const { childrenOnly, focusSelector } = operation;
-          morphdom_esm_default(element, childrenOnly ? template3.content : template3.innerHTML, {
+          morphdom_esm_default(element, childrenOnly ? template2.content : template2.innerHTML, {
             childrenOnly: !!childrenOnly,
             onBeforeElUpdated: shouldMorph(operation),
             onElUpdated: didMorph(operation)
@@ -7108,13 +7125,13 @@
       ...newOperations
     };
   };
-  var addOperations = (operations3) => {
-    add(operations3);
+  var addOperations = (operations2) => {
+    add(operations2);
   };
-  var addOperation = (name4, operation) => {
-    const operations3 = {};
-    operations3[name4] = operation;
-    add(operations3);
+  var addOperation = (name3, operation) => {
+    const operations2 = {};
+    operations2[name3] = operation;
+    add(operations2);
   };
   var OperationStore = {
     get all() {
@@ -7122,7 +7139,7 @@
     }
   };
   var missingElement = "warn";
-  var MissingElement$1 = {
+  var MissingElement = {
     get behavior() {
       return missingElement;
     },
@@ -7131,15 +7148,15 @@
       else console.warn("Invalid 'onMissingElement' option. Defaulting to 'warn'.");
     }
   };
-  var perform = (operations3, options = {
-    onMissingElement: MissingElement$1.behavior
+  var perform = (operations2, options = {
+    onMissingElement: MissingElement.behavior
   }) => {
     const batches = {};
-    operations3.forEach((operation) => {
+    operations2.forEach((operation) => {
       if (!!operation.batch) batches[operation.batch] = batches[operation.batch] ? ++batches[operation.batch] : 1;
     });
-    operations3.forEach((operation) => {
-      const name4 = operation.operation;
+    operations2.forEach((operation) => {
+      const name3 = operation.operation;
       try {
         if (operation.selector) {
           if (operation.xpath) {
@@ -7152,22 +7169,22 @@
         }
         if (operation.element || options.onMissingElement !== "ignore") {
           ActiveElement.set(document.activeElement);
-          const cableReadyOperation = OperationStore.all[name4];
+          const cableReadyOperation = OperationStore.all[name3];
           if (cableReadyOperation) {
             cableReadyOperation(operation);
             if (!!operation.batch && --batches[operation.batch] === 0) dispatch2(document, "cable-ready:batch-complete", {
               batch: operation.batch
             });
           } else {
-            console.error(`CableReady couldn't find the "${name4}" operation. Make sure you use the camelized form when calling an operation method.`);
+            console.error(`CableReady couldn't find the "${name3}" operation. Make sure you use the camelized form when calling an operation method.`);
           }
         }
       } catch (e) {
         if (operation.element) {
-          console.error(`CableReady detected an error in ${name4 || "operation"}: ${e.message}. If you need to support older browsers make sure you've included the corresponding polyfills. https://docs.stimulusreflex.com/setup#polyfills-for-ie11.`);
+          console.error(`CableReady detected an error in ${name3 || "operation"}: ${e.message}. If you need to support older browsers make sure you've included the corresponding polyfills. https://docs.stimulusreflex.com/setup#polyfills-for-ie11.`);
           console.error(e);
         } else {
-          const warning = `CableReady ${name4 || ""} operation failed due to missing DOM element for selector: '${operation.selector}'`;
+          const warning = `CableReady ${name3 || ""} operation failed due to missing DOM element for selector: '${operation.selector}'`;
           switch (options.onMissingElement) {
             case "ignore":
               break;
@@ -7186,11 +7203,11 @@
       }
     });
   };
-  var performAsync = (operations3, options = {
-    onMissingElement: MissingElement$1.behavior
+  var performAsync = (operations2, options = {
+    onMissingElement: MissingElement.behavior
   }) => new Promise((resolve, reject) => {
     try {
-      resolve(perform(operations3, options));
+      resolve(perform(operations2, options));
     } catch (err) {
       reject(err);
     }
@@ -7207,8 +7224,8 @@
     disconnectedCallback() {
       if (this.channel) this.channel.unsubscribe();
     }
-    createSubscription(consumer5, channel, receivedCallback) {
-      this.channel = consumer5.subscriptions.create({
+    createSubscription(consumer4, channel, receivedCallback) {
+      this.channel = consumer4.subscriptions.create({
         channel,
         identifier: this.identifier
       }, {
@@ -7250,9 +7267,9 @@
     }
     async connectedCallback() {
       if (this.preview) return;
-      const consumer5 = await CableConsumer.getConsumer();
-      if (consumer5) {
-        this.createSubscription(consumer5, "CableReady::Stream", this.performOperations.bind(this));
+      const consumer4 = await CableConsumer.getConsumer();
+      if (consumer4) {
+        this.createSubscription(consumer4, "CableReady::Stream", this.performOperations.bind(this));
       } else {
         console.error("The `cable_ready_stream_from` helper cannot connect. You must initialize CableReady with an Action Cable consumer.");
       }
@@ -7263,7 +7280,7 @@
       });
     }
     get onMissingElement() {
-      const value = this.getAttribute("missing") || MissingElement$1.behavior;
+      const value = this.getAttribute("missing") || MissingElement.behavior;
       if (["warn", "ignore", "event"].includes(value)) return value;
       else {
         console.warn("Invalid 'missing' attribute. Defaulting to 'warn'.");
@@ -7417,9 +7434,9 @@
     async connectedCallback() {
       if (this.preview) return;
       this.update = debounce(this.update.bind(this), this.debounce);
-      const consumer5 = await CableConsumer.getConsumer();
-      if (consumer5) {
-        this.createSubscription(consumer5, "CableReady::Stream", this.update);
+      const consumer4 = await CableConsumer.getConsumer();
+      if (consumer4) {
+        this.createSubscription(consumer4, "CableReady::Stream", this.update);
       } else {
         console.error("The `cable_ready_updates_for` helper cannot connect. You must initialize CableReady with an Action Cable consumer.");
       }
@@ -7428,6 +7445,7 @@
       }
     }
     disconnectedCallback() {
+      super.disconnectedCallback();
       if (this.observeAppearance) {
         this.appearanceObserver.stop();
       }
@@ -7449,10 +7467,10 @@
       const uniqueUrls = [...new Set(blocks.map((block) => block.url))];
       await Promise.all(uniqueUrls.map(async (url) => {
         if (!this.html.hasOwnProperty(url)) {
-          const response3 = await graciouslyFetch(url, {
+          const response2 = await graciouslyFetch(url, {
             "X-Cable-Ready": "update"
           });
-          this.html[url] = await response3.text();
+          this.html[url] = await response2.text();
         }
       }));
       this.triggerElementLog.push(`${(/* @__PURE__ */ new Date()).toLocaleString()}: ${Log.response(this.lastUpdateTimestamp, this, uniqueUrls)}`);
@@ -7491,11 +7509,11 @@
     }
     async process(data, html, fragmentsIndex, startTimestamp) {
       const blockIndex = fragmentsIndex[this.url];
-      const template3 = document.createElement("template");
+      const template2 = document.createElement("template");
       this.element.setAttribute("updating", "updating");
-      template3.innerHTML = String(html[this.url]).trim();
-      await this.resolveTurboFrames(template3.content);
-      const fragments = template3.content.querySelectorAll(this.query);
+      template2.innerHTML = String(html[this.url]).trim();
+      await this.resolveTurboFrames(template2.content);
+      const fragments = template2.content.querySelectorAll(this.query);
       if (fragments.length <= blockIndex) {
         console.warn(`Update aborted due to insufficient number of elements. The offending url is ${this.url}, the offending element is:`, this.element);
         return;
@@ -7613,10 +7631,10 @@
     UpdatesForElement.define();
   };
   var initialize = (initializeOptions = {}) => {
-    const { consumer: consumer5, onMissingElement, debug } = initializeOptions;
+    const { consumer: consumer4, onMissingElement, debug } = initializeOptions;
     Debug2.set(!!debug);
-    if (consumer5) {
-      CableConsumer.setConsumer(consumer5);
+    if (consumer4) {
+      CableConsumer.setConsumer(consumer4);
     } else {
       console.error("CableReady requires a reference to your Action Cable `consumer` for its helpers to function.\nEnsure that you have imported the `CableReady` package as well as `consumer` from your `channels` folder, then call `CableReady.initialize({ consumer })`.");
     }
@@ -7901,23 +7919,23 @@
       }
     }
   };
-  var descriptorPattern = /^(?:(.+?)(?:\.(.+?))?(?:@(window|document))?->)?(.+?)(?:#([^:]+?))(?::(.+))?$/;
+  var descriptorPattern = /^(?:(?:([^.]+?)\+)?(.+?)(?:\.(.+?))?(?:@(window|document))?->)?(.+?)(?:#([^:]+?))(?::(.+))?$/;
   function parseActionDescriptorString(descriptorString) {
     const source = descriptorString.trim();
     const matches = source.match(descriptorPattern) || [];
-    let eventName = matches[1];
-    let keyFilter = matches[2];
+    let eventName = matches[2];
+    let keyFilter = matches[3];
     if (keyFilter && !["keydown", "keyup", "keypress"].includes(eventName)) {
       eventName += `.${keyFilter}`;
       keyFilter = "";
     }
     return {
-      eventTarget: parseEventTarget(matches[3]),
+      eventTarget: parseEventTarget(matches[4]),
       eventName,
-      eventOptions: matches[6] ? parseEventOptions(matches[6]) : {},
-      identifier: matches[4],
-      methodName: matches[5],
-      keyFilter
+      eventOptions: matches[7] ? parseEventOptions(matches[7]) : {},
+      identifier: matches[5],
+      methodName: matches[6],
+      keyFilter: matches[1] || keyFilter
     };
   }
   function parseEventTarget(eventTargetName) {
@@ -7952,6 +7970,13 @@
   function tokenize(value) {
     return value.match(/[^\s]+/g) || [];
   }
+  function isSomething(object) {
+    return object !== null && object !== void 0;
+  }
+  function hasProperty(object, property) {
+    return Object.prototype.hasOwnProperty.call(object, property);
+  }
+  var allModifiers = ["meta", "ctrl", "alt", "shift"];
   var Action = class {
     constructor(element, index, descriptor, schema2) {
       this.element = element;
@@ -7972,30 +7997,38 @@
       const eventTarget = this.eventTargetName ? `@${this.eventTargetName}` : "";
       return `${this.eventName}${eventFilter}${eventTarget}->${this.identifier}#${this.methodName}`;
     }
-    isFilterTarget(event) {
+    shouldIgnoreKeyboardEvent(event) {
       if (!this.keyFilter) {
         return false;
       }
-      const filteres = this.keyFilter.split("+");
-      const modifiers = ["meta", "ctrl", "alt", "shift"];
-      const [meta, ctrl, alt, shift] = modifiers.map((modifier) => filteres.includes(modifier));
-      if (event.metaKey !== meta || event.ctrlKey !== ctrl || event.altKey !== alt || event.shiftKey !== shift) {
+      const filters = this.keyFilter.split("+");
+      if (this.keyFilterDissatisfied(event, filters)) {
         return true;
       }
-      const standardFilter = filteres.filter((key) => !modifiers.includes(key))[0];
+      const standardFilter = filters.filter((key) => !allModifiers.includes(key))[0];
       if (!standardFilter) {
         return false;
       }
-      if (!Object.prototype.hasOwnProperty.call(this.keyMappings, standardFilter)) {
+      if (!hasProperty(this.keyMappings, standardFilter)) {
         error(`contains unknown key filter: ${this.keyFilter}`);
       }
       return this.keyMappings[standardFilter].toLowerCase() !== event.key.toLowerCase();
     }
+    shouldIgnoreMouseEvent(event) {
+      if (!this.keyFilter) {
+        return false;
+      }
+      const filters = [this.keyFilter];
+      if (this.keyFilterDissatisfied(event, filters)) {
+        return true;
+      }
+      return false;
+    }
     get params() {
       const params2 = {};
       const pattern = new RegExp(`^data-${this.identifier}-(.+)-param$`, "i");
-      for (const { name: name4, value } of Array.from(this.element.attributes)) {
-        const match = name4.match(pattern);
+      for (const { name: name3, value } of Array.from(this.element.attributes)) {
+        const match = name3.match(pattern);
         const key = match && match[1];
         if (key) {
           params2[camelize(key)] = typecast(value);
@@ -8008,6 +8041,10 @@
     }
     get keyMappings() {
       return this.schema.keyMappings;
+    }
+    keyFilterDissatisfied(event, filters) {
+      const [meta, ctrl, alt, shift] = allModifiers.map((modifier) => filters.includes(modifier));
+      return event.metaKey !== meta || event.ctrlKey !== ctrl || event.altKey !== alt || event.shiftKey !== shift;
     }
   };
   var defaultEventNames = {
@@ -8053,8 +8090,9 @@
       return this.context.identifier;
     }
     handleEvent(event) {
-      if (this.willBeInvokedByEvent(event) && this.applyEventModifiers(event)) {
-        this.invokeWithEvent(event);
+      const actionEvent = this.prepareActionEvent(event);
+      if (this.willBeInvokedByEvent(event) && this.applyEventModifiers(actionEvent)) {
+        this.invokeWithEvent(actionEvent);
       }
     }
     get eventName() {
@@ -8070,23 +8108,25 @@
     applyEventModifiers(event) {
       const { element } = this.action;
       const { actionDescriptorFilters } = this.context.application;
+      const { controller } = this.context;
       let passes = true;
-      for (const [name4, value] of Object.entries(this.eventOptions)) {
-        if (name4 in actionDescriptorFilters) {
-          const filter = actionDescriptorFilters[name4];
-          passes = passes && filter({ name: name4, value, event, element });
+      for (const [name3, value] of Object.entries(this.eventOptions)) {
+        if (name3 in actionDescriptorFilters) {
+          const filter = actionDescriptorFilters[name3];
+          passes = passes && filter({ name: name3, value, event, element, controller });
         } else {
           continue;
         }
       }
       return passes;
     }
+    prepareActionEvent(event) {
+      return Object.assign(event, { params: this.action.params });
+    }
     invokeWithEvent(event) {
       const { target, currentTarget } = event;
       try {
-        const { params: params2 } = this.action;
-        const actionEvent = Object.assign(event, { params: params2 });
-        this.method.call(this.controller, actionEvent);
+        this.method.call(this.controller, event);
         this.context.logDebugActivity(this.methodName, { event, target, currentTarget, action: this.methodName });
       } catch (error3) {
         const { identifier, controller, element, index } = this;
@@ -8096,7 +8136,10 @@
     }
     willBeInvokedByEvent(event) {
       const eventTarget = event.target;
-      if (event instanceof KeyboardEvent && this.action.isFilterTarget(event)) {
+      if (event instanceof KeyboardEvent && this.action.shouldIgnoreKeyboardEvent(event)) {
+        return false;
+      }
+      if (event instanceof MouseEvent && this.action.shouldIgnoreMouseEvent(event)) {
         return false;
       }
       if (this.element === eventTarget) {
@@ -8182,8 +8225,7 @@
         this.processAddedNodes(mutation.addedNodes);
       }
     }
-    processAttributeChange(node, attributeName) {
-      const element = node;
+    processAttributeChange(element, attributeName) {
       if (this.elements.has(element)) {
         if (this.delegate.elementAttributeChanged && this.matchElement(element)) {
           this.delegate.elementAttributeChanged(element, attributeName);
@@ -8365,8 +8407,8 @@
     }
   };
   var SelectorObserver = class {
-    constructor(element, selector, delegate, details = {}) {
-      this.selector = selector;
+    constructor(element, selector, delegate, details) {
+      this._selector = selector;
       this.details = details;
       this.elementObserver = new ElementObserver(element, this);
       this.delegate = delegate;
@@ -8374,6 +8416,13 @@
     }
     get started() {
       return this.elementObserver.started;
+    }
+    get selector() {
+      return this._selector;
+    }
+    set selector(selector) {
+      this._selector = selector;
+      this.refresh();
     }
     start() {
       this.elementObserver.start();
@@ -8391,39 +8440,58 @@
       return this.elementObserver.element;
     }
     matchElement(element) {
-      const matches = element.matches(this.selector);
-      if (this.delegate.selectorMatchElement) {
-        return matches && this.delegate.selectorMatchElement(element, this.details);
+      const { selector } = this;
+      if (selector) {
+        const matches = element.matches(selector);
+        if (this.delegate.selectorMatchElement) {
+          return matches && this.delegate.selectorMatchElement(element, this.details);
+        }
+        return matches;
+      } else {
+        return false;
       }
-      return matches;
     }
     matchElementsInTree(tree) {
-      const match = this.matchElement(tree) ? [tree] : [];
-      const matches = Array.from(tree.querySelectorAll(this.selector)).filter((match2) => this.matchElement(match2));
-      return match.concat(matches);
+      const { selector } = this;
+      if (selector) {
+        const match = this.matchElement(tree) ? [tree] : [];
+        const matches = Array.from(tree.querySelectorAll(selector)).filter((match2) => this.matchElement(match2));
+        return match.concat(matches);
+      } else {
+        return [];
+      }
     }
     elementMatched(element) {
-      this.selectorMatched(element);
+      const { selector } = this;
+      if (selector) {
+        this.selectorMatched(element, selector);
+      }
     }
     elementUnmatched(element) {
-      this.selectorUnmatched(element);
+      const selectors = this.matchesByElement.getKeysForValue(element);
+      for (const selector of selectors) {
+        this.selectorUnmatched(element, selector);
+      }
     }
     elementAttributeChanged(element, _attributeName) {
-      const matches = this.matchElement(element);
-      const matchedBefore = this.matchesByElement.has(this.selector, element);
-      if (!matches && matchedBefore) {
-        this.selectorUnmatched(element);
+      const { selector } = this;
+      if (selector) {
+        const matches = this.matchElement(element);
+        const matchedBefore = this.matchesByElement.has(selector, element);
+        if (matches && !matchedBefore) {
+          this.selectorMatched(element, selector);
+        } else if (!matches && matchedBefore) {
+          this.selectorUnmatched(element, selector);
+        }
       }
     }
-    selectorMatched(element) {
-      if (this.delegate.selectorMatched) {
-        this.delegate.selectorMatched(element, this.selector, this.details);
-        this.matchesByElement.add(this.selector, element);
-      }
+    selectorMatched(element, selector) {
+      this.delegate.selectorMatched(element, selector, this.details);
+      this.matchesByElement.add(selector, element);
     }
-    selectorUnmatched(element) {
-      this.delegate.selectorUnmatched(element, this.selector, this.details);
-      this.matchesByElement.delete(this.selector, element);
+    selectorUnmatched(element, selector) {
+      this.delegate.selectorUnmatched(element, selector, this.details);
+      this.matchesByElement.delete(selector, element);
     }
   };
   var StringMapObserver = class {
@@ -8751,14 +8819,14 @@
         this.invokeChangedCallback(key, descriptor.writer(this.receiver[key]), descriptor.writer(descriptor.defaultValue));
       }
     }
-    stringMapValueChanged(value, name4, oldValue) {
-      const descriptor = this.valueDescriptorNameMap[name4];
+    stringMapValueChanged(value, name3, oldValue) {
+      const descriptor = this.valueDescriptorNameMap[name3];
       if (value === null)
         return;
       if (oldValue === null) {
         oldValue = descriptor.writer(descriptor.defaultValue);
       }
-      this.invokeChangedCallback(name4, value, oldValue);
+      this.invokeChangedCallback(name3, value, oldValue);
     }
     stringMapKeyRemoved(key, attributeName, oldValue) {
       const descriptor = this.valueDescriptorNameMap[key];
@@ -8769,17 +8837,17 @@
       }
     }
     invokeChangedCallbacksForDefaultValues() {
-      for (const { key, name: name4, defaultValue, writer } of this.valueDescriptors) {
+      for (const { key, name: name3, defaultValue, writer } of this.valueDescriptors) {
         if (defaultValue != void 0 && !this.controller.data.has(key)) {
-          this.invokeChangedCallback(name4, writer(defaultValue), void 0);
+          this.invokeChangedCallback(name3, writer(defaultValue), void 0);
         }
       }
     }
-    invokeChangedCallback(name4, rawValue, rawOldValue) {
-      const changedMethodName = `${name4}Changed`;
+    invokeChangedCallback(name3, rawValue, rawOldValue) {
+      const changedMethodName = `${name3}Changed`;
       const changedMethod = this.receiver[changedMethodName];
       if (typeof changedMethod == "function") {
-        const descriptor = this.valueDescriptorNameMap[name4];
+        const descriptor = this.valueDescriptorNameMap[name3];
         try {
           const value = descriptor.reader(rawValue);
           let oldValue = rawOldValue;
@@ -8832,32 +8900,32 @@
         delete this.tokenListObserver;
       }
     }
-    tokenMatched({ element, content: name4 }) {
+    tokenMatched({ element, content: name3 }) {
       if (this.scope.containsElement(element)) {
-        this.connectTarget(element, name4);
+        this.connectTarget(element, name3);
       }
     }
-    tokenUnmatched({ element, content: name4 }) {
-      this.disconnectTarget(element, name4);
+    tokenUnmatched({ element, content: name3 }) {
+      this.disconnectTarget(element, name3);
     }
-    connectTarget(element, name4) {
+    connectTarget(element, name3) {
       var _a;
-      if (!this.targetsByName.has(name4, element)) {
-        this.targetsByName.add(name4, element);
-        (_a = this.tokenListObserver) === null || _a === void 0 ? void 0 : _a.pause(() => this.delegate.targetConnected(element, name4));
+      if (!this.targetsByName.has(name3, element)) {
+        this.targetsByName.add(name3, element);
+        (_a = this.tokenListObserver) === null || _a === void 0 ? void 0 : _a.pause(() => this.delegate.targetConnected(element, name3));
       }
     }
-    disconnectTarget(element, name4) {
+    disconnectTarget(element, name3) {
       var _a;
-      if (this.targetsByName.has(name4, element)) {
-        this.targetsByName.delete(name4, element);
-        (_a = this.tokenListObserver) === null || _a === void 0 ? void 0 : _a.pause(() => this.delegate.targetDisconnected(element, name4));
+      if (this.targetsByName.has(name3, element)) {
+        this.targetsByName.delete(name3, element);
+        (_a = this.tokenListObserver) === null || _a === void 0 ? void 0 : _a.pause(() => this.delegate.targetDisconnected(element, name3));
       }
     }
     disconnectAllTargets() {
-      for (const name4 of this.targetsByName.keys) {
-        for (const element of this.targetsByName.getValuesForKey(name4)) {
-          this.disconnectTarget(element, name4);
+      for (const name3 of this.targetsByName.keys) {
+        for (const element of this.targetsByName.getValuesForKey(name3)) {
+          this.disconnectTarget(element, name3);
         }
       }
     }
@@ -8874,7 +8942,7 @@
   function readInheritableStaticArrayValues(constructor, propertyName) {
     const ancestors = getAncestorsForConstructor(constructor);
     return Array.from(ancestors.reduce((values, constructor2) => {
-      getOwnStaticArrayValues(constructor2, propertyName).forEach((name4) => values.add(name4));
+      getOwnStaticArrayValues(constructor2, propertyName).forEach((name3) => values.add(name3));
       return values;
     }, /* @__PURE__ */ new Set()));
   }
@@ -8903,34 +8971,47 @@
   }
   var OutletObserver = class {
     constructor(context, delegate) {
+      this.started = false;
       this.context = context;
       this.delegate = delegate;
       this.outletsByName = new Multimap();
       this.outletElementsByName = new Multimap();
       this.selectorObserverMap = /* @__PURE__ */ new Map();
+      this.attributeObserverMap = /* @__PURE__ */ new Map();
     }
     start() {
-      if (this.selectorObserverMap.size === 0) {
+      if (!this.started) {
         this.outletDefinitions.forEach((outletName) => {
-          const selector = this.selector(outletName);
-          const details = { outletName };
-          if (selector) {
-            this.selectorObserverMap.set(outletName, new SelectorObserver(document.body, selector, this, details));
-          }
+          this.setupSelectorObserverForOutlet(outletName);
+          this.setupAttributeObserverForOutlet(outletName);
         });
-        this.selectorObserverMap.forEach((observer) => observer.start());
-      }
-      this.dependentContexts.forEach((context) => context.refresh());
-    }
-    stop() {
-      if (this.selectorObserverMap.size > 0) {
-        this.disconnectAllOutlets();
-        this.selectorObserverMap.forEach((observer) => observer.stop());
-        this.selectorObserverMap.clear();
+        this.started = true;
+        this.dependentContexts.forEach((context) => context.refresh());
       }
     }
     refresh() {
       this.selectorObserverMap.forEach((observer) => observer.refresh());
+      this.attributeObserverMap.forEach((observer) => observer.refresh());
+    }
+    stop() {
+      if (this.started) {
+        this.started = false;
+        this.disconnectAllOutlets();
+        this.stopSelectorObservers();
+        this.stopAttributeObservers();
+      }
+    }
+    stopSelectorObservers() {
+      if (this.selectorObserverMap.size > 0) {
+        this.selectorObserverMap.forEach((observer) => observer.stop());
+        this.selectorObserverMap.clear();
+      }
+    }
+    stopAttributeObservers() {
+      if (this.attributeObserverMap.size > 0) {
+        this.attributeObserverMap.forEach((observer) => observer.stop());
+        this.attributeObserverMap.clear();
+      }
     }
     selectorMatched(element, _selector, { outletName }) {
       const outlet = this.getOutlet(element, outletName);
@@ -8945,7 +9026,32 @@
       }
     }
     selectorMatchElement(element, { outletName }) {
-      return this.hasOutlet(element, outletName) && element.matches(`[${this.context.application.schema.controllerAttribute}~=${outletName}]`);
+      const selector = this.selector(outletName);
+      const hasOutlet = this.hasOutlet(element, outletName);
+      const hasOutletController = element.matches(`[${this.schema.controllerAttribute}~=${outletName}]`);
+      if (selector) {
+        return hasOutlet && hasOutletController && element.matches(selector);
+      } else {
+        return false;
+      }
+    }
+    elementMatchedAttribute(_element, attributeName) {
+      const outletName = this.getOutletNameFromOutletAttributeName(attributeName);
+      if (outletName) {
+        this.updateSelectorObserverForOutlet(outletName);
+      }
+    }
+    elementAttributeValueChanged(_element, attributeName) {
+      const outletName = this.getOutletNameFromOutletAttributeName(attributeName);
+      if (outletName) {
+        this.updateSelectorObserverForOutlet(outletName);
+      }
+    }
+    elementUnmatchedAttribute(_element, attributeName) {
+      const outletName = this.getOutletNameFromOutletAttributeName(attributeName);
+      if (outletName) {
+        this.updateSelectorObserverForOutlet(outletName);
+      }
     }
     connectOutlet(outlet, element, outletName) {
       var _a;
@@ -8972,17 +9078,41 @@
         }
       }
     }
+    updateSelectorObserverForOutlet(outletName) {
+      const observer = this.selectorObserverMap.get(outletName);
+      if (observer) {
+        observer.selector = this.selector(outletName);
+      }
+    }
+    setupSelectorObserverForOutlet(outletName) {
+      const selector = this.selector(outletName);
+      const selectorObserver = new SelectorObserver(document.body, selector, this, { outletName });
+      this.selectorObserverMap.set(outletName, selectorObserver);
+      selectorObserver.start();
+    }
+    setupAttributeObserverForOutlet(outletName) {
+      const attributeName = this.attributeNameForOutletName(outletName);
+      const attributeObserver = new AttributeObserver(this.scope.element, attributeName, this);
+      this.attributeObserverMap.set(outletName, attributeObserver);
+      attributeObserver.start();
+    }
     selector(outletName) {
       return this.scope.outlets.getSelectorForOutletName(outletName);
     }
+    attributeNameForOutletName(outletName) {
+      return this.scope.schema.outletAttributeForScope(this.identifier, outletName);
+    }
+    getOutletNameFromOutletAttributeName(attributeName) {
+      return this.outletDefinitions.find((outletName) => this.attributeNameForOutletName(outletName) === attributeName);
+    }
     get outletDependencies() {
-      const dependencies4 = new Multimap();
-      this.router.modules.forEach((module4) => {
-        const constructor = module4.definition.controllerConstructor;
+      const dependencies3 = new Multimap();
+      this.router.modules.forEach((module3) => {
+        const constructor = module3.definition.controllerConstructor;
         const outlets = readInheritableStaticArrayValues(constructor, "outlets");
-        outlets.forEach((outlet) => dependencies4.add(outlet, module4.identifier));
+        outlets.forEach((outlet) => dependencies3.add(outlet, module3.identifier));
       });
-      return dependencies4;
+      return dependencies3;
     }
     get outletDefinitions() {
       return this.outletDependencies.getKeysForValue(this.identifier);
@@ -9006,6 +9136,9 @@
     get scope() {
       return this.context.scope;
     }
+    get schema() {
+      return this.context.schema;
+    }
     get identifier() {
       return this.context.identifier;
     }
@@ -9017,15 +9150,15 @@
     }
   };
   var Context = class {
-    constructor(module4, scope) {
+    constructor(module3, scope) {
       this.logDebugActivity = (functionName, detail = {}) => {
         const { identifier, controller, element } = this;
         detail = Object.assign({ identifier, controller, element }, detail);
         this.application.logDebugActivity(this.identifier, functionName, detail);
       };
-      this.module = module4;
+      this.module = module3;
       this.scope = scope;
-      this.controller = new module4.controllerConstructor(this);
+      this.controller = new module3.controllerConstructor(this);
       this.bindingObserver = new BindingObserver(this, this.dispatcher);
       this.valueObserver = new ValueObserver(this, this.controller);
       this.targetObserver = new TargetObserver(this, this);
@@ -9087,17 +9220,17 @@
       detail = Object.assign({ identifier, controller, element }, detail);
       this.application.handleError(error3, `Error ${message}`, detail);
     }
-    targetConnected(element, name4) {
-      this.invokeControllerMethod(`${name4}TargetConnected`, element);
+    targetConnected(element, name3) {
+      this.invokeControllerMethod(`${name3}TargetConnected`, element);
     }
-    targetDisconnected(element, name4) {
-      this.invokeControllerMethod(`${name4}TargetDisconnected`, element);
+    targetDisconnected(element, name3) {
+      this.invokeControllerMethod(`${name3}TargetDisconnected`, element);
     }
-    outletConnected(outlet, element, name4) {
-      this.invokeControllerMethod(`${namespaceCamelize(name4)}OutletConnected`, outlet, element);
+    outletConnected(outlet, element, name3) {
+      this.invokeControllerMethod(`${namespaceCamelize(name3)}OutletConnected`, outlet, element);
     }
-    outletDisconnected(outlet, element, name4) {
-      this.invokeControllerMethod(`${namespaceCamelize(name4)}OutletDisconnected`, outlet, element);
+    outletDisconnected(outlet, element, name3) {
+      this.invokeControllerMethod(`${namespaceCamelize(name3)}OutletDisconnected`, outlet, element);
     }
     invokeControllerMethod(methodName, ...args) {
       const controller = this.controller;
@@ -9229,21 +9362,21 @@
     constructor(scope) {
       this.scope = scope;
     }
-    has(name4) {
-      return this.data.has(this.getDataKey(name4));
+    has(name3) {
+      return this.data.has(this.getDataKey(name3));
     }
-    get(name4) {
-      return this.getAll(name4)[0];
+    get(name3) {
+      return this.getAll(name3)[0];
     }
-    getAll(name4) {
-      const tokenString = this.data.get(this.getDataKey(name4)) || "";
+    getAll(name3) {
+      const tokenString = this.data.get(this.getDataKey(name3)) || "";
       return tokenize(tokenString);
     }
-    getAttributeName(name4) {
-      return this.data.getAttributeNameForKey(this.getDataKey(name4));
+    getAttributeName(name3) {
+      return this.data.getAttributeNameForKey(this.getDataKey(name3));
     }
-    getDataKey(name4) {
-      return `${name4}-class`;
+    getDataKey(name3) {
+      return `${name3}-class`;
     }
     get data() {
       return this.scope.data;
@@ -9260,22 +9393,22 @@
       return this.scope.identifier;
     }
     get(key) {
-      const name4 = this.getAttributeNameForKey(key);
-      return this.element.getAttribute(name4);
+      const name3 = this.getAttributeNameForKey(key);
+      return this.element.getAttribute(name3);
     }
     set(key, value) {
-      const name4 = this.getAttributeNameForKey(key);
-      this.element.setAttribute(name4, value);
+      const name3 = this.getAttributeNameForKey(key);
+      this.element.setAttribute(name3, value);
       return this.get(key);
     }
     has(key) {
-      const name4 = this.getAttributeNameForKey(key);
-      return this.element.hasAttribute(name4);
+      const name3 = this.getAttributeNameForKey(key);
+      return this.element.hasAttribute(name3);
     }
     delete(key) {
       if (this.has(key)) {
-        const name4 = this.getAttributeNameForKey(key);
-        this.element.removeAttribute(name4);
+        const name3 = this.getAttributeNameForKey(key);
+        this.element.removeAttribute(name3);
         return true;
       } else {
         return false;
@@ -9286,9 +9419,9 @@
     }
   };
   var Guide = class {
-    constructor(logger3) {
+    constructor(logger2) {
       this.warnedKeysByObject = /* @__PURE__ */ new WeakMap();
-      this.logger = logger3;
+      this.logger = logger2;
     }
     warn(object, key, message) {
       let warnedKeys = this.warnedKeysByObject.get(object);
@@ -9418,7 +9551,7 @@
     }
   };
   var Scope = class _Scope {
-    constructor(schema2, element, identifier, logger3) {
+    constructor(schema2, element, identifier, logger2) {
       this.targets = new TargetSet(this);
       this.classes = new ClassMap(this);
       this.data = new DataMap(this);
@@ -9428,7 +9561,7 @@
       this.schema = schema2;
       this.element = element;
       this.identifier = identifier;
-      this.guide = new Guide(logger3);
+      this.guide = new Guide(logger2);
       this.outlets = new OutletSet(this.documentScope, element);
     }
     findElement(selector) {
@@ -9473,6 +9606,9 @@
     }
     parseValueForToken(token) {
       const { element, content: identifier } = token;
+      return this.parseValueForElementAndIdentifier(element, identifier);
+    }
+    parseValueForElementAndIdentifier(element, identifier) {
       const scopesByIdentifier = this.fetchScopesByIdentifierForElement(element);
       let scope = scopesByIdentifier.get(identifier);
       if (!scope) {
@@ -9529,7 +9665,7 @@
       return Array.from(this.modulesByIdentifier.values());
     }
     get contexts() {
-      return this.modules.reduce((contexts, module4) => contexts.concat(module4.contexts), []);
+      return this.modules.reduce((contexts, module3) => contexts.concat(module3.contexts), []);
     }
     start() {
       this.scopeObserver.start();
@@ -9539,23 +9675,31 @@
     }
     loadDefinition(definition) {
       this.unloadIdentifier(definition.identifier);
-      const module4 = new Module(this.application, definition);
-      this.connectModule(module4);
+      const module3 = new Module(this.application, definition);
+      this.connectModule(module3);
       const afterLoad = definition.controllerConstructor.afterLoad;
       if (afterLoad) {
-        afterLoad(definition.identifier, this.application);
+        afterLoad.call(definition.controllerConstructor, definition.identifier, this.application);
       }
     }
     unloadIdentifier(identifier) {
-      const module4 = this.modulesByIdentifier.get(identifier);
-      if (module4) {
-        this.disconnectModule(module4);
+      const module3 = this.modulesByIdentifier.get(identifier);
+      if (module3) {
+        this.disconnectModule(module3);
       }
     }
     getContextForElementAndIdentifier(element, identifier) {
-      const module4 = this.modulesByIdentifier.get(identifier);
-      if (module4) {
-        return module4.contexts.find((context) => context.element == element);
+      const module3 = this.modulesByIdentifier.get(identifier);
+      if (module3) {
+        return module3.contexts.find((context) => context.element == element);
+      }
+    }
+    proposeToConnectScopeForElementAndIdentifier(element, identifier) {
+      const scope = this.scopeObserver.parseValueForElementAndIdentifier(element, identifier);
+      if (scope) {
+        this.scopeObserver.elementMatchedValue(scope.element, scope);
+      } else {
+        console.error(`Couldn't find or create scope for identifier: "${identifier}" and element:`, element);
       }
     }
     handleError(error3, message, detail) {
@@ -9566,27 +9710,27 @@
     }
     scopeConnected(scope) {
       this.scopesByIdentifier.add(scope.identifier, scope);
-      const module4 = this.modulesByIdentifier.get(scope.identifier);
-      if (module4) {
-        module4.connectContextForScope(scope);
+      const module3 = this.modulesByIdentifier.get(scope.identifier);
+      if (module3) {
+        module3.connectContextForScope(scope);
       }
     }
     scopeDisconnected(scope) {
       this.scopesByIdentifier.delete(scope.identifier, scope);
-      const module4 = this.modulesByIdentifier.get(scope.identifier);
-      if (module4) {
-        module4.disconnectContextForScope(scope);
+      const module3 = this.modulesByIdentifier.get(scope.identifier);
+      if (module3) {
+        module3.disconnectContextForScope(scope);
       }
     }
-    connectModule(module4) {
-      this.modulesByIdentifier.set(module4.identifier, module4);
-      const scopes = this.scopesByIdentifier.getValuesForKey(module4.identifier);
-      scopes.forEach((scope) => module4.connectContextForScope(scope));
+    connectModule(module3) {
+      this.modulesByIdentifier.set(module3.identifier, module3);
+      const scopes = this.scopesByIdentifier.getValuesForKey(module3.identifier);
+      scopes.forEach((scope) => module3.connectContextForScope(scope));
     }
-    disconnectModule(module4) {
-      this.modulesByIdentifier.delete(module4.identifier);
-      const scopes = this.scopesByIdentifier.getValuesForKey(module4.identifier);
-      scopes.forEach((scope) => module4.disconnectContextForScope(scope));
+    disconnectModule(module3) {
+      this.modulesByIdentifier.delete(module3.identifier);
+      const scopes = this.scopesByIdentifier.getValuesForKey(module3.identifier);
+      scopes.forEach((scope) => module3.disconnectContextForScope(scope));
     }
   };
   var defaultSchema = {
@@ -9595,7 +9739,7 @@
     targetAttribute: "data-target",
     targetAttributeForScope: (identifier) => `data-${identifier}-target`,
     outletAttributeForScope: (identifier, outlet) => `data-${identifier}-${outlet}-outlet`,
-    keyMappings: Object.assign(Object.assign({ enter: "Enter", tab: "Tab", esc: "Escape", space: " ", up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight", home: "Home", end: "End" }, objectFromEntries("abcdefghijklmnopqrstuvwxyz".split("").map((c) => [c, c]))), objectFromEntries("0123456789".split("").map((n) => [n, n])))
+    keyMappings: Object.assign(Object.assign({ enter: "Enter", tab: "Tab", esc: "Escape", space: " ", up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight", home: "Home", end: "End", page_up: "PageUp", page_down: "PageDown" }, objectFromEntries("abcdefghijklmnopqrstuvwxyz".split("").map((c) => [c, c]))), objectFromEntries("0123456789".split("").map((n) => [n, n])))
   };
   function objectFromEntries(array) {
     return array.reduce((memo, [k, v]) => Object.assign(Object.assign({}, memo), { [k]: v }), {});
@@ -9636,8 +9780,8 @@
     register(identifier, controllerConstructor) {
       this.load({ identifier, controllerConstructor });
     }
-    registerActionOption(name4, filter) {
-      this.actionDescriptorFilters[name4] = filter;
+    registerActionOption(name3, filter) {
+      this.actionDescriptorFilters[name3] = filter;
     }
     load(head, ...rest) {
       const definitions = Array.isArray(head) ? head : [head, ...rest];
@@ -9720,34 +9864,43 @@
       return Object.assign(properties, propertiesForOutletDefinition(outletDefinition));
     }, {});
   }
-  function propertiesForOutletDefinition(name4) {
-    const camelizedName = namespaceCamelize(name4);
+  function getOutletController(controller, element, identifier) {
+    return controller.application.getControllerForElementAndIdentifier(element, identifier);
+  }
+  function getControllerAndEnsureConnectedScope(controller, element, outletName) {
+    let outletController = getOutletController(controller, element, outletName);
+    if (outletController)
+      return outletController;
+    controller.application.router.proposeToConnectScopeForElementAndIdentifier(element, outletName);
+    outletController = getOutletController(controller, element, outletName);
+    if (outletController)
+      return outletController;
+  }
+  function propertiesForOutletDefinition(name3) {
+    const camelizedName = namespaceCamelize(name3);
     return {
       [`${camelizedName}Outlet`]: {
         get() {
-          const outlet = this.outlets.find(name4);
-          if (outlet) {
-            const outletController = this.application.getControllerForElementAndIdentifier(outlet, name4);
-            if (outletController) {
+          const outletElement = this.outlets.find(name3);
+          const selector = this.outlets.getSelectorForOutletName(name3);
+          if (outletElement) {
+            const outletController = getControllerAndEnsureConnectedScope(this, outletElement, name3);
+            if (outletController)
               return outletController;
-            } else {
-              throw new Error(`Missing "data-controller=${name4}" attribute on outlet element for "${this.identifier}" controller`);
-            }
+            throw new Error(`The provided outlet element is missing an outlet controller "${name3}" instance for host controller "${this.identifier}"`);
           }
-          throw new Error(`Missing outlet element "${name4}" for "${this.identifier}" controller`);
+          throw new Error(`Missing outlet element "${name3}" for host controller "${this.identifier}". Stimulus couldn't find a matching outlet element using selector "${selector}".`);
         }
       },
       [`${camelizedName}Outlets`]: {
         get() {
-          const outlets = this.outlets.findAll(name4);
+          const outlets = this.outlets.findAll(name3);
           if (outlets.length > 0) {
-            return outlets.map((outlet) => {
-              const controller = this.application.getControllerForElementAndIdentifier(outlet, name4);
-              if (controller) {
-                return controller;
-              } else {
-                console.warn(`The provided outlet element is missing the outlet controller "${name4}" for "${this.identifier}"`, outlet);
-              }
+            return outlets.map((outletElement) => {
+              const outletController = getControllerAndEnsureConnectedScope(this, outletElement, name3);
+              if (outletController)
+                return outletController;
+              console.warn(`The provided outlet element is missing an outlet controller "${name3}" instance for host controller "${this.identifier}"`, outletElement);
             }).filter((controller) => controller);
           }
           return [];
@@ -9755,22 +9908,23 @@
       },
       [`${camelizedName}OutletElement`]: {
         get() {
-          const outlet = this.outlets.find(name4);
-          if (outlet) {
-            return outlet;
+          const outletElement = this.outlets.find(name3);
+          const selector = this.outlets.getSelectorForOutletName(name3);
+          if (outletElement) {
+            return outletElement;
           } else {
-            throw new Error(`Missing outlet element "${name4}" for "${this.identifier}" controller`);
+            throw new Error(`Missing outlet element "${name3}" for host controller "${this.identifier}". Stimulus couldn't find a matching outlet element using selector "${selector}".`);
           }
         }
       },
       [`${camelizedName}OutletElements`]: {
         get() {
-          return this.outlets.findAll(name4);
+          return this.outlets.findAll(name3);
         }
       },
       [`has${capitalize(camelizedName)}Outlet`]: {
         get() {
-          return this.outlets.has(name4);
+          return this.outlets.has(name3);
         }
       }
     };
@@ -9781,26 +9935,26 @@
       return Object.assign(properties, propertiesForTargetDefinition(targetDefinition));
     }, {});
   }
-  function propertiesForTargetDefinition(name4) {
+  function propertiesForTargetDefinition(name3) {
     return {
-      [`${name4}Target`]: {
+      [`${name3}Target`]: {
         get() {
-          const target = this.targets.find(name4);
+          const target = this.targets.find(name3);
           if (target) {
             return target;
           } else {
-            throw new Error(`Missing target element "${name4}" for "${this.identifier}" controller`);
+            throw new Error(`Missing target element "${name3}" for "${this.identifier}" controller`);
           }
         }
       },
-      [`${name4}Targets`]: {
+      [`${name3}Targets`]: {
         get() {
-          return this.targets.findAll(name4);
+          return this.targets.findAll(name3);
         }
       },
-      [`has${capitalize(name4)}Target`]: {
+      [`has${capitalize(name3)}Target`]: {
         get() {
-          return this.targets.has(name4);
+          return this.targets.has(name3);
         }
       }
     };
@@ -9824,9 +9978,9 @@
   }
   function propertiesForValueDefinitionPair(valueDefinitionPair, controller) {
     const definition = parseValueDefinitionPair(valueDefinitionPair, controller);
-    const { key, name: name4, reader: read, writer: write } = definition;
+    const { key, name: name3, reader: read, writer: write } = definition;
     return {
-      [name4]: {
+      [name3]: {
         get() {
           const value = this.data.get(key);
           if (value !== null) {
@@ -9843,7 +9997,7 @@
           }
         }
       },
-      [`has${capitalize(name4)}`]: {
+      [`has${capitalize(name3)}`]: {
         get() {
           return this.data.has(key) || definition.hasCustomDefaultValue;
         }
@@ -9886,51 +10040,67 @@
       return "object";
   }
   function parseValueTypeObject(payload) {
-    const typeFromObject = parseValueTypeConstant(payload.typeObject.type);
-    if (!typeFromObject)
-      return;
-    const defaultValueType = parseValueTypeDefault(payload.typeObject.default);
-    if (typeFromObject !== defaultValueType) {
-      const propertyPath = payload.controller ? `${payload.controller}.${payload.token}` : payload.token;
-      throw new Error(`The specified default value for the Stimulus Value "${propertyPath}" must match the defined type "${typeFromObject}". The provided default value of "${payload.typeObject.default}" is of type "${defaultValueType}".`);
+    const { controller, token, typeObject } = payload;
+    const hasType = isSomething(typeObject.type);
+    const hasDefault = isSomething(typeObject.default);
+    const fullObject = hasType && hasDefault;
+    const onlyType = hasType && !hasDefault;
+    const onlyDefault = !hasType && hasDefault;
+    const typeFromObject = parseValueTypeConstant(typeObject.type);
+    const typeFromDefaultValue = parseValueTypeDefault(payload.typeObject.default);
+    if (onlyType)
+      return typeFromObject;
+    if (onlyDefault)
+      return typeFromDefaultValue;
+    if (typeFromObject !== typeFromDefaultValue) {
+      const propertyPath = controller ? `${controller}.${token}` : token;
+      throw new Error(`The specified default value for the Stimulus Value "${propertyPath}" must match the defined type "${typeFromObject}". The provided default value of "${typeObject.default}" is of type "${typeFromDefaultValue}".`);
     }
-    return typeFromObject;
+    if (fullObject)
+      return typeFromObject;
   }
   function parseValueTypeDefinition(payload) {
-    const typeFromObject = parseValueTypeObject({
-      controller: payload.controller,
-      token: payload.token,
-      typeObject: payload.typeDefinition
-    });
-    const typeFromDefaultValue = parseValueTypeDefault(payload.typeDefinition);
-    const typeFromConstant = parseValueTypeConstant(payload.typeDefinition);
+    const { controller, token, typeDefinition } = payload;
+    const typeObject = { controller, token, typeObject: typeDefinition };
+    const typeFromObject = parseValueTypeObject(typeObject);
+    const typeFromDefaultValue = parseValueTypeDefault(typeDefinition);
+    const typeFromConstant = parseValueTypeConstant(typeDefinition);
     const type = typeFromObject || typeFromDefaultValue || typeFromConstant;
     if (type)
       return type;
-    const propertyPath = payload.controller ? `${payload.controller}.${payload.typeDefinition}` : payload.token;
-    throw new Error(`Unknown value type "${propertyPath}" for "${payload.token}" value`);
+    const propertyPath = controller ? `${controller}.${typeDefinition}` : token;
+    throw new Error(`Unknown value type "${propertyPath}" for "${token}" value`);
   }
   function defaultValueForDefinition(typeDefinition) {
     const constant = parseValueTypeConstant(typeDefinition);
     if (constant)
       return defaultValuesByType[constant];
-    const defaultValue = typeDefinition.default;
-    if (defaultValue !== void 0)
-      return defaultValue;
+    const hasDefault = hasProperty(typeDefinition, "default");
+    const hasType = hasProperty(typeDefinition, "type");
+    const typeObject = typeDefinition;
+    if (hasDefault)
+      return typeObject.default;
+    if (hasType) {
+      const { type } = typeObject;
+      const constantFromType = parseValueTypeConstant(type);
+      if (constantFromType)
+        return defaultValuesByType[constantFromType];
+    }
     return typeDefinition;
   }
   function valueDescriptorForTokenAndTypeDefinition(payload) {
-    const key = `${dasherize(payload.token)}-value`;
+    const { token, typeDefinition } = payload;
+    const key = `${dasherize(token)}-value`;
     const type = parseValueTypeDefinition(payload);
     return {
       type,
       key,
       name: camelize(key),
       get defaultValue() {
-        return defaultValueForDefinition(payload.typeDefinition);
+        return defaultValueForDefinition(typeDefinition);
       },
       get hasCustomDefaultValue() {
-        return parseValueTypeDefault(payload.typeDefinition) !== void 0;
+        return parseValueTypeDefault(typeDefinition) !== void 0;
       },
       reader: readers[type],
       writer: writers[type] || writers.default
@@ -9959,7 +10129,7 @@
       return !(value == "0" || String(value).toLowerCase() == "false");
     },
     number(value) {
-      return Number(value);
+      return Number(value.replace(/_/g, ""));
     },
     object(value) {
       const object = JSON.parse(value);
@@ -10039,1729 +10209,6 @@
   Controller.targets = [];
   Controller.outlets = [];
   Controller.values = {};
-
-  // ../../node_modules/stimulus_reflex/node_modules/cable_ready/dist/cable_ready.js
-  var name2 = "cable_ready";
-  var version2 = "5.0.6";
-  var description2 = "CableReady helps you create great real-time user experiences by making it simple to trigger client-side DOM changes from server-side Ruby.";
-  var keywords2 = ["ruby", "rails", "websockets", "actioncable", "cable", "ssr", "stimulus_reflex", "client-side", "dom"];
-  var homepage2 = "https://cableready.stimulusreflex.com";
-  var bugs2 = "https://github.com/stimulusreflex/cable_ready/issues";
-  var repository2 = "https://github.com/stimulusreflex/cable_ready";
-  var license2 = "MIT";
-  var author2 = "Nathan Hopkins <natehop@gmail.com>";
-  var contributors2 = ["Andrew Mason <andrewmcodes@protonmail.com>", "Julian Rubisch <julian@julianrubisch.at>", "Marco Roth <marco.roth@intergga.ch>", "Nathan Hopkins <natehop@gmail.com>"];
-  var main2 = "./dist/cable_ready.js";
-  var module2 = "./dist/cable_ready.js";
-  var browser2 = "./dist/cable_ready.js";
-  var unpkg2 = "./dist/cable_ready.umd.js";
-  var umd2 = "./dist/cable_ready.umd.js";
-  var files2 = ["dist/*", "javascript/*"];
-  var scripts2 = {
-    lint: "yarn run format --check",
-    format: "yarn run prettier-standard ./javascript/**/*.js rollup.config.mjs",
-    build: "yarn rollup -c",
-    watch: "yarn rollup -wc",
-    test: "web-test-runner javascript/test/**/*.test.js",
-    "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs && cp ./docs/_redirects ./docs/.vitepress/dist",
-    "docs:preview": "vitepress preview docs"
-  };
-  var dependencies2 = {
-    morphdom: "2.6.1"
-  };
-  var devDependencies2 = {
-    "@open-wc/testing": "^4.0.0",
-    "@rollup/plugin-json": "^6.1.0",
-    "@rollup/plugin-node-resolve": "^15.3.0",
-    "@rollup/plugin-terser": "^0.4.4",
-    "@web/dev-server-esbuild": "^1.0.3",
-    "@web/dev-server-rollup": "^0.6.4",
-    "@web/test-runner": "^0.19.0",
-    "prettier-standard": "^16.4.1",
-    rollup: "^4.25.0",
-    sinon: "^19.0.2",
-    vite: "^5.4.10",
-    vitepress: "^1.5.0",
-    "vitepress-plugin-search": "^1.0.4-alpha.22"
-  };
-  var packageInfo2 = {
-    name: name2,
-    version: version2,
-    description: description2,
-    keywords: keywords2,
-    homepage: homepage2,
-    bugs: bugs2,
-    repository: repository2,
-    license: license2,
-    author: author2,
-    contributors: contributors2,
-    main: main2,
-    module: module2,
-    browser: browser2,
-    import: "./dist/cable_ready.js",
-    unpkg: unpkg2,
-    umd: umd2,
-    files: files2,
-    scripts: scripts2,
-    dependencies: dependencies2,
-    devDependencies: devDependencies2
-  };
-  var inputTags2 = {
-    INPUT: true,
-    TEXTAREA: true,
-    SELECT: true
-  };
-  var mutableTags2 = {
-    INPUT: true,
-    TEXTAREA: true,
-    OPTION: true
-  };
-  var textInputTypes2 = {
-    "datetime-local": true,
-    "select-multiple": true,
-    "select-one": true,
-    color: true,
-    date: true,
-    datetime: true,
-    email: true,
-    month: true,
-    number: true,
-    password: true,
-    range: true,
-    search: true,
-    tel: true,
-    text: true,
-    textarea: true,
-    time: true,
-    url: true,
-    week: true
-  };
-  var activeElement2;
-  var ActiveElement2 = {
-    get element() {
-      return activeElement2;
-    },
-    set(element) {
-      activeElement2 = element;
-    }
-  };
-  var isTextInput2 = (element) => inputTags2[element.tagName] && textInputTypes2[element.type];
-  var assignFocus2 = (selector) => {
-    const element = selector && selector.nodeType === Node.ELEMENT_NODE ? selector : document.querySelector(selector);
-    const focusElement = element || ActiveElement2.element;
-    if (focusElement && focusElement.focus) focusElement.focus();
-  };
-  var dispatch3 = (element, name4, detail = {}) => {
-    const init = {
-      bubbles: true,
-      cancelable: true,
-      detail
-    };
-    const event = new CustomEvent(name4, init);
-    element.dispatchEvent(event);
-    if (window.jQuery) window.jQuery(element).trigger(name4, detail);
-  };
-  var xpathToElement2 = (xpath) => document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-  var xpathToElementArray2 = (xpath, reverse = false) => {
-    const snapshotList = document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-    const snapshots = [];
-    for (let i = 0; i < snapshotList.snapshotLength; i++) {
-      snapshots.push(snapshotList.snapshotItem(i));
-    }
-    return reverse ? snapshots.reverse() : snapshots;
-  };
-  var getClassNames2 = (names) => Array.from(names).flat();
-  var processElements2 = (operation, callback) => {
-    Array.from(operation.selectAll ? operation.element : [operation.element]).forEach(callback);
-  };
-  var kebabize2 = createCompounder2(function(result, word, index) {
-    return result + (index ? "-" : "") + word.toLowerCase();
-  });
-  function createCompounder2(callback) {
-    return function(str) {
-      return words2(str).reduce(callback, "");
-    };
-  }
-  var words2 = (str) => {
-    str = str == null ? "" : str;
-    return str.match(/([A-Z]{2,}|[0-9]+|[A-Z]?[a-z]+|[A-Z])/g) || [];
-  };
-  var operate2 = (operation, callback) => {
-    if (!operation.cancel) {
-      operation.delay ? setTimeout(callback, operation.delay) : callback();
-      return true;
-    }
-    return false;
-  };
-  var before2 = (target, operation) => dispatch3(target, `cable-ready:before-${kebabize2(operation.operation)}`, operation);
-  var after2 = (target, operation) => dispatch3(target, `cable-ready:after-${kebabize2(operation.operation)}`, operation);
-  function debounce2(fn, delay = 250) {
-    let timer;
-    return (...args) => {
-      const callback = () => fn.apply(this, args);
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(callback, delay);
-    };
-  }
-  function handleErrors2(response3) {
-    if (!response3.ok) throw Error(response3.statusText);
-    return response3;
-  }
-  function safeScalar2(val) {
-    if (val !== void 0 && !["string", "number", "boolean"].includes(typeof val)) console.warn(`Operation expects a string, number or boolean, but got ${val} (${typeof val})`);
-    return val != null ? val : "";
-  }
-  function safeString2(str) {
-    if (str !== void 0 && typeof str !== "string") console.warn(`Operation expects a string, but got ${str} (${typeof str})`);
-    return str != null ? String(str) : "";
-  }
-  function safeArray2(arr) {
-    if (arr !== void 0 && !Array.isArray(arr)) console.warn(`Operation expects an array, but got ${arr} (${typeof arr})`);
-    return arr != null ? Array.from(arr) : [];
-  }
-  function safeObject2(obj) {
-    if (obj !== void 0 && typeof obj !== "object") console.warn(`Operation expects an object, but got ${obj} (${typeof obj})`);
-    return obj != null ? Object(obj) : {};
-  }
-  function safeStringOrArray2(elem) {
-    if (elem !== void 0 && !Array.isArray(elem) && typeof elem !== "string") console.warn(`Operation expects an Array or a String, but got ${elem} (${typeof elem})`);
-    return elem == null ? "" : Array.isArray(elem) ? Array.from(elem) : String(elem);
-  }
-  function fragmentToString2(fragment) {
-    return new XMLSerializer().serializeToString(fragment);
-  }
-  async function graciouslyFetch2(url, additionalHeaders) {
-    try {
-      const response3 = await fetch(url, {
-        headers: {
-          "X-REQUESTED-WITH": "XmlHttpRequest",
-          ...additionalHeaders
-        }
-      });
-      if (response3 == void 0) return;
-      handleErrors2(response3);
-      return response3;
-    } catch (e) {
-      console.error(`Could not fetch ${url}`);
-    }
-  }
-  var BoundedQueue2 = class {
-    constructor(maxSize) {
-      this.maxSize = maxSize;
-      this.queue = [];
-    }
-    push(item) {
-      if (this.isFull()) {
-        this.shift();
-      }
-      this.queue.push(item);
-    }
-    shift() {
-      return this.queue.shift();
-    }
-    isFull() {
-      return this.queue.length === this.maxSize;
-    }
-  };
-  var utils2 = Object.freeze({
-    __proto__: null,
-    BoundedQueue: BoundedQueue2,
-    after: after2,
-    assignFocus: assignFocus2,
-    before: before2,
-    debounce: debounce2,
-    dispatch: dispatch3,
-    fragmentToString: fragmentToString2,
-    getClassNames: getClassNames2,
-    graciouslyFetch: graciouslyFetch2,
-    handleErrors: handleErrors2,
-    isTextInput: isTextInput2,
-    kebabize: kebabize2,
-    operate: operate2,
-    processElements: processElements2,
-    safeArray: safeArray2,
-    safeObject: safeObject2,
-    safeScalar: safeScalar2,
-    safeString: safeString2,
-    safeStringOrArray: safeStringOrArray2,
-    xpathToElement: xpathToElement2,
-    xpathToElementArray: xpathToElementArray2
-  });
-  var shouldMorph2 = (operation) => (fromEl, toEl) => !shouldMorphCallbacks2.map((callback) => typeof callback === "function" ? callback(operation, fromEl, toEl) : true).includes(false);
-  var didMorph2 = (operation) => (el) => {
-    didMorphCallbacks2.forEach((callback) => {
-      if (typeof callback === "function") callback(operation, el);
-    });
-  };
-  var verifyNotMutable2 = (detail, fromEl, toEl) => {
-    if (!mutableTags2[fromEl.tagName] && fromEl.isEqualNode(toEl)) return false;
-    return true;
-  };
-  var verifyNotContentEditable2 = (detail, fromEl, toEl) => {
-    if (fromEl === ActiveElement2.element && fromEl.isContentEditable) return false;
-    return true;
-  };
-  var verifyNotPermanent2 = (detail, fromEl, toEl) => {
-    const { permanentAttributeName } = detail;
-    if (!permanentAttributeName) return true;
-    const permanent = fromEl.closest(`[${permanentAttributeName}]`);
-    if (!permanent && fromEl === ActiveElement2.element && isTextInput2(fromEl)) {
-      const ignore = {
-        value: true
-      };
-      Array.from(toEl.attributes).forEach((attribute) => {
-        if (!ignore[attribute.name]) fromEl.setAttribute(attribute.name, attribute.value);
-      });
-      return false;
-    }
-    return !permanent;
-  };
-  var shouldMorphCallbacks2 = [verifyNotMutable2, verifyNotPermanent2, verifyNotContentEditable2];
-  var didMorphCallbacks2 = [];
-  var morph_callbacks2 = Object.freeze({
-    __proto__: null,
-    didMorph: didMorph2,
-    didMorphCallbacks: didMorphCallbacks2,
-    shouldMorph: shouldMorph2,
-    shouldMorphCallbacks: shouldMorphCallbacks2,
-    verifyNotContentEditable: verifyNotContentEditable2,
-    verifyNotMutable: verifyNotMutable2,
-    verifyNotPermanent: verifyNotPermanent2
-  });
-  var Operations2 = {
-    // DOM Mutations
-    append: (operation) => {
-      processElements2(operation, (element) => {
-        before2(element, operation);
-        operate2(operation, () => {
-          const { html, focusSelector } = operation;
-          element.insertAdjacentHTML("beforeend", safeScalar2(html));
-          assignFocus2(focusSelector);
-        });
-        after2(element, operation);
-      });
-    },
-    graft: (operation) => {
-      processElements2(operation, (element) => {
-        before2(element, operation);
-        operate2(operation, () => {
-          const { parent, focusSelector } = operation;
-          const parentElement = document.querySelector(parent);
-          if (parentElement) {
-            parentElement.appendChild(element);
-            assignFocus2(focusSelector);
-          }
-        });
-        after2(element, operation);
-      });
-    },
-    innerHtml: (operation) => {
-      processElements2(operation, (element) => {
-        before2(element, operation);
-        operate2(operation, () => {
-          const { html, focusSelector } = operation;
-          element.innerHTML = safeScalar2(html);
-          assignFocus2(focusSelector);
-        });
-        after2(element, operation);
-      });
-    },
-    insertAdjacentHtml: (operation) => {
-      processElements2(operation, (element) => {
-        before2(element, operation);
-        operate2(operation, () => {
-          const { html, position, focusSelector } = operation;
-          element.insertAdjacentHTML(position || "beforeend", safeScalar2(html));
-          assignFocus2(focusSelector);
-        });
-        after2(element, operation);
-      });
-    },
-    insertAdjacentText: (operation) => {
-      processElements2(operation, (element) => {
-        before2(element, operation);
-        operate2(operation, () => {
-          const { text, position, focusSelector } = operation;
-          element.insertAdjacentText(position || "beforeend", safeScalar2(text));
-          assignFocus2(focusSelector);
-        });
-        after2(element, operation);
-      });
-    },
-    outerHtml: (operation) => {
-      processElements2(operation, (element) => {
-        const parent = element.parentElement;
-        const idx = parent && Array.from(parent.children).indexOf(element);
-        before2(element, operation);
-        operate2(operation, () => {
-          const { html, focusSelector } = operation;
-          element.outerHTML = safeScalar2(html);
-          assignFocus2(focusSelector);
-        });
-        after2(parent ? parent.children[idx] : document.documentElement, operation);
-      });
-    },
-    prepend: (operation) => {
-      processElements2(operation, (element) => {
-        before2(element, operation);
-        operate2(operation, () => {
-          const { html, focusSelector } = operation;
-          element.insertAdjacentHTML("afterbegin", safeScalar2(html));
-          assignFocus2(focusSelector);
-        });
-        after2(element, operation);
-      });
-    },
-    remove: (operation) => {
-      processElements2(operation, (element) => {
-        before2(element, operation);
-        operate2(operation, () => {
-          const { focusSelector } = operation;
-          element.remove();
-          assignFocus2(focusSelector);
-        });
-        after2(document, operation);
-      });
-    },
-    replace: (operation) => {
-      processElements2(operation, (element) => {
-        const parent = element.parentElement;
-        const idx = parent && Array.from(parent.children).indexOf(element);
-        before2(element, operation);
-        operate2(operation, () => {
-          const { html, focusSelector } = operation;
-          element.outerHTML = safeScalar2(html);
-          assignFocus2(focusSelector);
-        });
-        after2(parent ? parent.children[idx] : document.documentElement, operation);
-      });
-    },
-    textContent: (operation) => {
-      processElements2(operation, (element) => {
-        before2(element, operation);
-        operate2(operation, () => {
-          const { text, focusSelector } = operation;
-          element.textContent = safeScalar2(text);
-          assignFocus2(focusSelector);
-        });
-        after2(element, operation);
-      });
-    },
-    // Element Property Mutations
-    addCssClass: (operation) => {
-      processElements2(operation, (element) => {
-        before2(element, operation);
-        operate2(operation, () => {
-          const { name: name4 } = operation;
-          element.classList.add(...getClassNames2([safeStringOrArray2(name4)]));
-        });
-        after2(element, operation);
-      });
-    },
-    removeAttribute: (operation) => {
-      processElements2(operation, (element) => {
-        before2(element, operation);
-        operate2(operation, () => {
-          const { name: name4 } = operation;
-          element.removeAttribute(safeString2(name4));
-        });
-        after2(element, operation);
-      });
-    },
-    removeCssClass: (operation) => {
-      processElements2(operation, (element) => {
-        before2(element, operation);
-        operate2(operation, () => {
-          const { name: name4 } = operation;
-          element.classList.remove(...getClassNames2([safeStringOrArray2(name4)]));
-          if (element.classList.length === 0) element.removeAttribute("class");
-        });
-        after2(element, operation);
-      });
-    },
-    setAttribute: (operation) => {
-      processElements2(operation, (element) => {
-        before2(element, operation);
-        operate2(operation, () => {
-          const { name: name4, value } = operation;
-          element.setAttribute(safeString2(name4), safeScalar2(value));
-        });
-        after2(element, operation);
-      });
-    },
-    setDatasetProperty: (operation) => {
-      processElements2(operation, (element) => {
-        before2(element, operation);
-        operate2(operation, () => {
-          const { name: name4, value } = operation;
-          element.dataset[safeString2(name4)] = safeScalar2(value);
-        });
-        after2(element, operation);
-      });
-    },
-    setProperty: (operation) => {
-      processElements2(operation, (element) => {
-        before2(element, operation);
-        operate2(operation, () => {
-          const { name: name4, value } = operation;
-          if (name4 in element) element[safeString2(name4)] = safeScalar2(value);
-        });
-        after2(element, operation);
-      });
-    },
-    setStyle: (operation) => {
-      processElements2(operation, (element) => {
-        before2(element, operation);
-        operate2(operation, () => {
-          const { name: name4, value } = operation;
-          element.style[safeString2(name4)] = safeScalar2(value);
-        });
-        after2(element, operation);
-      });
-    },
-    setStyles: (operation) => {
-      processElements2(operation, (element) => {
-        before2(element, operation);
-        operate2(operation, () => {
-          const { styles } = operation;
-          for (let [name4, value] of Object.entries(styles)) element.style[safeString2(name4)] = safeScalar2(value);
-        });
-        after2(element, operation);
-      });
-    },
-    setValue: (operation) => {
-      processElements2(operation, (element) => {
-        before2(element, operation);
-        operate2(operation, () => {
-          const { value } = operation;
-          element.value = safeScalar2(value);
-        });
-        after2(element, operation);
-      });
-    },
-    // DOM Events and Meta-Operations
-    dispatchEvent: (operation) => {
-      processElements2(operation, (element) => {
-        before2(element, operation);
-        operate2(operation, () => {
-          const { name: name4, detail } = operation;
-          dispatch3(element, safeString2(name4), safeObject2(detail));
-        });
-        after2(element, operation);
-      });
-    },
-    setMeta: (operation) => {
-      before2(document, operation);
-      operate2(operation, () => {
-        const { name: name4, content } = operation;
-        let meta = document.head.querySelector(`meta[name='${name4}']`);
-        if (!meta) {
-          meta = document.createElement("meta");
-          meta.name = safeString2(name4);
-          document.head.appendChild(meta);
-        }
-        meta.content = safeScalar2(content);
-      });
-      after2(document, operation);
-    },
-    setTitle: (operation) => {
-      before2(document, operation);
-      operate2(operation, () => {
-        const { title } = operation;
-        document.title = safeScalar2(title);
-      });
-      after2(document, operation);
-    },
-    // Browser Manipulations
-    clearStorage: (operation) => {
-      before2(document, operation);
-      operate2(operation, () => {
-        const { type } = operation;
-        const storage = type === "session" ? sessionStorage : localStorage;
-        storage.clear();
-      });
-      after2(document, operation);
-    },
-    go: (operation) => {
-      before2(window, operation);
-      operate2(operation, () => {
-        const { delta } = operation;
-        history.go(delta);
-      });
-      after2(window, operation);
-    },
-    pushState: (operation) => {
-      before2(window, operation);
-      operate2(operation, () => {
-        const { state, title, url } = operation;
-        history.pushState(safeObject2(state), safeString2(title), safeString2(url));
-      });
-      after2(window, operation);
-    },
-    redirectTo: (operation) => {
-      before2(window, operation);
-      operate2(operation, () => {
-        let { url, action, turbo } = operation;
-        action = action || "advance";
-        url = safeString2(url);
-        if (turbo === void 0) turbo = true;
-        if (turbo) {
-          if (window.Turbo) window.Turbo.visit(url, {
-            action
-          });
-          if (window.Turbolinks) window.Turbolinks.visit(url, {
-            action
-          });
-          if (!window.Turbo && !window.Turbolinks) window.location.href = url;
-        } else {
-          window.location.href = url;
-        }
-      });
-      after2(window, operation);
-    },
-    reload: (operation) => {
-      before2(window, operation);
-      operate2(operation, () => {
-        window.location.reload();
-      });
-      after2(window, operation);
-    },
-    removeStorageItem: (operation) => {
-      before2(document, operation);
-      operate2(operation, () => {
-        const { key, type } = operation;
-        const storage = type === "session" ? sessionStorage : localStorage;
-        storage.removeItem(safeString2(key));
-      });
-      after2(document, operation);
-    },
-    replaceState: (operation) => {
-      before2(window, operation);
-      operate2(operation, () => {
-        const { state, title, url } = operation;
-        history.replaceState(safeObject2(state), safeString2(title), safeString2(url));
-      });
-      after2(window, operation);
-    },
-    scrollIntoView: (operation) => {
-      const { element } = operation;
-      before2(element, operation);
-      operate2(operation, () => {
-        element.scrollIntoView(operation);
-      });
-      after2(element, operation);
-    },
-    setCookie: (operation) => {
-      before2(document, operation);
-      operate2(operation, () => {
-        const { cookie } = operation;
-        document.cookie = safeScalar2(cookie);
-      });
-      after2(document, operation);
-    },
-    setFocus: (operation) => {
-      const { element } = operation;
-      before2(element, operation);
-      operate2(operation, () => {
-        assignFocus2(element);
-      });
-      after2(element, operation);
-    },
-    setStorageItem: (operation) => {
-      before2(document, operation);
-      operate2(operation, () => {
-        const { key, value, type } = operation;
-        const storage = type === "session" ? sessionStorage : localStorage;
-        storage.setItem(safeString2(key), safeScalar2(value));
-      });
-      after2(document, operation);
-    },
-    // Notifications
-    consoleLog: (operation) => {
-      before2(document, operation);
-      operate2(operation, () => {
-        const { message, level } = operation;
-        level && ["warn", "info", "error"].includes(level) ? console[level](message) : console.log(message);
-      });
-      after2(document, operation);
-    },
-    consoleTable: (operation) => {
-      before2(document, operation);
-      operate2(operation, () => {
-        const { data, columns } = operation;
-        console.table(data, safeArray2(columns));
-      });
-      after2(document, operation);
-    },
-    notification: (operation) => {
-      before2(document, operation);
-      operate2(operation, () => {
-        const { title, options } = operation;
-        Notification.requestPermission().then((result) => {
-          operation.permission = result;
-          if (result === "granted") new Notification(safeString2(title), safeObject2(options));
-        });
-      });
-      after2(document, operation);
-    },
-    // Morph operations
-    morph: (operation) => {
-      processElements2(operation, (element) => {
-        const { html } = operation;
-        const template3 = document.createElement("template");
-        template3.innerHTML = String(safeScalar2(html)).trim();
-        operation.content = template3.content;
-        const parent = element.parentElement;
-        const idx = parent && Array.from(parent.children).indexOf(element);
-        before2(element, operation);
-        operate2(operation, () => {
-          const { childrenOnly, focusSelector } = operation;
-          morphdom_esm_default(element, childrenOnly ? template3.content : template3.innerHTML, {
-            childrenOnly: !!childrenOnly,
-            onBeforeElUpdated: shouldMorph2(operation),
-            onElUpdated: didMorph2(operation)
-          });
-          assignFocus2(focusSelector);
-        });
-        after2(parent ? parent.children[idx] : document.documentElement, operation);
-      });
-    }
-  };
-  var operations2 = Operations2;
-  var add3 = (newOperations) => {
-    operations2 = {
-      ...operations2,
-      ...newOperations
-    };
-  };
-  var addOperations2 = (operations3) => {
-    add3(operations3);
-  };
-  var addOperation2 = (name4, operation) => {
-    const operations3 = {};
-    operations3[name4] = operation;
-    add3(operations3);
-  };
-  var OperationStore2 = {
-    get all() {
-      return operations2;
-    }
-  };
-  var missingElement2 = "warn";
-  var MissingElement2 = {
-    get behavior() {
-      return missingElement2;
-    },
-    set(value) {
-      if (["warn", "ignore", "event", "exception"].includes(value)) missingElement2 = value;
-      else console.warn("Invalid 'onMissingElement' option. Defaulting to 'warn'.");
-    }
-  };
-  var perform2 = (operations3, options = {
-    onMissingElement: MissingElement2.behavior
-  }) => {
-    const batches = {};
-    operations3.forEach((operation) => {
-      if (!!operation.batch) batches[operation.batch] = batches[operation.batch] ? ++batches[operation.batch] : 1;
-    });
-    operations3.forEach((operation) => {
-      const name4 = operation.operation;
-      try {
-        if (operation.selector) {
-          if (operation.xpath) {
-            operation.element = operation.selectAll ? xpathToElementArray2(operation.selector) : xpathToElement2(operation.selector);
-          } else {
-            operation.element = operation.selectAll ? document.querySelectorAll(operation.selector) : document.querySelector(operation.selector);
-          }
-        } else {
-          operation.element = document;
-        }
-        if (operation.element || options.onMissingElement !== "ignore") {
-          ActiveElement2.set(document.activeElement);
-          const cableReadyOperation = OperationStore2.all[name4];
-          if (cableReadyOperation) {
-            cableReadyOperation(operation);
-            if (!!operation.batch && --batches[operation.batch] === 0) dispatch3(document, "cable-ready:batch-complete", {
-              batch: operation.batch
-            });
-          } else {
-            console.error(`CableReady couldn't find the "${name4}" operation. Make sure you use the camelized form when calling an operation method.`);
-          }
-        }
-      } catch (e) {
-        if (operation.element) {
-          console.error(`CableReady detected an error in ${name4 || "operation"}: ${e.message}. If you need to support older browsers make sure you've included the corresponding polyfills. https://docs.stimulusreflex.com/setup#polyfills-for-ie11.`);
-          console.error(e);
-        } else {
-          const warning = `CableReady ${name4 || ""} operation failed due to missing DOM element for selector: '${operation.selector}'`;
-          switch (options.onMissingElement) {
-            case "ignore":
-              break;
-            case "event":
-              dispatch3(document, "cable-ready:missing-element", {
-                warning,
-                operation
-              });
-              break;
-            case "exception":
-              throw warning;
-            default:
-              console.warn(warning);
-          }
-        }
-      }
-    });
-  };
-  var performAsync2 = (operations3, options = {
-    onMissingElement: MissingElement2.behavior
-  }) => new Promise((resolve, reject) => {
-    try {
-      resolve(perform2(operations3, options));
-    } catch (err) {
-      reject(err);
-    }
-  });
-  var SubscribingElement2 = class extends HTMLElement {
-    static get tagName() {
-      throw new Error("Implement the tagName() getter in the inheriting class");
-    }
-    static define() {
-      if (!customElements.get(this.tagName)) {
-        customElements.define(this.tagName, this);
-      }
-    }
-    disconnectedCallback() {
-      if (this.channel) this.channel.unsubscribe();
-    }
-    createSubscription(consumer5, channel, receivedCallback) {
-      this.channel = consumer5.subscriptions.create({
-        channel,
-        identifier: this.identifier
-      }, {
-        received: receivedCallback
-      });
-    }
-    get preview() {
-      return document.documentElement.hasAttribute("data-turbolinks-preview") || document.documentElement.hasAttribute("data-turbo-preview");
-    }
-    get identifier() {
-      return this.getAttribute("identifier");
-    }
-  };
-  var consumer3;
-  var BACKOFF2 = [25, 50, 75, 100, 200, 250, 500, 800, 1e3, 2e3];
-  var wait2 = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-  var getConsumerWithRetry2 = async (retry = 0) => {
-    if (consumer3) return consumer3;
-    if (retry >= BACKOFF2.length) {
-      throw new Error("Couldn't obtain a Action Cable consumer within 5s");
-    }
-    await wait2(BACKOFF2[retry]);
-    return await getConsumerWithRetry2(retry + 1);
-  };
-  var CableConsumer2 = {
-    setConsumer(value) {
-      consumer3 = value;
-    },
-    get consumer() {
-      return consumer3;
-    },
-    async getConsumer() {
-      return await getConsumerWithRetry2();
-    }
-  };
-  var StreamFromElement2 = class extends SubscribingElement2 {
-    static get tagName() {
-      return "cable-ready-stream-from";
-    }
-    async connectedCallback() {
-      if (this.preview) return;
-      const consumer5 = await CableConsumer2.getConsumer();
-      if (consumer5) {
-        this.createSubscription(consumer5, "CableReady::Stream", this.performOperations.bind(this));
-      } else {
-        console.error("The `cable_ready_stream_from` helper cannot connect. You must initialize CableReady with an Action Cable consumer.");
-      }
-    }
-    performOperations(data) {
-      if (data.cableReady) perform2(data.operations, {
-        onMissingElement: this.onMissingElement
-      });
-    }
-    get onMissingElement() {
-      const value = this.getAttribute("missing") || MissingElement2.behavior;
-      if (["warn", "ignore", "event"].includes(value)) return value;
-      else {
-        console.warn("Invalid 'missing' attribute. Defaulting to 'warn'.");
-        return "warn";
-      }
-    }
-  };
-  var debugging2 = false;
-  var Debug3 = {
-    get enabled() {
-      return debugging2;
-    },
-    get disabled() {
-      return !debugging2;
-    },
-    get value() {
-      return debugging2;
-    },
-    set(value) {
-      debugging2 = !!value;
-    },
-    set debug(value) {
-      debugging2 = !!value;
-    }
-  };
-  var request2 = (data, blocks) => {
-    if (Debug3.disabled) return;
-    const message = `\u2191 Updatable request affecting ${blocks.length} element(s): `;
-    console.log(message, {
-      elements: blocks.map((b) => b.element),
-      identifiers: blocks.map((b) => b.element.getAttribute("identifier")),
-      data
-    });
-    return message;
-  };
-  var cancel2 = (timestamp, reason) => {
-    if (Debug3.disabled) return;
-    const duration2 = /* @__PURE__ */ new Date() - timestamp;
-    const message = `\u274C Updatable request canceled after ${duration2}ms: ${reason}`;
-    console.log(message);
-    return message;
-  };
-  var response2 = (timestamp, element, urls) => {
-    if (Debug3.disabled) return;
-    const duration2 = /* @__PURE__ */ new Date() - timestamp;
-    const message = `\u2193 Updatable response: All URLs fetched in ${duration2}ms`;
-    console.log(message, {
-      element,
-      urls
-    });
-    return message;
-  };
-  var morphStart2 = (timestamp, element) => {
-    if (Debug3.disabled) return;
-    const duration2 = /* @__PURE__ */ new Date() - timestamp;
-    const message = `\u21BB Updatable morph: starting after ${duration2}ms`;
-    console.log(message, {
-      element
-    });
-    return message;
-  };
-  var morphEnd2 = (timestamp, element) => {
-    if (Debug3.disabled) return;
-    const duration2 = /* @__PURE__ */ new Date() - timestamp;
-    const message = `\u21BA Updatable morph: completed after ${duration2}ms`;
-    console.log(message, {
-      element
-    });
-    return message;
-  };
-  var Log2 = {
-    request: request2,
-    cancel: cancel2,
-    response: response2,
-    morphStart: morphStart2,
-    morphEnd: morphEnd2
-  };
-  var AppearanceObserver3 = class {
-    constructor(delegate, element = null) {
-      this.delegate = delegate;
-      this.element = element || delegate;
-      this.started = false;
-      this.intersecting = false;
-      this.intersectionObserver = new IntersectionObserver(this.intersect);
-    }
-    start() {
-      if (!this.started) {
-        this.started = true;
-        this.intersectionObserver.observe(this.element);
-        this.observeVisibility();
-      }
-    }
-    stop() {
-      if (this.started) {
-        this.started = false;
-        this.intersectionObserver.unobserve(this.element);
-        this.unobserveVisibility();
-      }
-    }
-    observeVisibility = () => {
-      document.addEventListener("visibilitychange", this.handleVisibilityChange);
-    };
-    unobserveVisibility = () => {
-      document.removeEventListener("visibilitychange", this.handleVisibilityChange);
-    };
-    intersect = (entries) => {
-      entries.forEach((entry) => {
-        if (entry.target === this.element) {
-          if (entry.isIntersecting && document.visibilityState === "visible") {
-            this.intersecting = true;
-            this.delegate.appearedInViewport();
-          } else {
-            this.intersecting = false;
-            this.delegate.disappearedFromViewport();
-          }
-        }
-      });
-    };
-    handleVisibilityChange = (event) => {
-      if (document.visibilityState === "visible" && this.intersecting) {
-        this.delegate.appearedInViewport();
-      } else {
-        this.delegate.disappearedFromViewport();
-      }
-    };
-  };
-  var template2 = `
-<style>
-  :host {
-    display: block;
-  }
-</style>
-<slot></slot>
-`;
-  var UpdatesForElement2 = class extends SubscribingElement2 {
-    static get tagName() {
-      return "cable-ready-updates-for";
-    }
-    constructor() {
-      super();
-      const shadowRoot = this.attachShadow({
-        mode: "open"
-      });
-      shadowRoot.innerHTML = template2;
-      this.triggerElementLog = new BoundedQueue2(10);
-      this.targetElementLog = new BoundedQueue2(10);
-      this.appearanceObserver = new AppearanceObserver3(this);
-      this.visible = false;
-      this.didTransitionToVisible = false;
-    }
-    async connectedCallback() {
-      if (this.preview) return;
-      this.update = debounce2(this.update.bind(this), this.debounce);
-      const consumer5 = await CableConsumer2.getConsumer();
-      if (consumer5) {
-        this.createSubscription(consumer5, "CableReady::Stream", this.update);
-      } else {
-        console.error("The `cable_ready_updates_for` helper cannot connect. You must initialize CableReady with an Action Cable consumer.");
-      }
-      if (this.observeAppearance) {
-        this.appearanceObserver.start();
-      }
-    }
-    disconnectedCallback() {
-      super.disconnectedCallback();
-      if (this.observeAppearance) {
-        this.appearanceObserver.stop();
-      }
-    }
-    async update(data) {
-      this.lastUpdateTimestamp = /* @__PURE__ */ new Date();
-      const blocks = Array.from(document.querySelectorAll(this.query), (element) => new Block2(element)).filter((block) => block.shouldUpdate(data));
-      this.triggerElementLog.push(`${(/* @__PURE__ */ new Date()).toLocaleString()}: ${Log2.request(data, blocks)}`);
-      if (blocks.length === 0) {
-        this.triggerElementLog.push(`${(/* @__PURE__ */ new Date()).toLocaleString()}: ${Log2.cancel(this.lastUpdateTimestamp, "All elements filtered out")}`);
-        return;
-      }
-      if (blocks[0].element !== this && !this.didTransitionToVisible) {
-        this.triggerElementLog.push(`${(/* @__PURE__ */ new Date()).toLocaleString()}: ${Log2.cancel(this.lastUpdateTimestamp, "Update already requested")}`);
-        return;
-      }
-      ActiveElement2.set(document.activeElement);
-      this.html = {};
-      const uniqueUrls = [...new Set(blocks.map((block) => block.url))];
-      await Promise.all(uniqueUrls.map(async (url) => {
-        if (!this.html.hasOwnProperty(url)) {
-          const response3 = await graciouslyFetch2(url, {
-            "X-Cable-Ready": "update"
-          });
-          this.html[url] = await response3.text();
-        }
-      }));
-      this.triggerElementLog.push(`${(/* @__PURE__ */ new Date()).toLocaleString()}: ${Log2.response(this.lastUpdateTimestamp, this, uniqueUrls)}`);
-      this.index = {};
-      blocks.forEach((block) => {
-        this.index.hasOwnProperty(block.url) ? this.index[block.url]++ : this.index[block.url] = 0;
-        block.process(data, this.html, this.index, this.lastUpdateTimestamp);
-      });
-    }
-    appearedInViewport() {
-      if (!this.visible) {
-        this.didTransitionToVisible = true;
-        this.update({});
-      }
-      this.visible = true;
-    }
-    disappearedFromViewport() {
-      this.visible = false;
-    }
-    get query() {
-      return `${this.tagName}[identifier="${this.identifier}"]`;
-    }
-    get identifier() {
-      return this.getAttribute("identifier");
-    }
-    get debounce() {
-      return this.hasAttribute("debounce") ? parseInt(this.getAttribute("debounce")) : 20;
-    }
-    get observeAppearance() {
-      return this.hasAttribute("observe-appearance");
-    }
-  };
-  var Block2 = class {
-    constructor(element) {
-      this.element = element;
-    }
-    async process(data, html, fragmentsIndex, startTimestamp) {
-      const blockIndex = fragmentsIndex[this.url];
-      const template3 = document.createElement("template");
-      this.element.setAttribute("updating", "updating");
-      template3.innerHTML = String(html[this.url]).trim();
-      await this.resolveTurboFrames(template3.content);
-      const fragments = template3.content.querySelectorAll(this.query);
-      if (fragments.length <= blockIndex) {
-        console.warn(`Update aborted due to insufficient number of elements. The offending url is ${this.url}, the offending element is:`, this.element);
-        return;
-      }
-      const operation = {
-        element: this.element,
-        html: fragments[blockIndex],
-        permanentAttributeName: "data-ignore-updates"
-      };
-      dispatch3(this.element, "cable-ready:before-update", operation);
-      this.element.targetElementLog.push(`${(/* @__PURE__ */ new Date()).toLocaleString()}: ${Log2.morphStart(startTimestamp, this.element)}`);
-      morphdom_esm_default(this.element, fragments[blockIndex], {
-        childrenOnly: true,
-        onBeforeElUpdated: shouldMorph2(operation),
-        onElUpdated: (_) => {
-          this.element.removeAttribute("updating");
-          this.element.didTransitionToVisible = false;
-          dispatch3(this.element, "cable-ready:after-update", operation);
-          assignFocus2(operation.focusSelector);
-        }
-      });
-      this.element.targetElementLog.push(`${(/* @__PURE__ */ new Date()).toLocaleString()}: ${Log2.morphEnd(startTimestamp, this.element)}`);
-    }
-    async resolveTurboFrames(documentFragment) {
-      const reloadingTurboFrames = [...documentFragment.querySelectorAll('turbo-frame[src]:not([loading="lazy"])')];
-      return Promise.all(reloadingTurboFrames.map((frame) => new Promise(async (resolve) => {
-        const frameResponse = await graciouslyFetch2(frame.getAttribute("src"), {
-          "Turbo-Frame": frame.id,
-          "X-Cable-Ready": "update"
-        });
-        const frameTemplate = document.createElement("template");
-        frameTemplate.innerHTML = await frameResponse.text();
-        await this.resolveTurboFrames(frameTemplate.content);
-        const selector = `turbo-frame#${frame.id}`;
-        const frameContent = frameTemplate.content.querySelector(selector);
-        const content = frameContent ? frameContent.innerHTML.trim() : "";
-        documentFragment.querySelector(selector).innerHTML = content;
-        resolve();
-      })));
-    }
-    shouldUpdate(data) {
-      return !this.ignoresInnerUpdates && this.hasChangesSelectedForUpdate(data) && (!this.observeAppearance || this.visible);
-    }
-    hasChangesSelectedForUpdate(data) {
-      const only = this.element.getAttribute("only");
-      return !(only && data.changed && !only.split(" ").some((attribute) => data.changed.includes(attribute)));
-    }
-    get ignoresInnerUpdates() {
-      return this.element.hasAttribute("ignore-inner-updates") && this.element.hasAttribute("performing-inner-update");
-    }
-    get url() {
-      return this.element.hasAttribute("url") ? this.element.getAttribute("url") : location.href;
-    }
-    get identifier() {
-      return this.element.identifier;
-    }
-    get query() {
-      return this.element.query;
-    }
-    get visible() {
-      return this.element.visible;
-    }
-    get observeAppearance() {
-      return this.element.observeAppearance;
-    }
-  };
-  var registerInnerUpdates2 = () => {
-    document.addEventListener("stimulus-reflex:before", (event) => {
-      recursiveMarkUpdatesForElements2(event.detail.element);
-    });
-    document.addEventListener("stimulus-reflex:after", (event) => {
-      setTimeout(() => {
-        recursiveUnmarkUpdatesForElements2(event.detail.element);
-      });
-    });
-    document.addEventListener("turbo:submit-start", (event) => {
-      recursiveMarkUpdatesForElements2(event.target);
-    });
-    document.addEventListener("turbo:submit-end", (event) => {
-      setTimeout(() => {
-        recursiveUnmarkUpdatesForElements2(event.target);
-      });
-    });
-    document.addEventListener("turbo-boost:command:start", (event) => {
-      recursiveMarkUpdatesForElements2(event.target);
-    });
-    document.addEventListener("turbo-boost:command:finish", (event) => {
-      setTimeout(() => {
-        recursiveUnmarkUpdatesForElements2(event.target);
-      });
-    });
-    document.addEventListener("turbo-boost:command:error", (event) => {
-      setTimeout(() => {
-        recursiveUnmarkUpdatesForElements2(event.target);
-      });
-    });
-  };
-  var recursiveMarkUpdatesForElements2 = (leaf) => {
-    const closestUpdatesFor = leaf && leaf.parentElement && leaf.parentElement.closest("cable-ready-updates-for");
-    if (closestUpdatesFor) {
-      closestUpdatesFor.setAttribute("performing-inner-update", "");
-      recursiveMarkUpdatesForElements2(closestUpdatesFor);
-    }
-  };
-  var recursiveUnmarkUpdatesForElements2 = (leaf) => {
-    const closestUpdatesFor = leaf && leaf.parentElement && leaf.parentElement.closest("cable-ready-updates-for");
-    if (closestUpdatesFor) {
-      closestUpdatesFor.removeAttribute("performing-inner-update");
-      recursiveUnmarkUpdatesForElements2(closestUpdatesFor);
-    }
-  };
-  var defineElements2 = () => {
-    registerInnerUpdates2();
-    StreamFromElement2.define();
-    UpdatesForElement2.define();
-  };
-  var initialize2 = (initializeOptions = {}) => {
-    const { consumer: consumer5, onMissingElement, debug } = initializeOptions;
-    Debug3.set(!!debug);
-    if (consumer5) {
-      CableConsumer2.setConsumer(consumer5);
-    } else {
-      console.error("CableReady requires a reference to your Action Cable `consumer` for its helpers to function.\nEnsure that you have imported the `CableReady` package as well as `consumer` from your `channels` folder, then call `CableReady.initialize({ consumer })`.");
-    }
-    if (onMissingElement) {
-      MissingElement2.set(onMissingElement);
-    }
-    defineElements2();
-  };
-  var global2 = {
-    perform: perform2,
-    performAsync: performAsync2,
-    shouldMorphCallbacks: shouldMorphCallbacks2,
-    didMorphCallbacks: didMorphCallbacks2,
-    initialize: initialize2,
-    addOperation: addOperation2,
-    addOperations: addOperations2,
-    version: packageInfo2.version,
-    cable: CableConsumer2,
-    get DOMOperations() {
-      console.warn("DEPRECATED: Please use `CableReady.operations` instead of `CableReady.DOMOperations`");
-      return OperationStore2.all;
-    },
-    get operations() {
-      return OperationStore2.all;
-    },
-    get consumer() {
-      return CableConsumer2.consumer;
-    }
-  };
-  window.CableReady = global2;
-
-  // ../../node_modules/stimulus_reflex/node_modules/@rails/actioncable/app/assets/javascripts/actioncable.esm.js
-  var adapters2 = {
-    logger: typeof console !== "undefined" ? console : void 0,
-    WebSocket: typeof WebSocket !== "undefined" ? WebSocket : void 0
-  };
-  var logger2 = {
-    log(...messages) {
-      if (this.enabled) {
-        messages.push(Date.now());
-        adapters2.logger.log("[ActionCable]", ...messages);
-      }
-    }
-  };
-  var now3 = () => (/* @__PURE__ */ new Date()).getTime();
-  var secondsSince3 = (time) => (now3() - time) / 1e3;
-  var ConnectionMonitor3 = class {
-    constructor(connection) {
-      this.visibilityDidChange = this.visibilityDidChange.bind(this);
-      this.connection = connection;
-      this.reconnectAttempts = 0;
-    }
-    start() {
-      if (!this.isRunning()) {
-        this.startedAt = now3();
-        delete this.stoppedAt;
-        this.startPolling();
-        addEventListener("visibilitychange", this.visibilityDidChange);
-        logger2.log(`ConnectionMonitor started. stale threshold = ${this.constructor.staleThreshold} s`);
-      }
-    }
-    stop() {
-      if (this.isRunning()) {
-        this.stoppedAt = now3();
-        this.stopPolling();
-        removeEventListener("visibilitychange", this.visibilityDidChange);
-        logger2.log("ConnectionMonitor stopped");
-      }
-    }
-    isRunning() {
-      return this.startedAt && !this.stoppedAt;
-    }
-    recordPing() {
-      this.pingedAt = now3();
-    }
-    recordConnect() {
-      this.reconnectAttempts = 0;
-      this.recordPing();
-      delete this.disconnectedAt;
-      logger2.log("ConnectionMonitor recorded connect");
-    }
-    recordDisconnect() {
-      this.disconnectedAt = now3();
-      logger2.log("ConnectionMonitor recorded disconnect");
-    }
-    startPolling() {
-      this.stopPolling();
-      this.poll();
-    }
-    stopPolling() {
-      clearTimeout(this.pollTimeout);
-    }
-    poll() {
-      this.pollTimeout = setTimeout(() => {
-        this.reconnectIfStale();
-        this.poll();
-      }, this.getPollInterval());
-    }
-    getPollInterval() {
-      const { staleThreshold, reconnectionBackoffRate } = this.constructor;
-      const backoff = Math.pow(1 + reconnectionBackoffRate, Math.min(this.reconnectAttempts, 10));
-      const jitterMax = this.reconnectAttempts === 0 ? 1 : reconnectionBackoffRate;
-      const jitter = jitterMax * Math.random();
-      return staleThreshold * 1e3 * backoff * (1 + jitter);
-    }
-    reconnectIfStale() {
-      if (this.connectionIsStale()) {
-        logger2.log(`ConnectionMonitor detected stale connection. reconnectAttempts = ${this.reconnectAttempts}, time stale = ${secondsSince3(this.refreshedAt)} s, stale threshold = ${this.constructor.staleThreshold} s`);
-        this.reconnectAttempts++;
-        if (this.disconnectedRecently()) {
-          logger2.log(`ConnectionMonitor skipping reopening recent disconnect. time disconnected = ${secondsSince3(this.disconnectedAt)} s`);
-        } else {
-          logger2.log("ConnectionMonitor reopening");
-          this.connection.reopen();
-        }
-      }
-    }
-    get refreshedAt() {
-      return this.pingedAt ? this.pingedAt : this.startedAt;
-    }
-    connectionIsStale() {
-      return secondsSince3(this.refreshedAt) > this.constructor.staleThreshold;
-    }
-    disconnectedRecently() {
-      return this.disconnectedAt && secondsSince3(this.disconnectedAt) < this.constructor.staleThreshold;
-    }
-    visibilityDidChange() {
-      if (document.visibilityState === "visible") {
-        setTimeout(() => {
-          if (this.connectionIsStale() || !this.connection.isOpen()) {
-            logger2.log(`ConnectionMonitor reopening stale connection on visibilitychange. visibilityState = ${document.visibilityState}`);
-            this.connection.reopen();
-          }
-        }, 200);
-      }
-    }
-  };
-  ConnectionMonitor3.staleThreshold = 6;
-  ConnectionMonitor3.reconnectionBackoffRate = 0.15;
-  var INTERNAL2 = {
-    message_types: {
-      welcome: "welcome",
-      disconnect: "disconnect",
-      ping: "ping",
-      confirmation: "confirm_subscription",
-      rejection: "reject_subscription"
-    },
-    disconnect_reasons: {
-      unauthorized: "unauthorized",
-      invalid_request: "invalid_request",
-      server_restart: "server_restart",
-      remote: "remote"
-    },
-    default_mount_path: "/cable",
-    protocols: ["actioncable-v1-json", "actioncable-unsupported"]
-  };
-  var { message_types: message_types3, protocols: protocols3 } = INTERNAL2;
-  var supportedProtocols3 = protocols3.slice(0, protocols3.length - 1);
-  var indexOf3 = [].indexOf;
-  var Connection3 = class {
-    constructor(consumer5) {
-      this.open = this.open.bind(this);
-      this.consumer = consumer5;
-      this.subscriptions = this.consumer.subscriptions;
-      this.monitor = new ConnectionMonitor3(this);
-      this.disconnected = true;
-    }
-    send(data) {
-      if (this.isOpen()) {
-        this.webSocket.send(JSON.stringify(data));
-        return true;
-      } else {
-        return false;
-      }
-    }
-    open() {
-      if (this.isActive()) {
-        logger2.log(`Attempted to open WebSocket, but existing socket is ${this.getState()}`);
-        return false;
-      } else {
-        const socketProtocols = [...protocols3, ...this.consumer.subprotocols || []];
-        logger2.log(`Opening WebSocket, current state is ${this.getState()}, subprotocols: ${socketProtocols}`);
-        if (this.webSocket) {
-          this.uninstallEventHandlers();
-        }
-        this.webSocket = new adapters2.WebSocket(this.consumer.url, socketProtocols);
-        this.installEventHandlers();
-        this.monitor.start();
-        return true;
-      }
-    }
-    close({ allowReconnect } = {
-      allowReconnect: true
-    }) {
-      if (!allowReconnect) {
-        this.monitor.stop();
-      }
-      if (this.isOpen()) {
-        return this.webSocket.close();
-      }
-    }
-    reopen() {
-      logger2.log(`Reopening WebSocket, current state is ${this.getState()}`);
-      if (this.isActive()) {
-        try {
-          return this.close();
-        } catch (error3) {
-          logger2.log("Failed to reopen WebSocket", error3);
-        } finally {
-          logger2.log(`Reopening WebSocket in ${this.constructor.reopenDelay}ms`);
-          setTimeout(this.open, this.constructor.reopenDelay);
-        }
-      } else {
-        return this.open();
-      }
-    }
-    getProtocol() {
-      if (this.webSocket) {
-        return this.webSocket.protocol;
-      }
-    }
-    isOpen() {
-      return this.isState("open");
-    }
-    isActive() {
-      return this.isState("open", "connecting");
-    }
-    triedToReconnect() {
-      return this.monitor.reconnectAttempts > 0;
-    }
-    isProtocolSupported() {
-      return indexOf3.call(supportedProtocols3, this.getProtocol()) >= 0;
-    }
-    isState(...states) {
-      return indexOf3.call(states, this.getState()) >= 0;
-    }
-    getState() {
-      if (this.webSocket) {
-        for (let state in adapters2.WebSocket) {
-          if (adapters2.WebSocket[state] === this.webSocket.readyState) {
-            return state.toLowerCase();
-          }
-        }
-      }
-      return null;
-    }
-    installEventHandlers() {
-      for (let eventName in this.events) {
-        const handler = this.events[eventName].bind(this);
-        this.webSocket[`on${eventName}`] = handler;
-      }
-    }
-    uninstallEventHandlers() {
-      for (let eventName in this.events) {
-        this.webSocket[`on${eventName}`] = function() {
-        };
-      }
-    }
-  };
-  Connection3.reopenDelay = 500;
-  Connection3.prototype.events = {
-    message(event) {
-      if (!this.isProtocolSupported()) {
-        return;
-      }
-      const { identifier, message, reason, reconnect, type } = JSON.parse(event.data);
-      switch (type) {
-        case message_types3.welcome:
-          if (this.triedToReconnect()) {
-            this.reconnectAttempted = true;
-          }
-          this.monitor.recordConnect();
-          return this.subscriptions.reload();
-        case message_types3.disconnect:
-          logger2.log(`Disconnecting. Reason: ${reason}`);
-          return this.close({
-            allowReconnect: reconnect
-          });
-        case message_types3.ping:
-          return this.monitor.recordPing();
-        case message_types3.confirmation:
-          this.subscriptions.confirmSubscription(identifier);
-          if (this.reconnectAttempted) {
-            this.reconnectAttempted = false;
-            return this.subscriptions.notify(identifier, "connected", {
-              reconnected: true
-            });
-          } else {
-            return this.subscriptions.notify(identifier, "connected", {
-              reconnected: false
-            });
-          }
-        case message_types3.rejection:
-          return this.subscriptions.reject(identifier);
-        default:
-          return this.subscriptions.notify(identifier, "received", message);
-      }
-    },
-    open() {
-      logger2.log(`WebSocket onopen event, using '${this.getProtocol()}' subprotocol`);
-      this.disconnected = false;
-      if (!this.isProtocolSupported()) {
-        logger2.log("Protocol is unsupported. Stopping monitor and disconnecting.");
-        return this.close({
-          allowReconnect: false
-        });
-      }
-    },
-    close(event) {
-      logger2.log("WebSocket onclose event");
-      if (this.disconnected) {
-        return;
-      }
-      this.disconnected = true;
-      this.monitor.recordDisconnect();
-      return this.subscriptions.notifyAll("disconnected", {
-        willAttemptReconnect: this.monitor.isRunning()
-      });
-    },
-    error() {
-      logger2.log("WebSocket onerror event");
-    }
-  };
-  var extend4 = function(object, properties) {
-    if (properties != null) {
-      for (let key in properties) {
-        const value = properties[key];
-        object[key] = value;
-      }
-    }
-    return object;
-  };
-  var Subscription3 = class {
-    constructor(consumer5, params2 = {}, mixin) {
-      this.consumer = consumer5;
-      this.identifier = JSON.stringify(params2);
-      extend4(this, mixin);
-    }
-    perform(action, data = {}) {
-      data.action = action;
-      return this.send(data);
-    }
-    send(data) {
-      return this.consumer.send({
-        command: "message",
-        identifier: this.identifier,
-        data: JSON.stringify(data)
-      });
-    }
-    unsubscribe() {
-      return this.consumer.subscriptions.remove(this);
-    }
-  };
-  var SubscriptionGuarantor3 = class {
-    constructor(subscriptions) {
-      this.subscriptions = subscriptions;
-      this.pendingSubscriptions = [];
-    }
-    guarantee(subscription2) {
-      if (this.pendingSubscriptions.indexOf(subscription2) == -1) {
-        logger2.log(`SubscriptionGuarantor guaranteeing ${subscription2.identifier}`);
-        this.pendingSubscriptions.push(subscription2);
-      } else {
-        logger2.log(`SubscriptionGuarantor already guaranteeing ${subscription2.identifier}`);
-      }
-      this.startGuaranteeing();
-    }
-    forget(subscription2) {
-      logger2.log(`SubscriptionGuarantor forgetting ${subscription2.identifier}`);
-      this.pendingSubscriptions = this.pendingSubscriptions.filter((s) => s !== subscription2);
-    }
-    startGuaranteeing() {
-      this.stopGuaranteeing();
-      this.retrySubscribing();
-    }
-    stopGuaranteeing() {
-      clearTimeout(this.retryTimeout);
-    }
-    retrySubscribing() {
-      this.retryTimeout = setTimeout(() => {
-        if (this.subscriptions && typeof this.subscriptions.subscribe === "function") {
-          this.pendingSubscriptions.map((subscription2) => {
-            logger2.log(`SubscriptionGuarantor resubscribing ${subscription2.identifier}`);
-            this.subscriptions.subscribe(subscription2);
-          });
-        }
-      }, 500);
-    }
-  };
-  var Subscriptions3 = class {
-    constructor(consumer5) {
-      this.consumer = consumer5;
-      this.guarantor = new SubscriptionGuarantor3(this);
-      this.subscriptions = [];
-    }
-    create(channelName, mixin) {
-      const channel = channelName;
-      const params2 = typeof channel === "object" ? channel : {
-        channel
-      };
-      const subscription2 = new Subscription3(this.consumer, params2, mixin);
-      return this.add(subscription2);
-    }
-    add(subscription2) {
-      this.subscriptions.push(subscription2);
-      this.consumer.ensureActiveConnection();
-      this.notify(subscription2, "initialized");
-      this.subscribe(subscription2);
-      return subscription2;
-    }
-    remove(subscription2) {
-      this.forget(subscription2);
-      if (!this.findAll(subscription2.identifier).length) {
-        this.sendCommand(subscription2, "unsubscribe");
-      }
-      return subscription2;
-    }
-    reject(identifier) {
-      return this.findAll(identifier).map((subscription2) => {
-        this.forget(subscription2);
-        this.notify(subscription2, "rejected");
-        return subscription2;
-      });
-    }
-    forget(subscription2) {
-      this.guarantor.forget(subscription2);
-      this.subscriptions = this.subscriptions.filter((s) => s !== subscription2);
-      return subscription2;
-    }
-    findAll(identifier) {
-      return this.subscriptions.filter((s) => s.identifier === identifier);
-    }
-    reload() {
-      return this.subscriptions.map((subscription2) => this.subscribe(subscription2));
-    }
-    notifyAll(callbackName, ...args) {
-      return this.subscriptions.map((subscription2) => this.notify(subscription2, callbackName, ...args));
-    }
-    notify(subscription2, callbackName, ...args) {
-      let subscriptions;
-      if (typeof subscription2 === "string") {
-        subscriptions = this.findAll(subscription2);
-      } else {
-        subscriptions = [subscription2];
-      }
-      return subscriptions.map((subscription3) => typeof subscription3[callbackName] === "function" ? subscription3[callbackName](...args) : void 0);
-    }
-    subscribe(subscription2) {
-      if (this.sendCommand(subscription2, "subscribe")) {
-        this.guarantor.guarantee(subscription2);
-      }
-    }
-    confirmSubscription(identifier) {
-      logger2.log(`Subscription confirmed ${identifier}`);
-      this.findAll(identifier).map((subscription2) => this.guarantor.forget(subscription2));
-    }
-    sendCommand(subscription2, command) {
-      const { identifier } = subscription2;
-      return this.consumer.send({
-        command,
-        identifier
-      });
-    }
-  };
-  var Consumer3 = class {
-    constructor(url) {
-      this._url = url;
-      this.subscriptions = new Subscriptions3(this);
-      this.connection = new Connection3(this);
-      this.subprotocols = [];
-    }
-    get url() {
-      return createWebSocketURL3(this._url);
-    }
-    send(data) {
-      return this.connection.send(data);
-    }
-    connect() {
-      return this.connection.open();
-    }
-    disconnect() {
-      return this.connection.close({
-        allowReconnect: false
-      });
-    }
-    ensureActiveConnection() {
-      if (!this.connection.isActive()) {
-        return this.connection.open();
-      }
-    }
-    addSubProtocol(subprotocol) {
-      this.subprotocols = [...this.subprotocols, subprotocol];
-    }
-  };
-  function createWebSocketURL3(url) {
-    if (typeof url === "function") {
-      url = url();
-    }
-    if (url && !/^wss?:/i.test(url)) {
-      const a = document.createElement("a");
-      a.href = url;
-      a.href = a.href;
-      a.protocol = a.protocol.replace("http", "ws");
-      return a.href;
-    } else {
-      return url;
-    }
-  }
-  function createConsumer4(url = getConfig3("url") || INTERNAL2.default_mount_path) {
-    return new Consumer3(url);
-  }
-  function getConfig3(name4) {
-    const element = document.head.querySelector(`meta[name='action-cable-${name4}']`);
-    if (element) {
-      return element.getAttribute("content");
-    }
-  }
 
   // ../../node_modules/stimulus_reflex/dist/stimulus_reflex.js
   var Toastify = class {
@@ -11993,7 +10440,7 @@
   function StartToastifyInstance(options) {
     return new Toastify(options);
   }
-  global2.operations.stimulusReflexVersionMismatch = (operation) => {
+  global.operations.stimulusReflexVersionMismatch = (operation) => {
     const levels = {
       info: {},
       success: {
@@ -12087,22 +10534,22 @@
       deprecationWarnings = !!value;
     }
   };
-  var debugging3 = false;
+  var debugging2 = false;
   var Debug$1 = {
     get enabled() {
-      return debugging3;
+      return debugging2;
     },
     get disabled() {
-      return !debugging3;
+      return !debugging2;
     },
     get value() {
-      return debugging3;
+      return debugging2;
     },
     set(value) {
-      debugging3 = !!value;
+      debugging2 = !!value;
     },
     set debug(value) {
-      debugging3 = !!value;
+      debugging2 = !!value;
     }
   };
   var defaultSchema2 = {
@@ -12133,7 +10580,7 @@
       }
     }
   };
-  var { debounce: debounce3, dispatch: dispatch4, xpathToElement: xpathToElement3, xpathToElementArray: xpathToElementArray3 } = utils2;
+  var { debounce: debounce2, dispatch: dispatch3, xpathToElement: xpathToElement2, xpathToElementArray: xpathToElementArray2 } = utils;
   var uuidv4 = () => {
     const crypto2 = window.crypto || window.msCrypto;
     return ("10000000-1000-4000-8000" + -1e11).replace(/[018]/g, (c) => (c ^ crypto2.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
@@ -12158,9 +10605,9 @@
     if (uppercaseFirstLetter) value = value.substr(0, 1).toUpperCase() + value.substr(1);
     return value;
   };
-  var XPathToElement = xpathToElement3;
-  var XPathToArray = xpathToElementArray3;
-  var emitEvent = (name4, detail = {}) => dispatch4(document, name4, detail);
+  var XPathToElement = xpathToElement2;
+  var XPathToArray = xpathToElementArray2;
+  var emitEvent = (name3, detail = {}) => dispatch3(document, name3, detail);
   var extractReflexName = (reflexString) => {
     const match = reflexString.match(/(?:.*->)?(.*?)(?:Reflex)?#/);
     return match ? match[1] : "";
@@ -12355,14 +10802,14 @@
   };
   var received = (data) => {
     if (!data.cableReady) return;
-    if (data.version.replace(".pre", "-pre").replace(".rc", "-rc") !== global2.version) {
+    if (data.version.replace(".pre", "-pre").replace(".rc", "-rc") !== global.version) {
       const mismatch = `CableReady failed to execute your reflex action due to a version mismatch between your gem and JavaScript version. Package versions must match exactly.
 
 cable_ready gem: ${data.version}
-cable_ready npm: ${global2.version}`;
+cable_ready npm: ${global.version}`;
       console.error(mismatch);
       if (Debug$1.enabled) {
-        global2.operations.stimulusReflexVersionMismatch({
+        global.operations.stimulusReflexVersionMismatch({
           text: mismatch,
           level: "error"
         });
@@ -12415,20 +10862,20 @@ cable_ready npm: ${global2.version}`;
         reflex.pendingOperations = reflexOperations.length;
         reflex.completedOperations = 0;
         reflex.piggybackOperations = data.operations;
-        global2.perform(reflexOperations);
+        global.perform(reflexOperations);
       }
     } else {
       if (data.operations.length && reflexes[data.operations[0].reflexId]) {
-        global2.perform(data.operations);
+        global.perform(data.operations);
       }
     }
   };
-  var consumer4;
+  var consumer3;
   var params;
   var subscription;
   var active;
   var initialize$1 = (consumerValue, paramsValue) => {
-    consumer4 = consumerValue;
+    consumer3 = consumerValue;
     params = paramsValue;
     document.addEventListener("DOMContentLoaded", () => {
       active = false;
@@ -12440,14 +10887,14 @@ cable_ready npm: ${global2.version}`;
   };
   var subscribe = (controller) => {
     if (subscription) return;
-    consumer4 = consumer4 || controller.application.consumer || createConsumer4();
+    consumer3 = consumer3 || controller.application.consumer || createConsumer3();
     const { channel } = controller.StimulusReflex;
-    const request4 = {
+    const request3 = {
       channel,
       ...params
     };
-    const identifier = JSON.stringify(request4);
-    subscription = consumer4.subscriptions.findAll(identifier)[0] || consumer4.subscriptions.create(request4, {
+    const identifier = JSON.stringify(request3);
+    subscription = consumer3.subscriptions.findAll(identifier)[0] || consumer3.subscriptions.create(request3, {
       received,
       connected,
       rejected,
@@ -12497,7 +10944,7 @@ cable_ready npm: ${global2.version}`;
     deliver,
     initialize: initialize$1
   };
-  var request3 = (reflex) => {
+  var request2 = (reflex) => {
     if (Debug$1.disabled || reflex.data.suppressLogging) return;
     console.log(`\u2191 stimulus \u2191 ${reflex.target}`, {
       id: reflex.id,
@@ -12540,8 +10987,8 @@ cable_ready npm: ${global2.version}`;
   };
   var duration = (reflex) => !reflex.cloned ? `in ${/* @__PURE__ */ new Date() - reflex.timestamp}ms` : "CLONED";
   var progress = (reflex) => reflex.totalOperations > 1 ? ` ${reflex.completedOperations}/${reflex.totalOperations}` : "";
-  var Log3 = {
-    request: request3,
+  var Log2 = {
+    request: request2,
     success,
     halted: halted$1,
     forbidden: forbidden$1,
@@ -12658,23 +11105,23 @@ cable_ready npm: ${global2.version}`;
     }
     return attrs;
   };
-  var name3 = "stimulus_reflex";
-  var version3 = "3.5.3";
-  var description3 = "Build reactive applications with the Rails tooling you already know and love.";
-  var keywords3 = ["ruby", "rails", "websockets", "actioncable", "turbolinks", "reactive", "cable", "ujs", "ssr", "stimulus", "reflex", "stimulus_reflex", "dom", "morphdom"];
-  var homepage3 = "https://docs.stimulusreflex.com";
-  var bugs3 = "https://github.com/stimulusreflex/stimulus_reflex/issues";
-  var repository3 = "https://github.com/stimulusreflex/stimulus_reflex";
-  var license3 = "MIT";
-  var author3 = "Nathan Hopkins <natehop@gmail.com>";
-  var contributors3 = ["Andrew Mason <andrewmcodes@protonmail.com>", "Julian Rubisch <julian@julianrubisch.at>", "Marco Roth <marco.roth@intergga.ch>", "Nathan Hopkins <natehop@gmail.com>"];
-  var main3 = "./dist/stimulus_reflex.js";
-  var module3 = "./dist/stimulus_reflex.js";
-  var browser3 = "./dist/stimulus_reflex.js";
-  var unpkg3 = "./dist/stimulus_reflex.umd.js";
-  var umd3 = "./dist/stimulus_reflex.umd.js";
-  var files3 = ["dist/*", "javascript/*"];
-  var scripts3 = {
+  var name2 = "stimulus_reflex";
+  var version2 = "3.5.3";
+  var description2 = "Build reactive applications with the Rails tooling you already know and love.";
+  var keywords2 = ["ruby", "rails", "websockets", "actioncable", "turbolinks", "reactive", "cable", "ujs", "ssr", "stimulus", "reflex", "stimulus_reflex", "dom", "morphdom"];
+  var homepage2 = "https://docs.stimulusreflex.com";
+  var bugs2 = "https://github.com/stimulusreflex/stimulus_reflex/issues";
+  var repository2 = "https://github.com/stimulusreflex/stimulus_reflex";
+  var license2 = "MIT";
+  var author2 = "Nathan Hopkins <natehop@gmail.com>";
+  var contributors2 = ["Andrew Mason <andrewmcodes@protonmail.com>", "Julian Rubisch <julian@julianrubisch.at>", "Marco Roth <marco.roth@intergga.ch>", "Nathan Hopkins <natehop@gmail.com>"];
+  var main2 = "./dist/stimulus_reflex.js";
+  var module2 = "./dist/stimulus_reflex.js";
+  var browser2 = "./dist/stimulus_reflex.js";
+  var unpkg2 = "./dist/stimulus_reflex.umd.js";
+  var umd2 = "./dist/stimulus_reflex.umd.js";
+  var files2 = ["dist/*", "javascript/*"];
+  var scripts2 = {
     lint: "yarn run format --check",
     format: "yarn run prettier-standard ./javascript/**/*.js rollup.config.mjs",
     build: "yarn rollup -c",
@@ -12689,12 +11136,12 @@ cable_ready npm: ${global2.version}`;
   var peerDependencies = {
     "@hotwired/stimulus": ">= 3.0"
   };
-  var dependencies3 = {
+  var dependencies2 = {
     "@hotwired/stimulus": "^3",
     "@rails/actioncable": "^6 || ^7",
     cable_ready: "^5.0.6"
   };
-  var devDependencies3 = {
+  var devDependencies2 = {
     "@open-wc/testing": "^4.0.0",
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^15.3.0",
@@ -12707,28 +11154,28 @@ cable_ready npm: ${global2.version}`;
     "toastify-js": "^1.12.0",
     vitepress: "^1.0.0-beta.1"
   };
-  var packageInfo3 = {
-    name: name3,
-    version: version3,
-    description: description3,
-    keywords: keywords3,
-    homepage: homepage3,
-    bugs: bugs3,
-    repository: repository3,
-    license: license3,
-    author: author3,
-    contributors: contributors3,
-    main: main3,
-    module: module3,
-    browser: browser3,
+  var packageInfo2 = {
+    name: name2,
+    version: version2,
+    description: description2,
+    keywords: keywords2,
+    homepage: homepage2,
+    bugs: bugs2,
+    repository: repository2,
+    license: license2,
+    author: author2,
+    contributors: contributors2,
+    main: main2,
+    module: module2,
+    browser: browser2,
     import: "./dist/stimulus_reflex.js",
-    unpkg: unpkg3,
-    umd: umd3,
-    files: files3,
-    scripts: scripts3,
+    unpkg: unpkg2,
+    umd: umd2,
+    files: files2,
+    scripts: scripts2,
     peerDependencies,
-    dependencies: dependencies3,
-    devDependencies: devDependencies3
+    dependencies: dependencies2,
+    devDependencies: devDependencies2
   };
   var ReflexData = class {
     constructor(options, reflexElement, controllerElement, reflexController, permanentAttributeName, target, args, url, tabId2) {
@@ -12807,7 +11254,7 @@ cable_ready npm: ${global2.version}`;
         args: this.args,
         url: this.url,
         tabId: this.tabId,
-        version: packageInfo3.version
+        version: packageInfo2.version
       };
     }
   };
@@ -12844,7 +11291,7 @@ cable_ready npm: ${global2.version}`;
     reflex.selector = event.detail.selector;
     reflex.morph = event.detail.stimulusReflex.morph;
     reflex.operation = event.type.split(":")[1].split("-").slice(1).join("_");
-    Log3.success(reflex);
+    Log2.success(reflex);
     if (reflex.completedOperations < reflex.totalOperations) return;
     if (stimulusReflex.resolveLate) setTimeout(() => reflex.promise.resolve({
       element: reflex.element,
@@ -12855,11 +11302,11 @@ cable_ready npm: ${global2.version}`;
       toString: () => ""
     }));
     setTimeout(() => dispatchLifecycleEvent(reflex, "finalize"));
-    if (reflex.piggybackOperations.length) global2.perform(reflex.piggybackOperations);
+    if (reflex.piggybackOperations.length) global.perform(reflex.piggybackOperations);
   };
   var routeReflexEvent = (event) => {
-    const { stimulusReflex, name: name4 } = event.detail || {};
-    const eventType = name4.split("-")[2];
+    const { stimulusReflex, name: name3 } = event.detail || {};
+    const eventType = name3.split("-")[2];
     const eventTypes = {
       nothing,
       halted,
@@ -12876,10 +11323,10 @@ cable_ready npm: ${global2.version}`;
     if (eventType === "error") reflex.error = event.detail.error;
     eventTypes[eventType](reflex, event);
     setTimeout(() => dispatchLifecycleEvent(reflex, eventType));
-    if (reflex.piggybackOperations.length) global2.perform(reflex.piggybackOperations);
+    if (reflex.piggybackOperations.length) global.perform(reflex.piggybackOperations);
   };
   var nothing = (reflex, event) => {
-    Log3.success(reflex);
+    Log2.success(reflex);
     setTimeout(() => reflex.promise.resolve({
       data: reflex.data,
       element: reflex.element,
@@ -12890,7 +11337,7 @@ cable_ready npm: ${global2.version}`;
     }));
   };
   var halted = (reflex, event) => {
-    Log3.halted(reflex, event);
+    Log2.halted(reflex, event);
     setTimeout(() => reflex.promise.resolve({
       data: reflex.data,
       element: reflex.element,
@@ -12901,7 +11348,7 @@ cable_ready npm: ${global2.version}`;
     }));
   };
   var forbidden = (reflex, event) => {
-    Log3.forbidden(reflex, event);
+    Log2.forbidden(reflex, event);
     setTimeout(() => reflex.promise.resolve({
       data: reflex.data,
       element: reflex.element,
@@ -12912,7 +11359,7 @@ cable_ready npm: ${global2.version}`;
     }));
   };
   var error2 = (reflex, event) => {
-    Log3.error(reflex, event);
+    Log2.error(reflex, event);
     setTimeout(() => reflex.promise.reject({
       data: reflex.data,
       element: reflex.element,
@@ -12944,7 +11391,7 @@ cable_ready npm: ${global2.version}`;
     });
     return controller;
   };
-  var scanForReflexes = debounce3(() => {
+  var scanForReflexes = debounce2(() => {
     const reflexElements = document.querySelectorAll(`[${Schema.reflex}]`);
     reflexElements.forEach((element) => scanForReflexesOnElement(element));
   }, 20);
@@ -12978,7 +11425,7 @@ cable_ready npm: ${global2.version}`;
       emitReadyEvent = true;
     }
     if (emitReadyEvent) {
-      dispatch4(element, "stimulus-reflex:ready", {
+      dispatch3(element, "stimulus-reflex:ready", {
         reflex: reflexAttribute,
         controller: controllerValue,
         action: actionValue,
@@ -12993,9 +11440,9 @@ cable_ready npm: ${global2.version}`;
     }
   };
   var tabId = uuidv4();
-  var initialize3 = (application2, { controller, consumer: consumer5, debug, params: params2, isolate, deprecate, transport: transport2 } = {}) => {
+  var initialize2 = (application2, { controller, consumer: consumer4, debug, params: params2, isolate, deprecate, transport: transport2 } = {}) => {
     Transport.set(transport2 || ActionCableTransport);
-    Transport.plugin.initialize(consumer5, params2);
+    Transport.plugin.initialize(consumer4, params2);
     IsolationMode.set(!!isolate);
     App.set(application2);
     Schema.set(application2);
@@ -13060,7 +11507,7 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
           controllerElement.reflexData[id2] = reflex.data;
           Transport.plugin.deliver(reflex);
         });
-        Log3.request(reflex);
+        Log2.request(reflex);
         return reflex.getPromise;
       },
       __perform(event) {
@@ -13111,15 +11558,15 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
   var StimulusReflex = Object.freeze({
     __proto__: null,
     StimulusReflexController,
-    initialize: initialize3,
+    initialize: initialize2,
     reflexes,
     register,
     scanForReflexes,
     scanForReflexesOnElement,
     useReflex
   });
-  var global3 = {
-    version: packageInfo3.version,
+  var global2 = {
+    version: packageInfo2.version,
     ...StimulusReflex,
     get debug() {
       return Debug$1.value;
@@ -13134,7 +11581,7 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
       Deprecate.set(!!value);
     }
   };
-  window.StimulusReflex = global3;
+  window.StimulusReflex = global2;
 
   // controllers/application.js
   var application = Application.start();
@@ -13149,7 +11596,7 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
   });
   var application_controller_default = class extends Controller {
     connect() {
-      global3.register(this);
+      global2.register(this);
     }
     // Application-wide lifecycle methods
     //
@@ -13188,8 +11635,8 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
   };
 
   // config/stimulus_reflex.js
-  global3.initialize(application, { controller: application_controller_default, isolate: true, debug: true });
-  global3.debug = true;
+  global2.initialize(application, { controller: application_controller_default, isolate: true, debug: true });
+  global2.debug = true;
 
   // controllers/chat_controller.js
   var chat_controller_exports = {};
@@ -13232,8 +11679,8 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
   });
 
   // ../../node_modules/just-extend/index.esm.js
-  var objectExtend = extend5;
-  function extend5() {
+  var objectExtend = extend4;
+  function extend4() {
     var args = [].slice.call(arguments);
     var deep = false;
     if (typeof args[0] == "boolean") {
@@ -13252,7 +11699,7 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
           var value = extender[key];
           if (deep && isCloneable(value)) {
             var base = Array.isArray(value) ? [] : {};
-            result[key] = extend5(
+            result[key] = extend4(
               true,
               Object.prototype.hasOwnProperty.call(result, key) && !isUnextendable(result[key]) ? result[key] : base,
               value
@@ -13660,7 +12107,7 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
     *
     * This is the same as adding hidden input fields in the form element.
     */
-    params(files4, xhr, chunk) {
+    params(files3, xhr, chunk) {
       if (chunk) return {
         dzuuid: chunk.file.upload.uuid,
         dzchunkindex: chunk.index,
@@ -14054,9 +12501,9 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
           this.hiddenFileInput.style.width = "0";
           _$3ed269f2f0fb224b$export$2e2bcd8739ae039.getElement(this.options.hiddenInputContainer, "hiddenInputContainer").appendChild(this.hiddenFileInput);
           this.hiddenFileInput.addEventListener("change", () => {
-            let { files: files4 } = this.hiddenFileInput;
-            if (files4.length) for (let file of files4) this.addFile(file);
-            this.emit("addedfiles", files4);
+            let { files: files3 } = this.hiddenFileInput;
+            if (files3.length) for (let file of files3) this.addFile(file);
+            this.emit("addedfiles", files3);
             setupHiddenFileInput();
           });
         };
@@ -14297,15 +12744,15 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
     drop(e) {
       if (!e.dataTransfer) return;
       this.emit("drop", e);
-      let files4 = [];
-      for (let i = 0; i < e.dataTransfer.files.length; i++) files4[i] = e.dataTransfer.files[i];
-      if (files4.length) {
+      let files3 = [];
+      for (let i = 0; i < e.dataTransfer.files.length; i++) files3[i] = e.dataTransfer.files[i];
+      if (files3.length) {
         let { items } = e.dataTransfer;
         if (items && items.length && items[0].webkitGetAsEntry != null)
           this._addFilesFromItems(items);
-        else this.handleFiles(files4);
+        else this.handleFiles(files3);
       }
-      this.emit("addedfiles", files4);
+      this.emit("addedfiles", files3);
     }
     paste(e) {
       if ($3ed269f2f0fb224b$var$__guard__(
@@ -14316,8 +12763,8 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
       let { items } = e.clipboardData;
       if (items.length) return this._addFilesFromItems(items);
     }
-    handleFiles(files4) {
-      for (let file of files4) this.addFile(file);
+    handleFiles(files3) {
+      for (let file of files3) this.addFile(file);
     }
     // When a folder is dropped (or files are pasted), items must be handled
     // instead of files.
@@ -14407,8 +12854,8 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
       });
     }
     // Wrapper for enqueueFile
-    enqueueFiles(files4) {
-      for (let file of files4) this.enqueueFile(file);
+    enqueueFiles(files3) {
+      for (let file of files3) this.enqueueFile(file);
       return null;
     }
     enqueueFile(file) {
@@ -14585,18 +13032,18 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
       ]);
     }
     // Loads the file, then calls finishedLoading()
-    processFiles(files4) {
-      for (let file of files4) {
+    processFiles(files3) {
+      for (let file of files3) {
         file.processing = true;
         file.status = _$3ed269f2f0fb224b$export$2e2bcd8739ae039.UPLOADING;
         this.emit("processing", file);
       }
-      if (this.options.uploadMultiple) this.emit("processingmultiple", files4);
-      return this.uploadFiles(files4);
+      if (this.options.uploadMultiple) this.emit("processingmultiple", files3);
+      return this.uploadFiles(files3);
     }
     _getFilesWithXhr(xhr) {
-      let files4;
-      return files4 = this.files.filter(
+      let files3;
+      return files3 = this.files.filter(
         (file) => file.xhr === xhr
       ).map(
         (file) => file
@@ -14631,15 +13078,15 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
         file
       ]);
     }
-    uploadFiles(files4) {
-      this._transformFiles(files4, (transformedFiles) => {
+    uploadFiles(files3) {
+      this._transformFiles(files3, (transformedFiles) => {
         if (this.options.chunking) {
           let transformedFile = transformedFiles[0];
-          files4[0].upload.chunked = this.options.chunking && (this.options.forceChunking || transformedFile.size > this.options.chunkSize);
-          files4[0].upload.totalChunkCount = Math.ceil(transformedFile.size / this.options.chunkSize);
+          files3[0].upload.chunked = this.options.chunking && (this.options.forceChunking || transformedFile.size > this.options.chunkSize);
+          files3[0].upload.totalChunkCount = Math.ceil(transformedFile.size / this.options.chunkSize);
         }
-        if (files4[0].upload.chunked) {
-          let file = files4[0];
+        if (files3[0].upload.chunked) {
+          let file = files3[0];
           let transformedFile = transformedFiles[0];
           let startedChunkCount = 0;
           file.upload.chunks = [];
@@ -14664,11 +13111,11 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
               progress: 0,
               retries: 0
             };
-            this._uploadData(files4, [
+            this._uploadData(files3, [
               dataBlock
             ]);
           };
-          file.upload.finishedChunkUpload = (chunk, response3) => {
+          file.upload.finishedChunkUpload = (chunk, response2) => {
             let allFinished = true;
             chunk.status = _$3ed269f2f0fb224b$export$2e2bcd8739ae039.SUCCESS;
             chunk.dataBlock = null;
@@ -14680,19 +13127,19 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
               if (file.upload.chunks[i].status !== _$3ed269f2f0fb224b$export$2e2bcd8739ae039.SUCCESS) allFinished = false;
             }
             if (allFinished) this.options.chunksUploaded(file, () => {
-              this._finished(files4, response3, null);
+              this._finished(files3, response2, null);
             });
           };
           if (this.options.parallelChunkUploads) for (let i = 0; i < file.upload.totalChunkCount; i++) handleNextChunk();
           else handleNextChunk();
         } else {
           let dataBlocks = [];
-          for (let i = 0; i < files4.length; i++) dataBlocks[i] = {
+          for (let i = 0; i < files3.length; i++) dataBlocks[i] = {
             name: this._getParamName(i),
             data: transformedFiles[i],
-            filename: files4[i].upload.filename
+            filename: files3[i].upload.filename
           };
-          this._uploadData(files4, dataBlocks);
+          this._uploadData(files3, dataBlocks);
         }
       });
     }
@@ -14707,48 +13154,48 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
     //  If dataBlocks contains the actual data to upload (meaning, that this could
     // either be transformed files, or individual chunks for chunked upload) then
     // they will be used for the actual data to upload.
-    _uploadData(files4, dataBlocks) {
+    _uploadData(files3, dataBlocks) {
       let xhr = new XMLHttpRequest();
-      for (let file of files4) file.xhr = xhr;
-      if (files4[0].upload.chunked)
-        files4[0].upload.chunks[dataBlocks[0].chunkIndex].xhr = xhr;
-      let method = this.resolveOption(this.options.method, files4, dataBlocks);
-      let url = this.resolveOption(this.options.url, files4, dataBlocks);
+      for (let file of files3) file.xhr = xhr;
+      if (files3[0].upload.chunked)
+        files3[0].upload.chunks[dataBlocks[0].chunkIndex].xhr = xhr;
+      let method = this.resolveOption(this.options.method, files3, dataBlocks);
+      let url = this.resolveOption(this.options.url, files3, dataBlocks);
       xhr.open(method, url, true);
-      let timeout = this.resolveOption(this.options.timeout, files4);
-      if (timeout) xhr.timeout = this.resolveOption(this.options.timeout, files4);
+      let timeout = this.resolveOption(this.options.timeout, files3);
+      if (timeout) xhr.timeout = this.resolveOption(this.options.timeout, files3);
       xhr.withCredentials = !!this.options.withCredentials;
       xhr.onload = (e) => {
-        this._finishedUploading(files4, xhr, e);
+        this._finishedUploading(files3, xhr, e);
       };
       xhr.ontimeout = () => {
-        this._handleUploadError(files4, xhr, `Request timedout after ${this.options.timeout / 1e3} seconds`);
+        this._handleUploadError(files3, xhr, `Request timedout after ${this.options.timeout / 1e3} seconds`);
       };
       xhr.onerror = () => {
-        this._handleUploadError(files4, xhr);
+        this._handleUploadError(files3, xhr);
       };
       let progressObj = xhr.upload != null ? xhr.upload : xhr;
-      progressObj.onprogress = (e) => this._updateFilesUploadProgress(files4, xhr, e);
+      progressObj.onprogress = (e) => this._updateFilesUploadProgress(files3, xhr, e);
       let headers = this.options.defaultHeaders ? {
         Accept: "application/json",
         "Cache-Control": "no-cache",
         "X-Requested-With": "XMLHttpRequest"
       } : {};
-      if (this.options.binaryBody) headers["Content-Type"] = files4[0].type;
+      if (this.options.binaryBody) headers["Content-Type"] = files3[0].type;
       if (this.options.headers) objectExtend(headers, this.options.headers);
       for (let headerName in headers) {
         let headerValue = headers[headerName];
         if (headerValue) xhr.setRequestHeader(headerName, headerValue);
       }
       if (this.options.binaryBody) {
-        for (let file of files4) this.emit("sending", file, xhr);
-        if (this.options.uploadMultiple) this.emit("sendingmultiple", files4, xhr);
-        this.submitRequest(xhr, null, files4);
+        for (let file of files3) this.emit("sending", file, xhr);
+        if (this.options.uploadMultiple) this.emit("sendingmultiple", files3, xhr);
+        this.submitRequest(xhr, null, files3);
       } else {
         let formData = new FormData();
         if (this.options.params) {
           let additionalParams = this.options.params;
-          if (typeof additionalParams === "function") additionalParams = additionalParams.call(this, files4, xhr, files4[0].upload.chunked ? this._getChunk(files4[0], xhr) : null);
+          if (typeof additionalParams === "function") additionalParams = additionalParams.call(this, files3, xhr, files3[0].upload.chunked ? this._getChunk(files3[0], xhr) : null);
           for (let key in additionalParams) {
             let value = additionalParams[key];
             if (Array.isArray(value))
@@ -14756,23 +13203,23 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
             else formData.append(key, value);
           }
         }
-        for (let file of files4) this.emit("sending", file, xhr, formData);
-        if (this.options.uploadMultiple) this.emit("sendingmultiple", files4, xhr, formData);
+        for (let file of files3) this.emit("sending", file, xhr, formData);
+        if (this.options.uploadMultiple) this.emit("sendingmultiple", files3, xhr, formData);
         this._addFormElementData(formData);
         for (let i = 0; i < dataBlocks.length; i++) {
           let dataBlock = dataBlocks[i];
           formData.append(dataBlock.name, dataBlock.data, dataBlock.filename);
         }
-        this.submitRequest(xhr, formData, files4);
+        this.submitRequest(xhr, formData, files3);
       }
     }
     // Transforms all files with this.options.transformFile and invokes done with the transformed files when done.
-    _transformFiles(files4, done) {
+    _transformFiles(files3, done) {
       let transformedFiles = [];
       let doneCounter = 0;
-      for (let i = 0; i < files4.length; i++) this.options.transformFile.call(this, files4[i], (transformedFile) => {
+      for (let i = 0; i < files3.length; i++) this.options.transformFile.call(this, files3[i], (transformedFile) => {
         transformedFiles[i] = transformedFile;
-        if (++doneCounter === files4.length) done(transformedFiles);
+        if (++doneCounter === files3.length) done(transformedFiles);
       });
     }
     // Takes care of adding other input elements of the form to the AJAX request
@@ -14789,9 +13236,9 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
     }
     // Invoked when there is new progress information about given files.
     // If e is not provided, it is assumed that the upload is finished.
-    _updateFilesUploadProgress(files4, xhr, e) {
-      if (!files4[0].upload.chunked)
-        for (let file of files4) {
+    _updateFilesUploadProgress(files3, xhr, e) {
+      if (!files3[0].upload.chunked)
+        for (let file of files3) {
           if (file.upload.total && file.upload.bytesSent && file.upload.bytesSent == file.upload.total) continue;
           if (e) {
             file.upload.progress = 100 * e.loaded / e.total;
@@ -14804,7 +13251,7 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
           this.emit("uploadprogress", file, file.upload.progress, file.upload.bytesSent);
         }
       else {
-        let file = files4[0];
+        let file = files3[0];
         let chunk = this._getChunk(file, xhr);
         if (e) {
           chunk.progress = 100 * e.loaded / e.total;
@@ -14826,74 +13273,74 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
         this.emit("uploadprogress", file, file.upload.progress, file.upload.bytesSent);
       }
     }
-    _finishedUploading(files4, xhr, e) {
-      let response3;
-      if (files4[0].status === _$3ed269f2f0fb224b$export$2e2bcd8739ae039.CANCELED) return;
+    _finishedUploading(files3, xhr, e) {
+      let response2;
+      if (files3[0].status === _$3ed269f2f0fb224b$export$2e2bcd8739ae039.CANCELED) return;
       if (xhr.readyState !== 4) return;
       if (xhr.responseType !== "arraybuffer" && xhr.responseType !== "blob") {
-        response3 = xhr.responseText;
+        response2 = xhr.responseText;
         if (xhr.getResponseHeader("content-type") && ~xhr.getResponseHeader("content-type").indexOf("application/json")) try {
-          response3 = JSON.parse(response3);
+          response2 = JSON.parse(response2);
         } catch (error3) {
           e = error3;
-          response3 = "Invalid JSON response from server.";
+          response2 = "Invalid JSON response from server.";
         }
       }
-      this._updateFilesUploadProgress(files4, xhr);
-      if (!(200 <= xhr.status && xhr.status < 300)) this._handleUploadError(files4, xhr, response3);
-      else if (files4[0].upload.chunked) files4[0].upload.finishedChunkUpload(this._getChunk(files4[0], xhr), response3);
-      else this._finished(files4, response3, e);
+      this._updateFilesUploadProgress(files3, xhr);
+      if (!(200 <= xhr.status && xhr.status < 300)) this._handleUploadError(files3, xhr, response2);
+      else if (files3[0].upload.chunked) files3[0].upload.finishedChunkUpload(this._getChunk(files3[0], xhr), response2);
+      else this._finished(files3, response2, e);
     }
-    _handleUploadError(files4, xhr, response3) {
-      if (files4[0].status === _$3ed269f2f0fb224b$export$2e2bcd8739ae039.CANCELED) return;
-      if (files4[0].upload.chunked && this.options.retryChunks) {
-        let chunk = this._getChunk(files4[0], xhr);
+    _handleUploadError(files3, xhr, response2) {
+      if (files3[0].status === _$3ed269f2f0fb224b$export$2e2bcd8739ae039.CANCELED) return;
+      if (files3[0].upload.chunked && this.options.retryChunks) {
+        let chunk = this._getChunk(files3[0], xhr);
         if (chunk.retries++ < this.options.retryChunksLimit) {
-          this._uploadData(files4, [
+          this._uploadData(files3, [
             chunk.dataBlock
           ]);
           return;
         } else console.warn("Retried this chunk too often. Giving up.");
       }
-      this._errorProcessing(files4, response3 || this.options.dictResponseError.replace("{{statusCode}}", xhr.status), xhr);
+      this._errorProcessing(files3, response2 || this.options.dictResponseError.replace("{{statusCode}}", xhr.status), xhr);
     }
-    submitRequest(xhr, formData, files4) {
+    submitRequest(xhr, formData, files3) {
       if (xhr.readyState != 1) {
         console.warn("Cannot send this request because the XMLHttpRequest.readyState is not OPENED.");
         return;
       }
       if (this.options.binaryBody) {
-        if (files4[0].upload.chunked) {
-          const chunk = this._getChunk(files4[0], xhr);
+        if (files3[0].upload.chunked) {
+          const chunk = this._getChunk(files3[0], xhr);
           xhr.send(chunk.dataBlock.data);
-        } else xhr.send(files4[0]);
+        } else xhr.send(files3[0]);
       } else xhr.send(formData);
     }
     // Called internally when processing is finished.
     // Individual callbacks have to be called in the appropriate sections.
-    _finished(files4, responseText, e) {
-      for (let file of files4) {
+    _finished(files3, responseText, e) {
+      for (let file of files3) {
         file.status = _$3ed269f2f0fb224b$export$2e2bcd8739ae039.SUCCESS;
         this.emit("success", file, responseText, e);
         this.emit("complete", file);
       }
       if (this.options.uploadMultiple) {
-        this.emit("successmultiple", files4, responseText, e);
-        this.emit("completemultiple", files4);
+        this.emit("successmultiple", files3, responseText, e);
+        this.emit("completemultiple", files3);
       }
       if (this.options.autoProcessQueue) return this.processQueue();
     }
     // Called internally when processing is finished.
     // Individual callbacks have to be called in the appropriate sections.
-    _errorProcessing(files4, message, xhr) {
-      for (let file of files4) {
+    _errorProcessing(files3, message, xhr) {
+      for (let file of files3) {
         file.status = _$3ed269f2f0fb224b$export$2e2bcd8739ae039.ERROR;
         this.emit("error", file, message, xhr);
         this.emit("complete", file);
       }
       if (this.options.uploadMultiple) {
-        this.emit("errormultiple", files4, message, xhr);
-        this.emit("completemultiple", files4);
+        this.emit("errormultiple", files3, message, xhr);
+        this.emit("completemultiple", files3);
       }
       if (this.options.autoProcessQueue) return this.processQueue();
     }
@@ -15031,19 +13478,19 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
     }
     return false;
   };
-  $3ed269f2f0fb224b$export$2e2bcd8739ae039.getElement = function(el, name4) {
+  $3ed269f2f0fb224b$export$2e2bcd8739ae039.getElement = function(el, name3) {
     let element;
     if (typeof el === "string") element = document.querySelector(el);
     else if (el.nodeType != null) element = el;
-    if (element == null) throw new Error(`Invalid \`${name4}\` option provided. Please provide a CSS selector or a plain HTML element.`);
+    if (element == null) throw new Error(`Invalid \`${name3}\` option provided. Please provide a CSS selector or a plain HTML element.`);
     return element;
   };
-  $3ed269f2f0fb224b$export$2e2bcd8739ae039.getElements = function(els, name4) {
+  $3ed269f2f0fb224b$export$2e2bcd8739ae039.getElements = function(els, name3) {
     let el, elements;
     if (els instanceof Array) {
       elements = [];
       try {
-        for (el of els) elements.push(this.getElement(el, name4));
+        for (el of els) elements.push(this.getElement(el, name3));
       } catch (e) {
         elements = null;
       }
@@ -15053,7 +13500,7 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
     } else if (els.nodeType != null) elements = [
       els
     ];
-    if (elements == null || !elements.length) throw new Error(`Invalid \`${name4}\` option provided. Please provide a CSS selector, a plain HTML element or a list of those.`);
+    if (elements == null || !elements.length) throw new Error(`Invalid \`${name3}\` option provided. Please provide a CSS selector, a plain HTML element or a list of those.`);
     return elements;
   };
   $3ed269f2f0fb224b$export$2e2bcd8739ae039.confirm = function(question, accepted, rejected2) {
@@ -15892,8 +14339,8 @@ Please set ${Schema.reflexSerializeForm}="true" on your Reflex Controller Elemen
     static get observedAttributes() {
       return ["text"];
     }
-    attributeChangedCallback(name4, oldValue, newValue) {
-      if (name4 === "text") {
+    attributeChangedCallback(name3, oldValue, newValue) {
+      if (name3 === "text") {
         this.text = newValue;
         if (this._tooltipElement) {
           this._tooltipElement.textContent = newValue;

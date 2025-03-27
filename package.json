@@ -6,24 +6,36 @@
 		"@hotwired/turbo-rails": "^7.3.0",
 		"@rails/actioncable": "^7.1.3-4",
 		"@rails/activestorage": "^8.0.100",
+		"@tailwindcss/forms": "^0.5.10",
+		"@tailwindcss/postcss": "^4.0.17",
 		"@types/rails__actioncable": "^6.1.11",
 		"activestorage": "^5.2.8-1",
-		"autoprefixer": "^10.4.14",
+		"autoprefixer": "^10.4.21",
 		"dropzone": "^6.0.0-beta.2",
 		"esbuild": "^0.24.2",
 		"esbuild-rails": "^1.0.3",
-		"postcss": "^8.4.24",
 		"stimulus_reflex": "^3.5",
-		"tailwindcss": "^4.0.0"
+		"tailwindcss": "^4.0.17"
 	},
 	"scripts": {
 		"build": "node esbuild.config.mjs",
-		"build:css": "tailwindcss -i ./app/assets/tailwind/application.css -o ./app/assets/builds/tailwind.css",
+		"build:css": "yarn postcss app/assets/tailwind/application.css -o app/assets/builds/application.css",
 		"build:default": "esbuild app/javascript/*.* --bundle --sourcemap --outdir=app/assets/builds --public-path=/assets"
 	},
 	"devDependencies": {
 		"@prettier/plugin-ruby": "^4.0.4",
 		"chokidar": "^4.0.0",
+		"postcss": "^8.5.3",
+		"postcss-cli": "^11.0.1",
+		"postcss-flexbugs-fixes": "^5.0.2",
+		"postcss-import": "^16.1.0",
+		"postcss-nested": "^7.0.2",
+		"postcss-nesting": "^13.0.1",
 		"prettier": "^3.4.2"
-	}
+	},
+	"browserslist": [
+		">0.3%",
+		"not dead",
+		"not op_mini all"
+	]
 }

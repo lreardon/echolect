@@ -1,10 +1,17 @@
 @import "tailwindcss";
+/* @import "tailwindcss/forms"; */
+
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
 
 @tailwind utilities;
 
 @theme {
   --color-primary: #61aeb8;
-  --color-surface: #1e1e1e;
+  --color-secondary: #255961;
+  --color-surface: rgb(3 7 18);
+  --color-on-surface: #eee;
+  --color-on-surface-variant: #c9c9c9;
+  --font-roboto: "Roboto", sans-serif;
   /* --color-secondary: colors.indigo[950]; */
   --breakpoint-sm: 420px;
   --breakpoint-md: 640px;
@@ -13,6 +20,21 @@
 }
 
 @layer base {
+  * {
+    /* background-color: #04011f; */
+    color: var(--color-on-surface);
+  }
+
+  body {
+    @apply bg-surface;
+    @apply font-roboto;
+
+    font-family: "Roboto", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    font-variation-settings: "wdth" 100;
+  }
   h1 {
     @apply text-2xl sm:text-3xl;
   }
@@ -29,6 +51,41 @@
     @apply hover:underline;
   }
 
+  input {
+    @apply focus:outline-none border-secondary focus:border-primary border-1 focus:border-2 focus:ring-0 px-2 py-1 accent-primary text-on-surface;
+  }
+
+  .field input {
+    @apply rounded-md shadow-inner text-on-surface;
+  }
+
+  input:is(:-webkit-autofill, :autofill) {
+    box-shadow: 0 0 0 30px var(--color-secondary) inset !important;
+    -webkit-text-fill-color: var(--color-on-surface);
+    font-family: "system-ui", sans-serif !important;
+    font-size: inherit !important;
+    font-weight: inherit !important;
+    zoom: 1 !important;
+
+    /* transition: all 99999s ease-in-out 0s !important; */
+
+    /* background-color: var(--color-secondary); */
+    /* color: theme('colors.gray.100') !important; */
+    /* -webkit-text-size-adjust: none; */
+  }
+
+  input[type="checkbox"] {
+    @apply h-5 w-5 border-secondary checked:accent-primary checked:border-2 checked:border-primary checked:bg-primary text-on-surface;
+  }
+
+  input:checked[type="checkbox"] {
+    background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='rgb(3 7 18)' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e") !important;
+    background-color: var(--color-primary) !important;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 130% 130%;
+  }
+
   .actions input {
     @apply cursor-pointer;
   }
@@ -40,10 +97,6 @@
 
   .special-button {
     @apply text-center font-bold py-2 px-4 rounded bg-primary hover:bg-[#51c0cf] hover:no-underline;
-  }
-
-  .field input {
-    @apply bg-transparent rounded-md shadow-inner ring-offset-transparent ring-offset-0;
   }
 
   .text-button {
@@ -102,6 +155,24 @@
     font-style: normal;
   }
 
+  .access-code-input {
+    @apply font-mono text-on-surface-variant;
+
+    /* font-family: "Ubuntu Sans Mono", monospace; */
+
+    /* font-optical-sizing: auto; */
+    /* font-weight: <weight>; */
+    /* font-style: normal; */
+  }
+
+  /* .roboto {
+    font-family: "Roboto", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    font-variation-settings: "wdth" 100;
+  } */
+
   .branded-text {
     /* font-family: "" Caveat, Montserrat Alternatives, Poetsen One, Kalam, Pangolin, Playpen Sans,  */
     font-family: "Solitreo", cursive;
@@ -120,9 +191,4 @@
     height: 100%;
     margin: 0 10px;
   }
-}
-
-* {
-  /* background-color: #04011f; */
-  color: #eee;
 }

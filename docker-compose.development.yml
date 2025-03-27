@@ -47,8 +47,9 @@ services:
       - public:/docker/app/public
       - node-modules:/docker/app/node_modules
       - bundle:/usr/local/bundle
-    # command: bash -c "bundle install && foreman start -f Procfile.dev"
     command: bash -c "bundle install && bin/dev"
+    # command: bash -c "bundle install && foreman start -f Procfile.dev"
+    # command: bash -c "sleep infinity"
     tty: true
     stdin_open: true
 

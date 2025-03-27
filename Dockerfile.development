@@ -7,18 +7,19 @@ RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
 	&& echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list \
 	&& apt-get update && apt-get install -y yarn
 
-WORKDIR /docker/app
+# RUN yarn global add postcss-cli
 
-COPY package.json ./
-RUN yarn install
+WORKDIR /docker/app
 
 COPY Gemfile ./
 RUN bundle install
 
-# COPY . . #? I don't *think* this will be necessary in dev since we mount the working directory as a volume
+COPY package.json ./
+RUN yarn install
 
 ARG DEFAULT_PORT 3000
 
 EXPOSE ${DEFAULT_PORT}
 
-CMD ["bin/dev"]
+# CMD ["bin/dev"]
+CMD ["sleep", "infinity"]
