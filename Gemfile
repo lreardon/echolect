@@ -121,7 +121,7 @@ gem 'aws-sdk-s3', require: false
 
 gem 'font-awesome-sass'
 
-gem 'sassc-rails'
+# gem 'sassc-rails'
 
 gem 'solid_queue'
 
