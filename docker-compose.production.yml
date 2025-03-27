@@ -154,6 +154,11 @@ volumes:
   mail-logs:
   mail-config:
   public:
+  # letsencrypt:
+  # localtime:
+  minio-data:
+  whisper-models:
+  whisper-transcriptions:
 networks:
   default:
     name: echolect
