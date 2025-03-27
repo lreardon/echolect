@@ -56,3 +56,5 @@
 !/app/assets/builds/.keep
 
 .direnv/python-*/
+
+Gemfile.lock
