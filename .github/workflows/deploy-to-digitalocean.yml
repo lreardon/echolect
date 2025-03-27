@@ -58,7 +58,7 @@ jobs:
             cd ~/server
             if ! docker ps -a | grep -q webapp; then
               echo "Webapp container not found. Building containers..."
-              docker-compose -f docker-compose.production.yml up -d --build
+              docker-compose -f docker-compose.production.yml up --build --no-cache
             else
               echo "Webapp container already exists."
               docker-compose -f docker-compose.production.yml up 
