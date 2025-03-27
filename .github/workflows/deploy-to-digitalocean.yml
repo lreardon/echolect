@@ -61,6 +61,7 @@ jobs:
               docker-compose -f docker-compose.production.yml up -d --build
             else
               echo "Webapp container already exists."
+              docker-compose -f docker-compose.production.yml up 
             fi
       - name: Run Migrations
         uses: appleboy/ssh-action@v1.0.3
