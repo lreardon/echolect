@@ -11,10 +11,12 @@ RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
 WORKDIR /docker/app
 
 COPY Gemfile ./
-
-ADD . /docker/app
-
 RUN bundle install
+
+COPY package.json ./
+RUN yarn install
+
+# ADD . /docker/app
 
 ARG DEFAULT_PORT 3000
 
