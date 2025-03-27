@@ -19,3 +19,7 @@ Python environment stuff sucks. As of now, I'm using pyenv to manage python vers
 Deployment to production is flaky. Right (right right) now I'm rebuilding contianers on the server via first `ssh root@echolect.co` from my machine with SSH keys for the droplet, then running `docker compose -f dockerfile.production.yml up`. We'll see if that works. The main pain points seem to be (1) bundling new dependencies, (2) everything else.
 
 The base image Docker For DigitalOcean (I believe, and of which I ought to dispose, as it's overhead isn't necessary and is possibly an anti-pattern) does not include `docker-compose`, so I installed it with `sudo apt install docker-compose`. 3/26/25
+
+## TODO
+Copy the models to the production server with: `scp -r services/whisper/models root@echolect.co:server/services/whisper/models`
+Look into better sync method
