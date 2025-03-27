@@ -18,11 +18,12 @@
 	},
 	"scripts": {
 		"build": "node esbuild.config.mjs",
-		"build:css": "tailwindcss -i ./app/assets/stylesheets/tailwind/application.css -o ./app/assets/builds/tailwind.css",
+		"build:css": "tailwindcss -i ./app/assets/tailwind/application.css -o ./app/assets/builds/tailwind.css",
 		"build:default": "esbuild app/javascript/*.* --bundle --sourcemap --outdir=app/assets/builds --public-path=/assets"
 	},
 	"devDependencies": {
 		"@prettier/plugin-ruby": "^4.0.4",
+		"chokidar": "^4.0.0",
 		"prettier": "^3.4.2"
 	}
 }
