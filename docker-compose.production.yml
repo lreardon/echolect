@@ -98,7 +98,7 @@ services:
       - /etc/letsencrypt:/etc/letsencrypt
       - public:/usr/share/nginx/html
     depends_on:
-      - webapp
+      # - webapp
     command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
   certbot:
     container_name: certbot
