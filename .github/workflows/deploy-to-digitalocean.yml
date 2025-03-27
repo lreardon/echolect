@@ -48,6 +48,20 @@ jobs:
       #     script: |
       #       cd ~/server
       #       bundle install
+      - name: Build Containers if needed
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ~/server
+            if ! docker ps -a | grep -q webapp; then
+              echo "Webapp container not found. Building containers..."
+              docker-compose -f docker-compose.production.yml up -d --build
+            else
+              echo "Webapp container already exists."
+            fi
       - name: Run Migrations
         uses: appleboy/ssh-action@v1.0.3
         with:
