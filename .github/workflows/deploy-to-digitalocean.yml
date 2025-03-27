@@ -39,15 +39,15 @@ jobs:
       #     script: |
       #       cd ~/server
       #       docker-compose -f docker-compose.production.yml up -d --build
-      - name: Bundle Install
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            cd ~/server
-            bundle install
+      # - name: Bundle Install
+      #   uses: appleboy/ssh-action@v1.0.3
+      #   with:
+      #     host: ${{ secrets.SSH_HOST }}
+      #     username: ${{ secrets.SSH_USERNAME }}
+      #     key: ${{ secrets.SSH_KEY }}
+      #     script: |
+      #       cd ~/server
+      #       bundle install
       - name: Run Migrations
         uses: appleboy/ssh-action@v1.0.3
         with:
