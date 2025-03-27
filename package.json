@@ -18,6 +18,7 @@
 	},
 	"scripts": {
 		"build": "node esbuild.config.mjs",
+		"build:css": "tailwindcss -i ./app/assets/stylesheets/tailwind/application.css -o ./app/assets/builds/tailwind.css",
 		"build:default": "esbuild app/javascript/*.* --bundle --sourcemap --outdir=app/assets/builds --public-path=/assets"
 	},
 	"devDependencies": {
